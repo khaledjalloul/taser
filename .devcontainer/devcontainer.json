@@ -1,0 +1,52 @@
+{
+    // "image": "khaledjalloul/devcontainer",
+    "dockerFile": "Dockerfile",
+    "postCreateCommand": "bash src/.devcontainer/post_create.bash",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // Python
+                "ms-python.python",
+                "ms-python.autopep8",
+                "detachhead.basedpyright",
+                // C++
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                "ms-vscode.cmake-tools",
+                // Docker
+                "ms-azuretools.vscode-docker",
+                // Yaml
+                "redhat.vscode-yaml",
+                // GitLens
+                "eamodio.gitlens",
+                // Markdown
+                "yzhang.markdown-all-in-one",
+                // ROS
+                "morningfrog.urdf-visualizer"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/home/vscode/venv/bin/python3.12",
+                "basedpyright.analysis.typeCheckingMode": "strict",
+                "basedpyright.analysis.inlayHints.callArgumentNames": false,
+                "basedpyright.analysis.inlayHints.functionReturnTypes": false,
+                "basedpyright.analysis.inlayHints.variableTypes": false
+            }
+        }
+    },
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/colcon_ws/src,type=bind",
+    "workspaceFolder": "/workspace/colcon_ws",
+    "mounts": [
+        // Enable GUI
+        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+        // Enable Docker-in-Docker
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+        // Enable volume persistence
+        "source=devcontainer-vscode-settings,target=/workspace/colcon_ws/.vscode,type=volume"
+    ],
+    "runArgs": [
+        "--env",
+        "DISPLAY=${env:DISPLAY}",
+        "--device",
+        "/dev/dri"
+    ]
+}
