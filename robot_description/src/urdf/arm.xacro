@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <material name="light-blue">
+        <color rgba="0 0.3 0.7 1"/>
+    </material>
+    <material name="white">
+        <color rgba="0.5 0.5 1 1"/>
+    </material>
+
+    <xacro:macro name="arm" params="index y_offset">
+        <link name="arm_${index}_1">
+            <visual>
+                <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="0.5 0.25 1"/>
+                </geometry>
+                <material name="light-blue"/>
+            </visual>
+        </link>
+
+        <joint name="base_arm_${index}_1_joint" type="continuous">
+            <parent link="base"/>
+            <child link="arm_${index}_1"/>
+            <origin xyz="0.0 ${y_offset} 1.5" rpy="0.0 0.0 0.0"/>
+            <axis xyz="0 1 0"/>
+        </joint>
+
+        <link name="arm_${index}_2">
+            <visual>
+                <origin xyz="0.0 0.0 -0.25" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="0.25 0.25 0.5"/>
+                </geometry>
+                <material name="white"/>
+            </visual>
+        </link>
+
+        <joint name="arm_${index}_1_arm_${index}_2_joint" type="continuous">
+            <parent link="arm_${index}_1"/>
+            <child link="arm_${index}_2"/>
+            <origin xyz="0.0 0 -1" rpy="0.0 0.0 0.0"/>
+            <axis xyz="0 0 1"/>
+        </joint>
+
+        <link name="arm_${index}_3">
+            <visual>
+                <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="0.25 0.25 1"/>
+                </geometry>
+                <material name="light-blue"/>
+            </visual>
+        </link>
+
+        <joint name="arm_${index}_2_arm_${index}_3_joint" type="continuous">
+            <parent link="arm_${index}_2"/>
+            <child link="arm_${index}_3"/>
+            <origin xyz="0.0 0 -0.5" rpy="0.0 0.0 0.0"/>
+            <axis xyz="1 0 0"/>
+        </joint>
+    </xacro:macro>
+
+    <!-- <xacro:macro name="inertial" params="m x y z oy oz" >
+        <inertial>
+            <origin xyz="0 ${oy} ${oz}" rpy="0.0 0.0 0.0"/>
+            <mass value="${m}"/>
+            <inertia    ixx="${(1/12) * m * (z*z + y*y)}" ixy="0.0" ixz="0.0"
+                        iyy="${(1/12) * m * (x*x + z*z)}" iyz="0.0"
+                        izz="${(1/12) * m * (y*y + x*x)}"/>
+        </inertial>
+    </xacro:macro> -->
+</robot>

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <material name="pink">
+        <color rgba="0.3 0 0.2 1"/>
+    </material>
+
+    <xacro:macro name="wheel" params="index y_offset z_offset parent_link">
+        <link name="wheel_${index}">
+            <visual>
+                <origin xyz="0.0 0.0 0.0" rpy="1.575 0.0 0.0"/>
+                <geometry>
+                    <cylinder length="0.25" radius="0.5"/>
+                </geometry>
+                <material name="pink"/>
+            </visual>
+        </link>
+
+        <joint name="${parent_link}_wheel_${index}_joint" type="continuous">
+            <parent link="${parent_link}"/>
+            <child link="wheel_${index}"/>
+            <origin xyz="0.0 ${y_offset} ${z_offset}" rpy="0.0 0.0 0.0"/>
+            <axis xyz="0 1 0"/>
+        </joint>
+    </xacro:macro>
+
+</robot>
