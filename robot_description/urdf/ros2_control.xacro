@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="wheeled_humanoid_ros2_control">
+    <ros2_control name="wheeled_humanoid" type="system">
+
+      <hardware>
+        <plugin>mock_components/GenericSystem</plugin>
+        <param name="calculate_dynamics">true</param>
+      </hardware>
+
+      <joint name="base_arm_1_1_joint">
+        <command_interface name="velocity" />
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="arm_1_1_arm_1_2_joint">
+        <command_interface name="velocity" />
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="arm_1_2_arm_1_3_joint">
+        <command_interface name="velocity" />
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="base_arm_2_1_joint">
+        <command_interface name="velocity" />
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="arm_2_1_arm_2_2_joint">
+        <command_interface name="velocity" />
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="arm_2_2_arm_2_3_joint">
+        <command_interface name="velocity" />
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="base_wheel_1_joint">
+        <command_interface name="velocity" />
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="base_wheel_2_joint">
+        <command_interface name="velocity" />
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="wheel_3_base_wheel_3_steering_joint">
+        <command_interface name="velocity" />
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="wheel_3_steering_wheel_3_joint">
+        <command_interface name="velocity" />
+        <state_interface name="position" />
+      </joint>
+
+    </ros2_control>
+  </xacro:macro>
+</robot>

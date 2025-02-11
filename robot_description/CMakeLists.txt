@@ -4,7 +4,7 @@ project(robot_description)
 find_package(ament_cmake REQUIRED)
 
 install(
-  DIRECTORY src config launch
+  DIRECTORY config launch urdf
   DESTINATION share/${PROJECT_NAME}
 )
 

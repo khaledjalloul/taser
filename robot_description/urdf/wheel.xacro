@@ -24,4 +24,14 @@
         </joint>
     </xacro:macro>
 
+    <!-- <xacro:macro name="wheel_inertial" params="m x y z oy oz" >
+        <inertial>
+            <origin xyz="0 ${oy} ${oz}" rpy="0.0 0.0 0.0"/>
+            <mass value="${m}"/>
+            <inertia    ixx="${(1/12) * m * (z*z + y*y)}" ixy="0.0" ixz="0.0"
+                        iyy="${(1/12) * m * (x*x + z*z)}" iyz="0.0"
+                        izz="${(1/12) * m * (y*y + x*x)}"/>
+        </inertial>
+    </xacro:macro> -->
+
 </robot>

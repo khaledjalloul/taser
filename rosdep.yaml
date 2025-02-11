@@ -1,2 +1,2 @@
-python3-cvxpy:
-  ubuntu: [python3-cvxpy]
+gz_harmonic:
+  ubuntu: [gz-harmonic]
