@@ -59,6 +59,16 @@
             <origin xyz="0.0 0 -0.5" rpy="0.0 0.0 0.0" />
             <axis xyz="1 0 0" />
         </joint>
+
+        <link name="arm_${index}_eef">
+        </link>
+
+        <joint name="arm_${index}_3_arm_${index}_eef_joint" type="fixed">
+            <parent link="arm_${index}_3" />
+            <child link="arm_${index}_eef" />
+            <origin xyz="0.0 0 -1" rpy="0.0 0.0 0.0" />
+        </joint>
+
     </xacro:macro>
 
 </robot>
