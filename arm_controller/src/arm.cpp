@@ -2,24 +2,43 @@
 
 namespace arm_controller {
 
-Arm::Arm(std::string name, std::string inertial_frame,
-         std::shared_ptr<TransformListener> transformListener)
-    : name_(name), inertial_frame_(inertial_frame),
-      transformListener_(transformListener) {}
+Arm::Arm(std::string name, std::string base_frame,
+         std::shared_ptr<RosInterface> ros_interface)
+    : name_(name), base_frame_(base_frame), ros_interface_(ros_interface) {}
+
+ArmJointState Arm::get_joint_positions() {
+  if (name_ == "arm_1") {
+    return ros_interface_->get_joint_positions().head(3);
+  } else {
+    return ros_interface_->get_joint_positions().segment(3, 3);
+  }
+}
+
+Pose Arm::get_end_effector_pose(bool absolute_in_map) {
+  auto target_frame = absolute_in_map ? "map" : base_frame_;
+  auto tf = ros_interface_->get_transform(target_frame, name_ + "_eef");
+
+  auto orientation = tf.rotation.toRotationMatrix().eulerAngles(0, 1, 2);
+
+  return {tf.translation, orientation};
+}
+
+// TODO
+Pose Arm::get_end_effector_twist() { return Pose(); }
 
 Jacobian Arm::get_geometric_jacobian() {
-  auto TIE = transformListener_->get_tf(inertial_frame_, name_ + "_eef");
-  auto TI0 = transformListener_->get_tf(inertial_frame_, name_ + "_1");
-  auto TI1 = transformListener_->get_tf(inertial_frame_, name_ + "_2");
-  auto TI2 = transformListener_->get_tf(inertial_frame_, name_ + "_3");
+  auto TBE = ros_interface_->get_transform(base_frame_, name_ + "_eef");
+  auto TB0 = ros_interface_->get_transform(base_frame_, name_ + "_1");
+  auto TB1 = ros_interface_->get_transform(base_frame_, name_ + "_2");
+  auto TB2 = ros_interface_->get_transform(base_frame_, name_ + "_3");
 
-  auto I_r0E = TIE.translation - TI0.translation;
-  auto I_r1E = TIE.translation - TI1.translation;
-  auto I_r2E = TIE.translation - TI2.translation;
+  auto I_r0E = TBE.translation - TB0.translation;
+  auto I_r1E = TBE.translation - TB1.translation;
+  auto I_r2E = TBE.translation - TB2.translation;
 
   auto I_n0 = n0_;
-  auto I_n1 = TI1.rotation * n1_;
-  auto I_n2 = TI2.rotation * n2_;
+  auto I_n1 = TB1.rotation * n1_;
+  auto I_n2 = TB2.rotation * n2_;
 
   Jacobian J;
   J.block<3, 1>(0, 0) = I_n0.cross(I_r0E);
@@ -30,6 +49,43 @@ Jacobian Arm::get_geometric_jacobian() {
   J.block<3, 1>(3, 2) = I_n2;
 
   return J;
+}
+
+Matrix Arm::get_pseudoinverse(Matrix mat) {
+  if (mat.rows() == mat.cols()) {
+    return mat.inverse();
+  } else if (mat.rows() > mat.cols()) {
+    // Full column rank
+    return (mat.transpose() * mat.transpose()).inverse() * mat.transpose();
+  } else {
+    // Full row rank
+    return mat.transpose() * (mat * mat.transpose()).inverse();
+  }
+}
+
+// TODO
+ArmJointState Arm::solve_ik_for_joint_positions(
+    Vector p_desired, std::optional<std::vector<int>> jacobian_indices) {
+  return ArmJointState();
+}
+
+ArmJointState Arm::solve_ik_for_joint_velocities(
+    Vector w_desired, std::optional<std::vector<int>> jacobian_indices) {
+  auto J = get_geometric_jacobian();
+
+  // Matrix J_selected;
+  // if (!jacobian_indices.has_value()) {
+  //   J_selected = J;
+  // } else {
+  //   for (size_t i = 0; i < jacobian_indices.value().size(); i++) {
+  //     J_selected.row(i) = J.row(jacobian_indices.value()[i]);
+  //   }
+  // }
+
+  auto J_inv = get_pseudoinverse(J);
+
+  auto dq = J_inv * w_desired;
+  return dq;
 }
 
 } // namespace arm_controller

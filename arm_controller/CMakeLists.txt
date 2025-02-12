@@ -7,6 +7,7 @@ set (PACKAGE_DEPENDENCIES
   rclcpp
   Eigen3
   geometry_msgs
+  sensor_msgs
   tf2_msgs
   tf2_ros
 )
@@ -18,9 +19,9 @@ endforeach()
 
 # Library
 add_library(${PROJECT_NAME} SHARED
-  src/ik_solver.cpp
-  src/transform_listener.cpp
+  src/ros_interface.cpp
   src/arm.cpp
+  src/ik_solver.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

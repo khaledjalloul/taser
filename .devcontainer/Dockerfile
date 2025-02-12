@@ -14,13 +14,16 @@ RUN apt install -y \
     # C++
     cmake \
     clang-format \
+    gdb \
     # GUI support
     libxrandr2
 
 # Install Python packages
 RUN virtualenv /home/vscode/venv
 RUN echo 'export PYTHONPATH=$PYTHONPATH:/home/vscode/venv/lib/python3.12/site-packages' >> /home/vscode/venv/bin/activate
-RUN /home/vscode/venv/bin/pip install --no-input cvxpy ecos
+RUN /home/vscode/venv/bin/pip install --no-input cvxpy ecos \
+    # TODO: Find out why
+    catkin_pkg
 
 # Set up apt repositories
 RUN echo "deb [trusted=yes] https://khaledjalloul.github.io/debian-repository unstable main" | tee /etc/apt/sources.list.d/khaledjalloul.list
