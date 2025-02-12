@@ -5,6 +5,9 @@ namespace arm_controller {
 RosInterface::RosInterface(std::string name)
     : rclcpp::Node(name), buffer_(get_clock()), tf_listener_(buffer_) {
 
+  joint_velocity_pub_ = create_publisher<std_msgs::msg::Float64MultiArray>(
+      "/velocity_controller/commands", 10);
+
   joint_state_sub_ = create_subscription<sensor_msgs::msg::JointState>(
       "/joint_states", 10,
       [this](sensor_msgs::msg::JointState msg) { joint_state_callback(msg); });
@@ -31,6 +34,13 @@ Transform RosInterface::get_transform(std::string target_frame,
   }
 }
 
+void RosInterface::publish_joint_velocities(
+    std_msgs::msg::Float64MultiArray msg) {
+  joint_velocity_pub_->publish(msg);
+}
+
+// TODO: optimize to store msg as is, then get later as eigen, maybe a template
+// function
 void RosInterface::joint_state_callback(sensor_msgs::msg::JointState msg) {
   for (size_t i; i < msg.position.size(); i++) {
     joint_positions_[i] = msg.position[i];

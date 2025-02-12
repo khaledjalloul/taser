@@ -8,9 +8,10 @@ Arm::Arm(std::string name, std::string base_frame,
 
 ArmJointState Arm::get_joint_positions() {
   if (name_ == "arm_1") {
-    return ros_interface_->get_joint_positions().head(3);
+    return ros_interface_->get_joint_positions().head(num_joints_);
   } else {
-    return ros_interface_->get_joint_positions().segment(3, 3);
+    return ros_interface_->get_joint_positions().segment(num_joints_,
+                                                         num_joints_);
   }
 }
 
@@ -32,35 +33,36 @@ Jacobian Arm::get_geometric_jacobian() {
   auto TB1 = ros_interface_->get_transform(base_frame_, name_ + "_2");
   auto TB2 = ros_interface_->get_transform(base_frame_, name_ + "_3");
 
-  auto I_r0E = TBE.translation - TB0.translation;
-  auto I_r1E = TBE.translation - TB1.translation;
-  auto I_r2E = TBE.translation - TB2.translation;
+  auto B_r0E = TBE.translation - TB0.translation;
+  auto B_r1E = TBE.translation - TB1.translation;
+  auto B_r2E = TBE.translation - TB2.translation;
 
-  auto I_n0 = n0_;
-  auto I_n1 = TB1.rotation * n1_;
-  auto I_n2 = TB2.rotation * n2_;
+  auto B_n0 = n0_;
+  auto B_n1 = TB1.rotation * n1_;
+  auto B_n2 = TB2.rotation * n2_;
 
   Jacobian J;
-  J.block<3, 1>(0, 0) = I_n0.cross(I_r0E);
-  J.block<3, 1>(0, 1) = I_n1.cross(I_r1E);
-  J.block<3, 1>(0, 2) = I_n2.cross(I_r2E);
-  J.block<3, 1>(3, 0) = I_n0;
-  J.block<3, 1>(3, 1) = I_n1;
-  J.block<3, 1>(3, 2) = I_n2;
+  J.block<3, 1>(0, 0) = B_n0.cross(B_r0E);
+  J.block<3, 1>(0, 1) = B_n1.cross(B_r1E);
+  J.block<3, 1>(0, 2) = B_n2.cross(B_r2E);
+  J.block<3, 1>(3, 0) = B_n0;
+  J.block<3, 1>(3, 1) = B_n1;
+  J.block<3, 1>(3, 2) = B_n2;
 
   return J;
 }
 
 Matrix Arm::get_pseudoinverse(Matrix mat) {
-  if (mat.rows() == mat.cols()) {
-    return mat.inverse();
-  } else if (mat.rows() > mat.cols()) {
-    // Full column rank
-    return (mat.transpose() * mat.transpose()).inverse() * mat.transpose();
-  } else {
-    // Full row rank
-    return mat.transpose() * (mat * mat.transpose()).inverse();
-  }
+  // if (mat.rows() == mat.cols()) {
+  //   return mat.inverse();
+  // } else if (mat.rows() > mat.cols()) {
+  //   // Full column rank
+  //   return (mat.transpose() * mat.transpose()).inverse() * mat.transpose();
+  // } else {
+  //   // Full row rank
+  //   return mat.transpose() * (mat * mat.transpose()).inverse();
+  // }
+  return mat.completeOrthogonalDecomposition().pseudoInverse();
 }
 
 // TODO
@@ -72,6 +74,7 @@ ArmJointState Arm::solve_ik_for_joint_positions(
 ArmJointState Arm::solve_ik_for_joint_velocities(
     Vector w_desired, std::optional<std::vector<int>> jacobian_indices) {
   auto J = get_geometric_jacobian();
+  auto J_positional = J.topRows(3);
 
   // Matrix J_selected;
   // if (!jacobian_indices.has_value()) {
@@ -82,7 +85,7 @@ ArmJointState Arm::solve_ik_for_joint_velocities(
   //   }
   // }
 
-  auto J_inv = get_pseudoinverse(J);
+  auto J_inv = get_pseudoinverse(J_positional);
 
   auto dq = J_inv * w_desired;
   return dq;

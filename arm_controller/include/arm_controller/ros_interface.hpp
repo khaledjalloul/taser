@@ -4,6 +4,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
 #include <tf2_msgs/msg/tf_message.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -22,6 +23,8 @@ public:
 
   Transform get_transform(std::string target_frame, std::string source_frame);
 
+  void publish_joint_velocities(std_msgs::msg::Float64MultiArray msg);
+
   void joint_state_callback(sensor_msgs::msg::JointState msg);
 
 private:
@@ -30,6 +33,8 @@ private:
 
   tf2_ros::Buffer buffer_;
   tf2_ros::TransformListener tf_listener_;
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr
+      joint_velocity_pub_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr
       joint_state_sub_;
 };

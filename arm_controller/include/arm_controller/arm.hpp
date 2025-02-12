@@ -24,16 +24,19 @@ public:
   Matrix get_pseudoinverse(Matrix mat);
 
   ArmJointState solve_ik_for_joint_positions(
-      Vector p_desired, std::optional<std::vector<int>> jacobian_indices);
+      Vector p_desired,
+      std::optional<std::vector<int>> jacobian_indices = std::nullopt);
 
   ArmJointState solve_ik_for_joint_velocities(
-      Vector w_desired, std::optional<std::vector<int>> jacobian_indices);
+      Vector w_desired,
+      std::optional<std::vector<int>> jacobian_indices = std::nullopt);
 
 private:
   std::string name_, base_frame_;
   std::shared_ptr<RosInterface> ros_interface_;
 
   // Rotation axes
+  int num_joints_{3};
   Axis n0_{0, 1, 0};
   Axis n1_{0, 0, 1};
   Axis n2_{1, 0, 0};
