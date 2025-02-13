@@ -19,8 +19,8 @@
 
     <xacro:base />
 
-    <xacro:arm index="1" y_offset="1.125" />
-    <xacro:arm index="2" y_offset="-1.125" />
+    <xacro:arm name="left_arm" y_offset="1.125" />
+    <xacro:arm name="right_arm" y_offset="-1.125" />
 
     <xacro:wheel index="1" parent_link="base" y_offset="1.125" z_offset="-1.75" />
     <xacro:wheel index="2" parent_link="base" y_offset="-1.125" z_offset="-1.75" />

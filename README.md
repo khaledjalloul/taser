@@ -50,3 +50,45 @@
 - arm controllers
 - "sensing", publishes or idk where obstacles and objects are
 - missions state machine
+
+
+main launch file will start:
+- controller(s): constantly checks desired state and produces input
+- state machine: move to, pick up, drop
+
+SM
+-> reach arm mission
+-> mission planner keeps calculating error given current eef position to know when to stop (ros SM)
+-> publish desired pose (ros SM)
+-> controller sees pose (ros arm_controller)
+-> controller calculates error given current eef position
+-> controller sends desired w to arm package
+-> arm package gets dq given the transforms (ros - can be passed fom controller)
+-> arm package returns desired dq
+-> controller publishes dq (ros)
+
+SM
+-> reach base mission
+-> mission planner keeps calculating error given current eef position to know when to stop (ros SM)
+-> publish desired pose (ros SM)
+-> path planner sees pose (ros path_planner)
+-> path planner obtaints path
+-> publishes the next pose to go (ros path_planner)
+-> mpc sees desired pose (ros base_mpc)
+-> mpc generates wheel inputs given current pose (ros base_mpc)
+-> publishes wheel inputs (ros base_mpc)
+
+nodes:
+- SM
+- arm_controller
+- path_planner
+- base_mpc
+
+- should controller class be coupled with ros interface or can they be separated
+  - controller needs:
+    - subscriber to get desired pose
+    - joint states to calculate eef position
+    - transforms to calculate jacobian
+    - publisher to publish dq
+- controller class uses arm class without ros
+  - can the same be done with path planner and mpc?

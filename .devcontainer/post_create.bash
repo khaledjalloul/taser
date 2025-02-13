@@ -1,3 +1,5 @@
+RUN kj cli completion
+
 sudo chown -R $USER .
 
 rosdep update

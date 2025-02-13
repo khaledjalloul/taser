@@ -19,9 +19,9 @@ endforeach()
 
 # Library
 add_library(${PROJECT_NAME} SHARED
-  src/ros_interface.cpp
-  src/arm.cpp
-  src/ik_solver.cpp
+  src/arm_kinematics.cpp
+  src/controller.cpp
+  src/ros_node.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -31,7 +31,7 @@ ament_target_dependencies(${PROJECT_NAME} ${PACKAGE_DEPENDENCIES})
 
 # Executable
 add_executable(${PROJECT_NAME}_node
-  src/arm_controller_node.cpp
+  src/main.cpp
 )
 target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME})
 

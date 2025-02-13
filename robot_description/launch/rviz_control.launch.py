@@ -39,7 +39,9 @@ def generate_launch_description():
     velocity_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["velocity_controller",
+        arguments=["left_arm_velocity_controller",
+                   "right_arm_velocity_controller",
+                   "wheels_velocity_controller",
                    "--param-file", str(CONTROLLER_MANAGER_CONFIG)],
     )
 

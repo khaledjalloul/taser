@@ -35,4 +35,3 @@ RUN rosdep init
 
 # Install personal CLI
 RUN apt install -y khaled-cli
-RUN kj cli completion
