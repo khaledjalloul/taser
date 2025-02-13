@@ -57,7 +57,7 @@
             <parent link="${name}_2" />
             <child link="${name}_3" />
             <origin xyz="0.0 0 -0.5" rpy="0.0 0.0 0.0" />
-            <axis xyz="1 0 0" />
+            <axis xyz="0 1 0" />
         </joint>
 
         <link name="${name}_eef">

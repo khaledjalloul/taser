@@ -34,6 +34,8 @@ RosNode::RosNode(std::string name)
 
   executor_thread_ =
       std::thread([this]() { rclcpp::spin(this->get_node_base_interface()); });
+
+  RCLCPP_INFO(get_logger(), "Node \"%s\" started.", name.c_str());
 }
 
 RosNode::~RosNode() { executor_thread_.join(); }

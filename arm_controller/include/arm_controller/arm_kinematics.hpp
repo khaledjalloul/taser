@@ -33,7 +33,7 @@ private:
   int num_joints_{3};
   Axis n0_{0, 1, 0};
   Axis n1_{0, 0, 1};
-  Axis n2_{1, 0, 0};
+  Axis n2_{0, 1, 0};
 };
 
 } // namespace arm_controller

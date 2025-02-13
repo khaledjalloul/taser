@@ -12,8 +12,8 @@ int main(int argc, char *argv[]) {
 
   ArmKinematics left_arm("left_arm");
   ArmKinematics right_arm("right_arm");
-  Controller controller(0.5);
-  RosNode node("arm_controller_node");
+  Controller controller(1);
+  RosNode node("arm_controller");
 
   rclcpp::Rate r(10);
 
