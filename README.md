@@ -92,3 +92,8 @@ nodes:
     - publisher to publish dq
 - controller class uses arm class without ros
   - can the same be done with path planner and mpc?
+
+
+main loop in sm using switch case
+-> state is started by running execute
+-> 

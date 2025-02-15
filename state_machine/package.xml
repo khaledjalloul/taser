@@ -1,20 +1,16 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>arm_controller</name>
+  <name>state_machine</name>
   <version>0.0.0</version>
-  <description>Controller for the humanoid arms</description>
+  <description>State machine for the wheeled humanoid</description>
 
-  <maintainer email="khaled.jalloul@gmail.com">Khaled Jalloul</maintainer>
+  <maintainer email="khaled.jalloul@hotmail.com">Khaled Jalloul</maintainer>
 
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
-  <depend>geometry_msgs</depend>
-  <depend>sensor_msgs</depend>
-  <depend>tf2_msgs</depend>
-  <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

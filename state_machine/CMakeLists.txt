@@ -1,29 +1,25 @@
 cmake_minimum_required(VERSION 3.8)
-project(arm_controller)
+project(state_machine)
 
 # Declare dependencies
-find_package(ament_cmake REQUIRED)
 set(PACKAGE_DEPENDENCIES
   rclcpp
-  Eigen3
-  geometry_msgs
-  sensor_msgs
-  tf2_msgs
-  tf2_ros
 )
 
 # Find dependencies
+find_package(ament_cmake REQUIRED)
 foreach(PKG ${PACKAGE_DEPENDENCIES})
   find_package(${PKG} REQUIRED)
 endforeach()
 
 # Library
 add_library(${PROJECT_NAME} SHARED
-  src/arm_kinematics.cpp
-  src/controller.cpp
-  src/ros_node.cpp
+  src/states/wave.cpp
+  src/states/move.cpp
+  src/state_machine.cpp
 )
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_include_directories(
+  ${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
@@ -35,8 +31,10 @@ add_executable(${PROJECT_NAME}_node
 )
 target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME})
 
+install(DIRECTORY include/
+  DESTINATION include/${PROJECT_NAME}
+)
 # Install
-install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_node
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib

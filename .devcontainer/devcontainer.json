@@ -12,7 +12,7 @@
                 // C++
                 "ms-vscode.cpptools",
                 "ms-vscode.cpptools-extension-pack",
-                "ms-vscode.cmake-tools",
+                "kylinideteam.cmake-intellisence",
                 "xaver.clang-format",
                 // Docker
                 "ms-azuretools.vscode-docker",
