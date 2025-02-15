@@ -28,6 +28,12 @@ RosNode::RosNode(std::string name)
       "/right_arm_velocity_controller/desired_position", 10,
       [this](geometry_msgs::msg::Point msg) { right_arm_desired_pos = msg; });
 
+  left_arm_current_pos_pub = create_publisher<geometry_msgs::msg::Point>(
+      "/left_arm_velocity_controller/current_position", 10);
+
+  right_arm_current_pos_pub = create_publisher<geometry_msgs::msg::Point>(
+      "/right_arm_velocity_controller/current_position", 10);
+
   joint_state_sub_ = create_subscription<sensor_msgs::msg::JointState>(
       "/joint_states", 10,
       [this](sensor_msgs::msg::JointState msg) { joint_state_callback(msg); });
@@ -35,7 +41,7 @@ RosNode::RosNode(std::string name)
   executor_thread_ =
       std::thread([this]() { rclcpp::spin(this->get_node_base_interface()); });
 
-  RCLCPP_INFO(get_logger(), "Node \"%s\" started.", name.c_str());
+  RCLCPP_INFO(get_logger(), "Node started.");
 }
 
 RosNode::~RosNode() { executor_thread_.join(); }

@@ -33,6 +33,10 @@ public:
       left_arm_joint_velocity_pub;
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr
       right_arm_joint_velocity_pub;
+  rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr
+      left_arm_current_pos_pub;
+  rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr
+      right_arm_current_pos_pub;
 
 private:
   RobotJointState joint_positions_{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};

@@ -1,24 +1,26 @@
 #pragma once
 
 #include <iostream>
-#include <rclcpp/rclcpp.hpp>
+#include <memory>
 
-#include "state_machine/states/move.hpp"
-#include "state_machine/states/wave.hpp"
+#include "state_machine/ros_node.hpp"
+#include "state_machine/state.hpp"
 
 namespace state_machine {
 
 class StateMachine {
 public:
-  StateMachine();
+  StateMachine(std::shared_ptr<RosNode> ros_node);
 
   void check_state();
 
-  void start();
+  void update();
 
 private:
-  StateType current_state_;
-  std::unique_ptr<State> current_state_obj_;
+  StateType state_{-1};
+  StateType next_state_{StateType::GRAB};
+  std::unique_ptr<State> state_obj_;
+  std::shared_ptr<RosNode> ros_node_;
 };
 
 } // namespace state_machine

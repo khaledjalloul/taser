@@ -1,17 +1,15 @@
 #pragma once
 
-#include "state_machine/states/state.hpp"
+#include "state_machine/state.hpp"
 
 namespace state_machine {
 
 class Move : public State {
 public:
-  Move(StateType &current_state);
+  Move(std::shared_ptr<RosNode> ros_node);
   ~Move() override;
 
-  void update() override;
-
-  StateType get_type() override { return StateType::MOVE; }
+  void update(StateType &next_state) override;
 };
 
 } // namespace state_machine

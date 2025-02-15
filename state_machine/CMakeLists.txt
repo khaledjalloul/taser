@@ -3,6 +3,8 @@ project(state_machine)
 
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES
+  arm_controller
+  geometry_msgs
   rclcpp
 )
 
@@ -14,9 +16,12 @@ endforeach()
 
 # Library
 add_library(${PROJECT_NAME} SHARED
-  src/states/wave.cpp
-  src/states/move.cpp
+  src/ros_node.cpp
   src/state_machine.cpp
+  src/states/grab.cpp
+  src/states/lift.cpp
+  src/states/move.cpp
+  src/states/wave.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

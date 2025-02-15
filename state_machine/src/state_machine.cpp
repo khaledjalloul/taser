@@ -1,38 +1,39 @@
 #include "state_machine/state_machine.hpp"
 
+#include "state_machine/states/grab.hpp"
+#include "state_machine/states/idle.hpp"
+#include "state_machine/states/lift.hpp"
+
 namespace state_machine {
 
-StateMachine::StateMachine()
-    : current_state_(StateType::MOVE),
-      current_state_obj_(new Move(current_state_)) {}
+StateMachine::StateMachine(std::shared_ptr<RosNode> ros_node)
+    : ros_node_(ros_node) {}
 
 void StateMachine::check_state() {
-  if (current_state_ == current_state_obj_->get_type()) {
+  if (next_state_ == state_)
     return;
-  }
 
-  switch (current_state_) {
-  case StateType::MOVE:
-    current_state_obj_.reset(new Move(current_state_));
+  switch (next_state_) {
+  case StateType::IDLE:
+    state_obj_.reset(new Idle(ros_node_));
     break;
-  case StateType::WAVE:
-    current_state_obj_.reset(new Wave(current_state_));
+  case StateType::GRAB:
+    state_obj_.reset(new Grab(ros_node_));
+    break;
+  case StateType::LIFT:
+    state_obj_.reset(new Lift(ros_node_));
     break;
   default:
     break;
   }
+
+  state_ = next_state_;
 }
 
-void StateMachine::start() {
-  rclcpp::Rate r(1);
+void StateMachine::update() {
+  check_state();
 
-  while (rclcpp::ok()) {
-    check_state();
-
-    current_state_obj_->update();
-
-    r.sleep();
-  }
+  state_obj_->update(next_state_);
 }
 
 } // namespace state_machine

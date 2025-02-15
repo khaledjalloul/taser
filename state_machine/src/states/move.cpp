@@ -1,15 +1,12 @@
 #include "state_machine/states/move.hpp"
 
-#include <iostream>
-
 namespace state_machine {
 
-Move::Move(StateType &current_state) : State(current_state) {}
-Move::~Move() {}
-
-void Move::update() {
-  std::cout << "Move" << std::endl;
-  current_state_ = StateType::WAVE;
+Move::Move(std::shared_ptr<RosNode> ros_node) : State(ros_node) {
+  RCLCPP_INFO(ros_node->get_logger(), "Moving...");
 }
+Move::~Move() { RCLCPP_INFO(ros_node_->get_logger(), "Finished moving."); }
+
+void Move::update(StateType &next_state) { next_state = StateType::WAVE; }
 
 } // namespace state_machine
