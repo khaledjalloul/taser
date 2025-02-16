@@ -5,11 +5,12 @@ project(arm_controller)
 find_package(ament_cmake REQUIRED)
 set(PACKAGE_DEPENDENCIES
   Eigen3
-  geometry_msgs
   rclcpp
+  rclcpp_action
   sensor_msgs
-  tf2_msgs
+  std_msgs
   tf2_ros
+  wheeled_humanoid_msgs
 )
 
 # Find dependencies

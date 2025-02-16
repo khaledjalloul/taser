@@ -28,44 +28,29 @@
 ## Steps
 
 - [x] Learn what is /tf and robot state publisher and how i can use them
-- [x] Test arm to decide if 2 or 3 dof and which dof: 3 - y, z, x
-- [ ] prepare ros packages
-- [ ] reuse sketch follower to control one arm, keep everything the same for now just refactor the code a bit
+- [x] Test arm to decide if 2 or 3 dof and which dof: 3 - y, z, y
+- [x] prepare ros packages
+- [x] reuse sketch follower to control one arm, keep everything the same for now just refactor the code a bit
 - [ ] set up simulation, environment, obstacles, and assume that sensing is provided (robot already knows where everything is and where it is in the environment)
 - [ ] test RRT* given the obstacles in simulation
-- [ ] design base with 3 wheels
+- [x] design base with 3 wheels
 - [ ] design base mpc controller
 - [ ] test base mpc with rrt path in the environment
-- [ ] attach both arms to the base and test them with control
+- [x] attach both arms to the base and test them with control
 - [ ] add path planning to the arms to be able to pick up objects
 - [ ] create missions for the robot to go to a location and pick up object (assume robot knows where objects are and that they are not obstacles)
 - [ ] remove hard-coded sensing, add sensors and implement slam maybe?
 
-## ROS Packages
+## ROS Packages / Nodes
 
-- simulation and environment
-- base path planner
-- base controller, subscribes to observation and publishes input
-- arm path planners
-- arm controllers
-- "sensing", publishes or idk where obstacles and objects are
-- missions state machine
+- [x] simulation and environment
+- [ ] base path planner
+- [ ] base controller, subscribes to observation and publishes input
+- [ ] arm path planners
+- [x] arm controllers
+- [ ] "sensing", publishes or idk where obstacles and objects are
+- [x] missions state machine
 
-
-main launch file will start:
-- controller(s): constantly checks desired state and produces input
-- state machine: move to, pick up, drop
-
-SM
--> reach arm mission
--> mission planner keeps calculating error given current eef position to know when to stop (ros SM)
--> publish desired pose (ros SM)
--> controller sees pose (ros arm_controller)
--> controller calculates error given current eef position
--> controller sends desired w to arm package
--> arm package gets dq given the transforms (ros - can be passed fom controller)
--> arm package returns desired dq
--> controller publishes dq (ros)
 
 SM
 -> reach base mission
@@ -78,12 +63,6 @@ SM
 -> mpc generates wheel inputs given current pose (ros base_mpc)
 -> publishes wheel inputs (ros base_mpc)
 
-nodes:
-- SM
-- arm_controller
-- path_planner
-- base_mpc
-
 - should controller class be coupled with ros interface or can they be separated
   - controller needs:
     - subscriber to get desired pose
@@ -92,14 +71,3 @@ nodes:
     - publisher to publish dq
 - controller class uses arm class without ros
   - can the same be done with path planner and mpc?
-
-
-main loop in sm using switch case
--> state is started by running execute
--> 
-
-TODO:
-- create action server
-- make ros nodes use other classes
-- change eigen stuff to ros msgs
-- combine move arm classes

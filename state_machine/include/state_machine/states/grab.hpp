@@ -6,6 +6,7 @@
 
 namespace state_machine {
 
+// TODO: combine move arm state machine classes into one
 class Grab : public State {
 public:
   Grab(std::shared_ptr<RosNode> ros_node);
@@ -13,10 +14,8 @@ public:
 
   StateType update() override;
 
-  std::tuple<double, double> get_pos_error();
-
 private:
-  geometry_msgs::msg::Point left_arm_desired_pos_, right_arm_desired_pos_;
+  StateType next_state_;
 };
 
 } // namespace state_machine

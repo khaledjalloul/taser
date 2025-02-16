@@ -12,7 +12,9 @@ StateMachine::StateMachine(std::shared_ptr<RosNode> ros_node)
 
   ros_node->create_set_state_service(
       [this](int state, std::string &state_name_res) {
+        set_state_mutex_.lock();
         state_name_res = set_state(static_cast<StateType>(state));
+        set_state_mutex_.unlock();
       });
 }
 
@@ -38,8 +40,10 @@ std::string StateMachine::set_state(StateType next_state) {
 }
 
 void StateMachine::update() {
+  set_state_mutex_.lock();
   auto next_state = state_obj_->update();
   (void)set_state(next_state);
+  set_state_mutex_.unlock();
 }
 
 } // namespace state_machine

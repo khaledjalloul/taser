@@ -4,8 +4,8 @@ project(state_machine)
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES
   arm_controller
-  geometry_msgs
   rclcpp
+  rclcpp_action
   std_srvs
   wheeled_humanoid_msgs
 )

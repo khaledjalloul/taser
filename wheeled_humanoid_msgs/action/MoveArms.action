@@ -3,6 +3,5 @@ geometry_msgs/Vector3 left_arm
 geometry_msgs/Vector3 right_arm
 ---
 # Result
-bool data
 ---
 # Feedback

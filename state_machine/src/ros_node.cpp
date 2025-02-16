@@ -3,19 +3,8 @@
 namespace state_machine {
 
 RosNode::RosNode(std::string name) : rclcpp::Node(name) {
-  left_arm_desired_pos_pub = create_publisher<geometry_msgs::msg::Point>(
-      "/left_arm_velocity_controller/desired_position", 10);
-
-  right_arm_desired_pos_pub = create_publisher<geometry_msgs::msg::Point>(
-      "/right_arm_velocity_controller/desired_position", 10);
-
-  left_arm_current_pos_sub_ = create_subscription<geometry_msgs::msg::Point>(
-      "/left_arm_velocity_controller/current_position", 10,
-      [this](geometry_msgs::msg::Point msg) { left_arm_current_pos = msg; });
-
-  right_arm_current_pos_sub_ = create_subscription<geometry_msgs::msg::Point>(
-      "/right_arm_velocity_controller/current_position", 10,
-      [this](geometry_msgs::msg::Point msg) { right_arm_current_pos = msg; });
+  action_client_ = rclcpp_action::create_client<MoveArmsAction>(
+      this, "/arm_controller/move_to");
 
   executor_thread_ =
       std::thread([this]() { rclcpp::spin(this->get_node_base_interface()); });
@@ -33,6 +22,33 @@ void RosNode::create_set_state_service(
                  SetStateMsg::Response::SharedPtr res) {
         callback(req->state, res->data);
       });
+}
+
+void RosNode::send_move_arms_action(MoveArmsAction::Goal goal,
+                                    std::function<void(StateType)> done_cb) {
+  if (!action_client_->wait_for_action_server(std::chrono::seconds(2))) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "Action server not available after waiting");
+    done_cb(StateType::IDLE);
+    return;
+  }
+
+  auto goal_options = rclcpp_action::Client<MoveArmsAction>::SendGoalOptions();
+
+  goal_options.result_callback =
+      [this, done_cb](const MoveArmsGoalHandle::WrappedResult &result) {
+        switch (result.code) {
+        case rclcpp_action::ResultCode::SUCCEEDED:
+          RCLCPP_INFO(get_logger(), "Move arms succeeded.");
+          break;
+        default:
+          RCLCPP_ERROR(get_logger(), "Move arms failed.");
+          return;
+        }
+        done_cb(StateType::IDLE);
+      };
+
+  action_client_->async_send_goal(goal, goal_options);
 }
 
 } // namespace state_machine

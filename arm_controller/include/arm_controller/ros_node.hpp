@@ -1,44 +1,42 @@
 #pragma once
 
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 
-#include <geometry_msgs/msg/point.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
-#include <tf2_msgs/msg/tf_message.hpp>
+#include <wheeled_humanoid_msgs/action/move_arms.hpp>
 
+#include "arm_controller/arm_kinematics.hpp"
+#include "arm_controller/controller.hpp"
 #include "arm_controller/types.hpp"
 
 namespace arm_controller {
 
 class RosNode : public rclcpp::Node {
+  using MoveArmsAction = wheeled_humanoid_msgs::action::MoveArms;
+  using MoveArmsGoalHandle = rclcpp_action::ServerGoalHandle<MoveArmsAction>;
+
 public:
   RosNode(std::string name);
-  ~RosNode();
 
   Transform get_transform(std::string target_frame, std::string source_frame);
 
   Transforms get_arm_transforms(std::string arm_name);
 
+  void move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle);
+  double move_arm_step(std::string name, Position p);
+
   void joint_state_callback(sensor_msgs::msg::JointState msg);
 
-  // Desired arm end effector positions
-  geometry_msgs::msg::Point left_arm_desired_pos;
-  geometry_msgs::msg::Point right_arm_desired_pos;
-
-  // Publish to topics that control the joints
-  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr
-      left_arm_joint_velocity_pub;
-  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr
-      right_arm_joint_velocity_pub;
-  rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr
-      left_arm_current_pos_pub;
-  rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr
-      right_arm_current_pos_pub;
-
 private:
+  ArmKinematics left_arm_;
+  ArmKinematics right_arm_;
+  Controller controller_;
+
+  // Joint states
   RobotJointState joint_positions_{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   RobotJointState joint_velocities_{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -50,14 +48,14 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr
       joint_state_sub_;
 
-  // Subscribe to topics holding desired positions
-  rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr
-      left_arm_desired_pos_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr
-      right_arm_desired_pos_sub_;
+  // Publish to topics that control the joints
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr
+      left_arm_joint_velocity_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr
+      right_arm_joint_velocity_pub_;
 
-  // Executor
-  std::thread executor_thread_;
+  // Action Server to receive desired positions
+  rclcpp_action::Server<MoveArmsAction>::SharedPtr action_server_;
 };
 
 } // namespace arm_controller
