@@ -11,7 +11,7 @@ public:
   Grab(std::shared_ptr<RosNode> ros_node);
   ~Grab() override;
 
-  void update(StateType &next_state) override;
+  StateType update() override;
 
   std::tuple<double, double> get_pos_error();
 

@@ -33,5 +33,15 @@ RUN apt update
 RUN mkdir -p /etc/ros/rosdep/sources.list.d && echo "yaml file:///workspace/colcon_ws/src/rosdep.yaml" | tee /etc/ros/rosdep/sources.list.d/1-custom-deps.list
 RUN rosdep init
 
+# Install rosdep dependencies to cache them in the image
+RUN apt install -y \
+    ros-jazzy-controller-manager \
+    ros-jazzy-joint-state-broadcaster \
+    ros-jazzy-joint-state-publisher-gui \
+    ros-jazzy-robot-state-publisher \
+    ros-jazzy-rviz2 \
+    ros-jazzy-velocity-controllers \
+    ros-jazzy-xacro
+
 # Install personal CLI
 RUN apt install -y khaled-cli

@@ -10,15 +10,14 @@ namespace state_machine {
 
 class StateMachine {
 public:
-  StateMachine(std::shared_ptr<RosNode> ros_node, StateType &state);
+  StateMachine(std::shared_ptr<RosNode> ros_node);
 
-  void check_state();
+  std::string set_state(StateType desired_state);
 
   void update();
 
 private:
   StateType state_;
-  StateType &next_state_;
   std::unique_ptr<State> state_obj_;
   std::shared_ptr<RosNode> ros_node_;
 };

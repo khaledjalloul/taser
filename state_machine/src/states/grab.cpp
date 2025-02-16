@@ -20,12 +20,14 @@ Grab::Grab(std::shared_ptr<RosNode> ros_node) : State(ros_node) {
 
 Grab::~Grab() { RCLCPP_INFO(ros_node_->get_logger(), "Finished grabbing."); }
 
-void Grab::update(StateType &next_state) {
+StateType Grab::update() {
   auto err = get_pos_error();
 
   if (std::get<0>(err) < 0.1 && std::get<1>(err) < 0.1) {
-    next_state = StateType::IDLE;
+    return StateType::IDLE;
   }
+
+  return StateType::GRAB;
 }
 
 std::tuple<double, double> Grab::get_pos_error() {

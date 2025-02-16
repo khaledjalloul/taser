@@ -1,0 +1,5 @@
+# Request
+int8 state
+---
+# Response
+string data

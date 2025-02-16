@@ -7,6 +7,7 @@ set(PACKAGE_DEPENDENCIES
   geometry_msgs
   rclcpp
   std_srvs
+  wheeled_humanoid_msgs
 )
 
 # Find dependencies

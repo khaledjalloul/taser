@@ -97,3 +97,9 @@ nodes:
 main loop in sm using switch case
 -> state is started by running execute
 -> 
+
+TODO:
+- create action server
+- make ros nodes use other classes
+- change eigen stuff to ros msgs
+- combine move arm classes

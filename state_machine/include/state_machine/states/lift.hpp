@@ -9,7 +9,7 @@ public:
   Lift(std::shared_ptr<RosNode> ros_node);
   ~Lift() override;
 
-  void update(StateType &next_state) override;
+  StateType update() override;
 };
 
 } // namespace state_machine

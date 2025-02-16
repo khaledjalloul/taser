@@ -7,6 +7,6 @@ Wave::Wave(std::shared_ptr<RosNode> ros_node) : State(ros_node) {
 }
 Wave::~Wave() { RCLCPP_INFO(ros_node_->get_logger(), "Finished waving."); }
 
-void Wave::update(StateType &next_state) { next_state = StateType::MOVE; }
+StateType Wave::update() { return StateType::IDLE; }
 
 } // namespace state_machine

@@ -2,7 +2,7 @@
 
 #include <geometry_msgs/msg/point.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <std_srvs/srv/trigger.hpp>
+#include <wheeled_humanoid_msgs/srv/set_state.hpp>
 
 #include <arm_controller/types.hpp>
 
@@ -11,13 +11,14 @@
 namespace state_machine {
 
 class RosNode : public rclcpp::Node {
+  using SetStateMsg = wheeled_humanoid_msgs::srv::SetState;
+
 public:
-  RosNode(std::string name, StateType &state);
+  RosNode(std::string name);
   ~RosNode();
 
-  void set_state_callback(
-      const std_srvs::srv::Trigger::Request::SharedPtr &request,
-      const std_srvs::srv::Trigger::Response::SharedPtr &response);
+  void create_set_state_service(
+      std::function<void(int state, std::string &state_name_res)> callback);
 
   // Current arm end effector positions
   geometry_msgs::msg::Point left_arm_current_pos;
@@ -37,13 +38,10 @@ private:
       right_arm_current_pos_sub_;
 
   // Service to set the state of the state machine
-  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr set_state_srv_;
+  rclcpp::Service<SetStateMsg>::SharedPtr set_state_srv_;
 
   // Executor
   std::thread executor_thread_;
-
-  // State
-  StateType &state_;
 };
 
 } // namespace state_machine

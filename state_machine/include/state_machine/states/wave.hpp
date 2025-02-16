@@ -9,7 +9,7 @@ public:
   Wave(std::shared_ptr<RosNode> ros_node);
   ~Wave() override;
 
-  void update(StateType &next_state) override;
+  StateType update() override;
 };
 
 } // namespace state_machine

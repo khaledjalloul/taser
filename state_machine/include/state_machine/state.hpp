@@ -13,7 +13,7 @@ public:
   State(std::shared_ptr<RosNode> ros_node) : ros_node_(ros_node) {}
   virtual ~State() {}
 
-  virtual void update(StateType &next_state) = 0;
+  virtual StateType update() = 0;
 
 protected:
   std::shared_ptr<RosNode> ros_node_;

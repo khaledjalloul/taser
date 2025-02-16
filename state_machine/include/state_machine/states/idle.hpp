@@ -11,7 +11,7 @@ public:
     RCLCPP_INFO(ros_node->get_logger(), "Reached idle state.");
   }
 
-  void update(StateType & /*next_state*/) override {};
+  StateType update() override { return StateType::IDLE; }
 };
 
 } // namespace state_machine
