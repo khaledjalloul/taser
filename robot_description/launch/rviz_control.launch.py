@@ -26,7 +26,7 @@ def generate_launch_description():
     ros2_control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        output="both",
+        output="screen",
         parameters=[str(CONTROLLER_MANAGER_CONFIG)],
     )
 

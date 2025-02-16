@@ -1,4 +1,4 @@
-RUN kj cli completion
+kj cli completion
 
 sudo chown -R $USER .
 

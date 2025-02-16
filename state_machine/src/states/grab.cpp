@@ -7,12 +7,12 @@ namespace state_machine {
 Grab::Grab(std::shared_ptr<RosNode> ros_node) : State(ros_node) {
   RCLCPP_INFO(ros_node->get_logger(), "Grabbing...");
 
-  left_arm_desired_pos_.x = 1;
-  left_arm_desired_pos_.y = 1.25;
-  left_arm_desired_pos_.z = 0;
-  right_arm_desired_pos_.x = 1;
-  right_arm_desired_pos_.y = -1.25;
-  right_arm_desired_pos_.z = 0;
+  left_arm_desired_pos_.x = 1.725;
+  left_arm_desired_pos_.y = 0.565;
+  left_arm_desired_pos_.z = -0.065;
+  right_arm_desired_pos_.x = 1.725;
+  right_arm_desired_pos_.y = -0.565;
+  right_arm_desired_pos_.z = -0.065;
 
   ros_node->left_arm_desired_pos_pub->publish(left_arm_desired_pos_);
   ros_node->right_arm_desired_pos_pub->publish(right_arm_desired_pos_);

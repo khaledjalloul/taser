@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
 
   rclcpp::Rate r(10);
 
+  // TODO: Refactor
   while (rclcpp::ok()) {
     auto left_arm_tfs = ros_node.get_arm_transforms("left_arm");
     auto right_arm_tfs = ros_node.get_arm_transforms("right_arm");

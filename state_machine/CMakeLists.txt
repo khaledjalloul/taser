@@ -6,6 +6,7 @@ set(PACKAGE_DEPENDENCIES
   arm_controller
   geometry_msgs
   rclcpp
+  std_srvs
 )
 
 # Find dependencies
@@ -38,6 +39,9 @@ target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME})
 # Install
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
+)
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
 )
 install(TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}

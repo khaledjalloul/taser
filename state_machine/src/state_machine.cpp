@@ -6,8 +6,8 @@
 
 namespace state_machine {
 
-StateMachine::StateMachine(std::shared_ptr<RosNode> ros_node)
-    : ros_node_(ros_node) {}
+StateMachine::StateMachine(std::shared_ptr<RosNode> ros_node, StateType &state)
+    : ros_node_(ros_node), next_state_(state) {}
 
 void StateMachine::check_state() {
   if (next_state_ == state_)

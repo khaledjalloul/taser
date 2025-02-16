@@ -4,10 +4,9 @@
 #include <memory>
 
 #include "state_machine/ros_node.hpp"
+#include "state_machine/types.hpp"
 
 namespace state_machine {
-
-enum class StateType { IDLE, MOVE, GRAB, LIFT, WAVE };
 
 class State {
 public:
