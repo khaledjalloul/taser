@@ -1,8 +1,7 @@
 #include "state_machine/state_machine.hpp"
 
-#include "state_machine/states/grab.hpp"
 #include "state_machine/states/idle.hpp"
-#include "state_machine/states/lift.hpp"
+#include "state_machine/states/move_arms.hpp"
 
 namespace state_machine {
 

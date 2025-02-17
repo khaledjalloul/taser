@@ -4,10 +4,9 @@
 
 namespace state_machine {
 
-class Wave : public State {
+class MoveBase : public State {
 public:
-  Wave(std::shared_ptr<RosNode> ros_node);
-  ~Wave() override;
+  MoveBase(std::shared_ptr<RosNode> ros_node);
 
   StateType update() override;
 };

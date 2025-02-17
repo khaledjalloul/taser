@@ -10,13 +10,19 @@ namespace state_machine {
 
 class State {
 public:
-  State(std::shared_ptr<RosNode> ros_node) : ros_node_(ros_node) {}
-  virtual ~State() {}
+  State(std::shared_ptr<RosNode> ros_node, const std::string &name)
+      : ros_node_(ros_node), name_(name) {
+    RCLCPP_INFO(ros_node->get_logger(), "Reached state %s.", name.c_str());
+  }
+  virtual ~State() {
+    RCLCPP_INFO(ros_node_->get_logger(), "Finished state %s.", name_.c_str());
+  }
 
   virtual StateType update() = 0;
 
 protected:
   std::shared_ptr<RosNode> ros_node_;
+  const std::string name_;
 };
 
 } // namespace state_machine

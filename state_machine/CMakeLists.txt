@@ -20,10 +20,8 @@ endforeach()
 add_library(${PROJECT_NAME} SHARED
   src/ros_node.cpp
   src/state_machine.cpp
-  src/states/grab.cpp
-  src/states/lift.cpp
-  src/states/move.cpp
-  src/states/wave.cpp
+  src/states/move_arms.cpp
+  src/states/move_base.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
