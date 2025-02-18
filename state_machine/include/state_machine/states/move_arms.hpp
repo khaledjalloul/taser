@@ -6,40 +6,40 @@ namespace state_machine {
 
 class MoveArms : public State {
 public:
-  MoveArms(std::shared_ptr<RosNode> ros_node,
-           StateType state = StateType::MOVE_ARMS,
-           const std::string &name = "MOVE_ARMS");
+  MoveArms(std::shared_ptr<RosNode> ros_node, StateType state,
+           const std::string &name)
+      : State(ros_node, name), next_state_(state) {}
 
   StateType update() override;
 
-  virtual void set_goal(MoveArmsAction::Goal &goal) {}
+  void publish_goal(StateType desired_next_state);
+
+protected:
+  MoveArmsAction::Goal goal_;
 
 private:
   StateType next_state_;
 };
 
+class RestArms : public MoveArms {
+public:
+  RestArms(std::shared_ptr<RosNode> ros_node);
+};
+
 class Grab : public MoveArms {
 public:
-  Grab(std::shared_ptr<RosNode> ros_node)
-      : MoveArms(ros_node, StateType::GRAB, "GRAB") {}
-
-  void set_goal(MoveArmsAction::Goal &goal) override;
+  Grab(std::shared_ptr<RosNode> ros_node);
 };
 
 class Lift : public MoveArms {
 public:
-  Lift(std::shared_ptr<RosNode> ros_node)
-      : MoveArms(ros_node, StateType::LIFT, "LIFT") {}
-
-  void set_goal(MoveArmsAction::Goal &goal) override {}
+  Lift(std::shared_ptr<RosNode> ros_node);
 };
 
 class Wave : public MoveArms {
 public:
   Wave(std::shared_ptr<RosNode> ros_node)
       : MoveArms(ros_node, StateType::WAVE, "WAVE") {}
-
-  void set_goal(MoveArmsAction::Goal &goal) override {}
 };
 
 } // namespace state_machine

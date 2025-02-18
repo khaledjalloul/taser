@@ -24,8 +24,9 @@ void RosNode::create_set_state_service(
       });
 }
 
-void RosNode::send_move_arms_action(MoveArmsAction::Goal goal,
-                                    std::function<void(StateType)> done_cb) {
+void RosNode::send_move_arms_action(
+    MoveArmsAction::Goal goal,
+    std::function<void(std::optional<StateType>)> done_cb) {
   if (!action_client_->wait_for_action_server(std::chrono::seconds(2))) {
     RCLCPP_ERROR(this->get_logger(),
                  "Action server not available after waiting");
@@ -45,7 +46,7 @@ void RosNode::send_move_arms_action(MoveArmsAction::Goal goal,
           RCLCPP_ERROR(get_logger(), "Move arms failed.");
           return;
         }
-        done_cb(StateType::IDLE);
+        done_cb(std::nullopt);
       };
 
   action_client_->async_send_goal(goal, goal_options);

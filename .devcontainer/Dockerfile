@@ -36,11 +36,13 @@ RUN rosdep init
 # Install rosdep dependencies to cache them in the image
 RUN apt install -y \
     ros-jazzy-controller-manager \
+    ros-jazzy-ros2-control \
+    ros-jazzy-ros2-controllers \
+    ros-jazzy-velocity-controllers \
     ros-jazzy-joint-state-broadcaster \
     ros-jazzy-joint-state-publisher-gui \
     ros-jazzy-robot-state-publisher \
     ros-jazzy-rviz2 \
-    ros-jazzy-velocity-controllers \
     ros-jazzy-xacro
 
 # Install personal CLI

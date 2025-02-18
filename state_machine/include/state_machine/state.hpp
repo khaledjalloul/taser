@@ -14,9 +14,6 @@ public:
       : ros_node_(ros_node), name_(name) {
     RCLCPP_INFO(ros_node->get_logger(), "Reached state %s.", name.c_str());
   }
-  virtual ~State() {
-    RCLCPP_INFO(ros_node_->get_logger(), "Finished state %s.", name_.c_str());
-  }
 
   virtual StateType update() = 0;
 
