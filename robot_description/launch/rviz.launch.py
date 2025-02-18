@@ -1,4 +1,3 @@
-from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
@@ -6,6 +5,7 @@ from launch.conditions import IfCondition
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.descriptions import ParameterValue
+from pathlib import Path
 
 
 RVIZ_CONFIG_FILE = (

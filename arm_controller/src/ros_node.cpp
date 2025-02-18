@@ -61,6 +61,12 @@ Transforms RosNode::get_arm_transforms(std::string arm_name) {
 }
 
 void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
+  // Cancel active goal if any is running
+  if (active_goal_ && active_goal_->is_active()) {
+    active_goal_->abort(std::make_shared<MoveArmsAction::Result>());
+  }
+  active_goal_ = goal_handle;
+
   rclcpp::Rate r(10);
   const auto goal = goal_handle->get_goal();
   auto result = std::make_shared<MoveArmsAction::Result>();
@@ -68,6 +74,8 @@ void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
   while (rclcpp::ok()) {
     if (goal_handle->is_canceling()) {
       goal_handle->canceled(result);
+      return;
+    } else if (!goal_handle->is_active()) {
       return;
     }
 

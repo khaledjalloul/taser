@@ -56,6 +56,7 @@ private:
 
   // Action Server to receive desired positions
   rclcpp_action::Server<MoveArmsAction>::SharedPtr action_server_;
+  std::shared_ptr<MoveArmsGoalHandle> active_goal_;
 };
 
 } // namespace arm_controller
