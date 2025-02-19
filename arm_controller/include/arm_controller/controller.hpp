@@ -8,7 +8,7 @@ class Controller {
 public:
   Controller(double kp);
 
-  Twist step(Pose x0, Pose x_ss);
+  Twist step(Pose x0, Pose x_ss) const;
 
 private:
   double kp_;

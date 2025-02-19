@@ -15,7 +15,7 @@ public:
     RCLCPP_INFO(ros_node->get_logger(), "Reached state %s.", name.c_str());
   }
 
-  virtual StateType update() = 0;
+  virtual StateType update() const = 0;
 
 protected:
   std::shared_ptr<RosNode> ros_node_;

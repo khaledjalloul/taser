@@ -10,7 +10,7 @@ public:
            const std::string &name)
       : State(ros_node, name), next_state_(state) {}
 
-  StateType update() override;
+  StateType update() const override;
 
   void publish_goal(StateType desired_next_state);
 

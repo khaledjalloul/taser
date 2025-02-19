@@ -22,9 +22,9 @@ public:
   void create_set_state_service(
       std::function<void(int state, std::string &state_name_res)> callback);
 
-  void
-  send_move_arms_action(MoveArmsAction::Goal goal,
-                        std::function<void(std::optional<StateType>)> done_cb);
+  void send_move_arms_action(
+      MoveArmsAction::Goal goal,
+      std::function<void(std::optional<StateType>)> done_cb) const;
 
 private:
   // Service to set the state of the state machine

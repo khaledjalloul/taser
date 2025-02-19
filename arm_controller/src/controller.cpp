@@ -4,7 +4,7 @@ namespace arm_controller {
 
 Controller::Controller(double kp) : kp_(kp) {}
 
-Twist Controller::step(Pose x0, Pose x_ss) {
+Twist Controller::step(Pose x0, Pose x_ss) const {
   Twist err;
 
   err.linear.x = kp_ * (x_ss.position.x - x0.position.x);

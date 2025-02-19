@@ -10,20 +10,22 @@ class ArmKinematics {
 public:
   ArmKinematics(std::string name);
 
-  Pose get_end_effector_pose(Transform TBE);
+  Pose get_end_effector_pose(Transform TBE) const;
 
-  Twist get_end_effector_twist(Transforms tfs, ArmJointState dq);
+  Twist get_end_effector_twist(Transforms tfs, ArmJointState dq) const;
 
-  Jacobian get_geometric_jacobian(Transforms tfs);
+  Jacobian get_geometric_jacobian(Transforms tfs) const;
 
-  Matrix get_pseudoinverse(Matrix mat);
+  Matrix get_pseudoinverse(Matrix mat) const;
 
   // TODO
-  ArmJointState solve_ik_for_joint_positions(Pose p_desired, Transforms tfs) {
+  ArmJointState solve_ik_for_joint_positions(Pose p_desired,
+                                             Transforms tfs) const {
     return ArmJointState();
   }
 
-  ArmJointState solve_ik_for_joint_velocities(Twist w_desired, Transforms tfs);
+  ArmJointState solve_ik_for_joint_velocities(Twist w_desired,
+                                              Transforms tfs) const;
 
 private:
   std::string name_;

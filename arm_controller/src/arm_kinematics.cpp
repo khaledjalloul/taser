@@ -4,21 +4,22 @@ namespace arm_controller {
 
 ArmKinematics::ArmKinematics(std::string name) : name_(name) {}
 
-Pose ArmKinematics::get_end_effector_pose(Transform TBE) {
+Pose ArmKinematics::get_end_effector_pose(Transform TBE) const {
   auto orientation = TBE.rotation.toRotationMatrix().eulerAngles(0, 1, 2);
 
   return {TBE.translation[0], TBE.translation[1], TBE.translation[2],
           orientation[0],     orientation[1],     orientation[2]};
 }
 
-Twist ArmKinematics::get_end_effector_twist(Transforms tfs, ArmJointState dq) {
+Twist ArmKinematics::get_end_effector_twist(Transforms tfs,
+                                            ArmJointState dq) const {
   auto J = get_geometric_jacobian(tfs);
 
   auto w = J * dq;
   return {w[0], w[1], w[2], w[3], w[4], w[5]};
 }
 
-Jacobian ArmKinematics::get_geometric_jacobian(Transforms tfs) {
+Jacobian ArmKinematics::get_geometric_jacobian(Transforms tfs) const {
   auto B_r0E = tfs.TBE.translation - tfs.TB0.translation;
   auto B_r1E = tfs.TBE.translation - tfs.TB1.translation;
   auto B_r2E = tfs.TBE.translation - tfs.TB2.translation;
@@ -38,7 +39,7 @@ Jacobian ArmKinematics::get_geometric_jacobian(Transforms tfs) {
   return J;
 }
 
-Matrix ArmKinematics::get_pseudoinverse(Matrix mat) {
+Matrix ArmKinematics::get_pseudoinverse(Matrix mat) const {
   // if (mat.rows() == mat.cols()) {
   //   return mat.inverse();
   // } else if (mat.rows() > mat.cols()) {
@@ -51,8 +52,9 @@ Matrix ArmKinematics::get_pseudoinverse(Matrix mat) {
   return mat.completeOrthogonalDecomposition().pseudoInverse();
 }
 
-ArmJointState ArmKinematics::solve_ik_for_joint_velocities(Twist w_desired,
-                                                           Transforms tfs) {
+ArmJointState
+ArmKinematics::solve_ik_for_joint_velocities(Twist w_desired,
+                                             Transforms tfs) const {
   auto J = get_geometric_jacobian(tfs);
   auto J_positional = J.topRows(3);
   auto w_d =

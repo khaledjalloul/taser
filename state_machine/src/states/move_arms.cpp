@@ -13,7 +13,7 @@ void MoveArms::publish_goal(StateType desired_next_state) {
       });
 }
 
-StateType MoveArms::update() { return next_state_; }
+StateType MoveArms::update() const { return next_state_; }
 
 RestArms::RestArms(std::shared_ptr<RosNode> ros_node)
     : MoveArms(ros_node, StateType::REST_ARMS, "REST_ARMS") {

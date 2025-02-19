@@ -28,7 +28,7 @@ RosNode::RosNode(std::string name)
 }
 
 TransformMsg RosNode::get_transform(std::string target_frame,
-                                    std::string source_frame) {
+                                    std::string source_frame) const {
   try {
     auto tf =
         buffer_.lookupTransform(target_frame, source_frame, tf2::TimePointZero);
@@ -38,7 +38,7 @@ TransformMsg RosNode::get_transform(std::string target_frame,
   }
 }
 
-void RosNode::publish_transform(const TransformMsg &tf) {
+void RosNode::publish_transform(const TransformMsg &tf) const {
   TransformStamped tf_stamped;
   tf_stamped.header.stamp = now();
   tf_stamped.header.frame_id = "odom";

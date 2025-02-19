@@ -8,7 +8,7 @@ class MoveBase : public State {
 public:
   MoveBase(std::shared_ptr<RosNode> ros_node);
 
-  StateType update() override;
+  StateType update() const override;
 };
 
 } // namespace state_machine

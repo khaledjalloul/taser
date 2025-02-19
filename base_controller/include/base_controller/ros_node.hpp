@@ -21,9 +21,9 @@ public:
   RosNode(std::string name);
 
   TransformMsg get_transform(std::string target_frame,
-                             std::string source_frame);
+                             std::string source_frame) const;
 
-  void publish_transform(const TransformMsg &tf);
+  void publish_transform(const TransformMsg &tf) const;
 
   void joint_state_callback(sensor_msgs::msg::JointState msg);
 

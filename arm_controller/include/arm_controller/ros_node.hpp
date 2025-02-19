@@ -22,12 +22,13 @@ class RosNode : public rclcpp::Node {
 public:
   RosNode(std::string name);
 
-  Transform get_transform(std::string target_frame, std::string source_frame);
+  Transform get_transform(std::string target_frame,
+                          std::string source_frame) const;
 
-  Transforms get_arm_transforms(std::string arm_name);
+  Transforms get_arm_transforms(std::string arm_name) const;
 
   void move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle);
-  double move_arm_step(std::string name, Position p);
+  double move_arm_step(std::string name, Position p) const;
 
 private:
   ArmKinematics left_arm_;

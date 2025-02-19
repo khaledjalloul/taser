@@ -34,7 +34,7 @@ RosNode::RosNode(std::string name)
 }
 
 Transform RosNode::get_transform(std::string target_frame,
-                                 std::string source_frame) {
+                                 std::string source_frame) const {
   try {
     auto tf =
         buffer_.lookupTransform(target_frame, source_frame, tf2::TimePointZero);
@@ -47,7 +47,7 @@ Transform RosNode::get_transform(std::string target_frame,
   }
 }
 
-Transforms RosNode::get_arm_transforms(std::string arm_name) {
+Transforms RosNode::get_arm_transforms(std::string arm_name) const {
   Transforms tfs;
   tfs.TBE = get_transform("base", arm_name + "_eef");
   tfs.TB0 = get_transform("base", arm_name + "_1");
@@ -98,7 +98,7 @@ void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
   goal_handle->succeed(result);
 }
 
-double RosNode::move_arm_step(std::string name, Position p) {
+double RosNode::move_arm_step(std::string name, Position p) const {
   auto &arm = name == "left_arm" ? left_arm_ : right_arm_;
   auto &pub = name == "left_arm" ? left_arm_joint_velocity_pub_
                                  : right_arm_joint_velocity_pub_;

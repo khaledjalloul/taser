@@ -26,7 +26,7 @@ void RosNode::create_set_state_service(
 
 void RosNode::send_move_arms_action(
     MoveArmsAction::Goal goal,
-    std::function<void(std::optional<StateType>)> done_cb) {
+    std::function<void(std::optional<StateType>)> done_cb) const {
   if (!action_client_->wait_for_action_server(std::chrono::seconds(2))) {
     RCLCPP_ERROR(this->get_logger(),
                  "Action server not available after waiting");
