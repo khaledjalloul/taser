@@ -6,10 +6,6 @@ RosNode::RosNode(std::string name)
     : rclcpp::Node(name), left_arm_("left_arm"), right_arm_("right_arm"),
       controller_(1), buffer_(get_clock()), tf_listener_(buffer_) {
 
-  joint_state_sub_ = create_subscription<sensor_msgs::msg::JointState>(
-      "/joint_states", 10,
-      [this](sensor_msgs::msg::JointState msg) { joint_state_callback(msg); });
-
   left_arm_joint_velocity_pub_ =
       create_publisher<std_msgs::msg::Float64MultiArray>(
           "/left_arm_velocity_controller/commands", 10);
@@ -133,18 +129,6 @@ double RosNode::move_arm_step(std::string name, Position p) {
   err = sqrt(err);
 
   return err;
-}
-
-// TODO: optimize to store msg as is, then get later as eigen, maybe a template
-// function
-void RosNode::joint_state_callback(sensor_msgs::msg::JointState msg) {
-  for (size_t i; i < msg.position.size(); i++) {
-    joint_positions_[i] = msg.position[i];
-  }
-
-  for (size_t i; i < msg.velocity.size(); i++) {
-    joint_velocities_[i] = msg.velocity[i];
-  }
 }
 
 } // namespace arm_controller

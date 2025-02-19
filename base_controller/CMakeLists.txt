@@ -5,6 +5,8 @@ project(base_controller)
 set(PACKAGE_DEPENDENCIES
   geometry_msgs
   rclcpp
+  sensor_msgs
+  std_msgs
   tf2_ros
   # wheeled_humanoid_msgs
 )
@@ -17,7 +19,7 @@ endforeach()
 
 # Library
 add_library(${PROJECT_NAME} SHARED
-  src/ackermann_model.cpp
+  src/base_kinematics.cpp
   src/ros_node.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC

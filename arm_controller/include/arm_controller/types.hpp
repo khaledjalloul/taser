@@ -11,7 +11,6 @@ using Axis = Vector3;
 using Quaternion = Eigen::Quaterniond;
 using Jacobian = Eigen::Matrix<double, 6, 3>;
 
-using RobotJointState = Eigen::Vector<double, 10>;
 using ArmJointState = Vector3;
 
 struct Position {

@@ -29,24 +29,14 @@ public:
   void move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle);
   double move_arm_step(std::string name, Position p);
 
-  void joint_state_callback(sensor_msgs::msg::JointState msg);
-
 private:
   ArmKinematics left_arm_;
   ArmKinematics right_arm_;
   Controller controller_;
 
-  // Joint states
-  RobotJointState joint_positions_{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  RobotJointState joint_velocities_{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
   // Listen to robot transforms
   tf2_ros::Buffer buffer_;
   tf2_ros::TransformListener tf_listener_;
-
-  // Subscribe to joint states
-  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr
-      joint_state_sub_;
 
   // Publish to topics that control the joints
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr

@@ -7,7 +7,6 @@
 namespace arm_controller {
 
 class ArmKinematics {
-
 public:
   ArmKinematics(std::string name);
 

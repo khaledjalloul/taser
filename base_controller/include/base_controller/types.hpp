@@ -5,18 +5,19 @@
 
 namespace base_controller {
 
+using RobotJointState = Eigen::Vector<double, 10>;
+using TransformMsg = geometry_msgs::msg::Transform;
+
 struct BasePosition {
   double x, y, theta; // base orientation
 };
 
 struct BaseVelocity {
-  double v, w; // base orientation rate
+  double linear, angular; // base orientation rate
 };
 
 struct WheelState {
   double v_l, v_r, steering; // steering angle
 };
-
-using TransformMsg = geometry_msgs::msg::Transform;
 
 } // namespace base_controller

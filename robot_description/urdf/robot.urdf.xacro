@@ -8,9 +8,9 @@
 
     <xacro:wheeled_humanoid_ros2_control />
 
-    <!-- map -> odom: Localization corrections (ex. SLAM) -->
+    <!-- map -> odom - Localization corrections (ex. SLAM) -->
     <link name="map" />
-    <!-- odom -> base: Robot motion relative to starting position -->
+    <!-- odom -> base - Robot motion relative to starting position -->
     <link name="odom" />
 
     <joint name="map_odom_joint" type="fixed">
