@@ -4,12 +4,8 @@
 
 namespace arm_controller {
 
-using Vector = Eigen::VectorXd;
 using Vector3 = Eigen::Vector3d;
 using Matrix = Eigen::MatrixXd;
-
-using Position = Vector3;
-using Orientation = Vector3;
 
 using Axis = Vector3;
 using Quaternion = Eigen::Quaterniond;
@@ -18,18 +14,26 @@ using Jacobian = Eigen::Matrix<double, 6, 3>;
 using RobotJointState = Eigen::Vector<double, 10>;
 using ArmJointState = Vector3;
 
+struct Position {
+  double x, y, z;
+};
+
+struct Orientation {
+  double roll, pitch, yaw;
+};
+
 struct Pose {
   Position position;
   Orientation orientation;
 };
 
 struct Twist {
-  Vector3 linear;
-  Vector3 angular;
+  Position linear;
+  Orientation angular;
 };
 
 struct Transform {
-  Position translation;
+  Vector3 translation;
   Quaternion rotation;
 };
 

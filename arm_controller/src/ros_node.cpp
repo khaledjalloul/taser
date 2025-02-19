@@ -42,12 +42,12 @@ Transform RosNode::get_transform(std::string target_frame,
   try {
     auto tf =
         buffer_.lookupTransform(target_frame, source_frame, tf2::TimePointZero);
-    return {Position(tf.transform.translation.x, tf.transform.translation.y,
-                     tf.transform.translation.z),
+    return {Vector3(tf.transform.translation.x, tf.transform.translation.y,
+                    tf.transform.translation.z),
             Quaternion(tf.transform.rotation.w, tf.transform.rotation.x,
                        tf.transform.rotation.y, tf.transform.rotation.z)};
   } catch (tf2::TransformException &ex) {
-    return {Position(0, 0, 0), Quaternion(1, 0, 0, 0)};
+    return {Vector3(0, 0, 0), Quaternion(1, 0, 0, 0)};
   }
 }
 
@@ -79,11 +79,11 @@ void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
       return;
     }
 
-    auto l_p = Position(goal->left_arm.x, goal->left_arm.y, goal->left_arm.z);
+    auto l_p = Position{goal->left_arm.x, goal->left_arm.y, goal->left_arm.z};
     auto l_err = move_arm_step("left_arm", l_p);
 
     auto r_p =
-        Position(goal->right_arm.x, goal->right_arm.y, goal->right_arm.z);
+        Position{goal->right_arm.x, goal->right_arm.y, goal->right_arm.z};
     auto r_err = move_arm_step("right_arm", r_p);
 
     if (l_err < 0.05 && r_err < 0.05) {
@@ -128,9 +128,8 @@ double RosNode::move_arm_step(std::string name, Position p) {
   pub->publish(vel_msg);
 
   // Calculate error between current and desired end effector positions
-  auto err = pow(p_cur.position[0] - p[0], 2) +
-             pow(p_cur.position[1] - p[1], 2) +
-             pow(p_cur.position[2] - p[2], 2);
+  auto err = pow(p_cur.position.x - p.x, 2) + pow(p_cur.position.y - p.y, 2) +
+             pow(p_cur.position.z - p.z, 2);
   err = sqrt(err);
 
   return err;

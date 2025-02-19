@@ -7,14 +7,15 @@ ArmKinematics::ArmKinematics(std::string name) : name_(name) {}
 Pose ArmKinematics::get_end_effector_pose(Transform TBE) {
   auto orientation = TBE.rotation.toRotationMatrix().eulerAngles(0, 1, 2);
 
-  return {TBE.translation, orientation};
+  return {TBE.translation[0], TBE.translation[1], TBE.translation[2],
+          orientation[0],     orientation[1],     orientation[2]};
 }
 
 Twist ArmKinematics::get_end_effector_twist(Transforms tfs, ArmJointState dq) {
   auto J = get_geometric_jacobian(tfs);
 
   auto w = J * dq;
-  return {w.head(3), w.tail(3)};
+  return {w[0], w[1], w[2], w[3], w[4], w[5]};
 }
 
 Jacobian ArmKinematics::get_geometric_jacobian(Transforms tfs) {
@@ -54,6 +55,8 @@ ArmJointState ArmKinematics::solve_ik_for_joint_velocities(Twist w_desired,
                                                            Transforms tfs) {
   auto J = get_geometric_jacobian(tfs);
   auto J_positional = J.topRows(3);
+  auto w_d =
+      Vector3(w_desired.linear.x, w_desired.linear.y, w_desired.linear.z);
 
   // Matrix J_selected;
   // if (!jacobian_indices.has_value()) {
@@ -66,7 +69,7 @@ ArmJointState ArmKinematics::solve_ik_for_joint_velocities(Twist w_desired,
 
   auto J_inv = get_pseudoinverse(J_positional);
 
-  auto dq = J_inv * w_desired.linear;
+  auto dq = J_inv * w_d;
   return dq;
 }
 

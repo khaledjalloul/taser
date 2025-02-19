@@ -37,15 +37,7 @@ void RosNode::send_move_arms_action(
   auto goal_options = rclcpp_action::Client<MoveArmsAction>::SendGoalOptions();
 
   goal_options.result_callback =
-      [this, done_cb](const MoveArmsGoalHandle::WrappedResult &result) {
-        switch (result.code) {
-        case rclcpp_action::ResultCode::SUCCEEDED:
-          RCLCPP_INFO(get_logger(), "Move arms succeeded.");
-          break;
-        default:
-          RCLCPP_ERROR(get_logger(), "Move arms failed.");
-          return;
-        }
+      [this, done_cb](const MoveArmsGoalHandle::WrappedResult & /*result*/) {
         done_cb(std::nullopt);
       };
 
