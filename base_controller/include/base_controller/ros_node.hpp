@@ -1,13 +1,14 @@
 #pragma once
 
-#include <memory>
-
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/joint_state.hpp>
-#include <std_msgs/msg/float64_multi_array.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
+
+#include <sensor_msgs/msg/joint_state.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
+#include <wheeled_humanoid_msgs/action/move_base.hpp>
 
 #include "base_controller/base_kinematics.hpp"
 #include "base_controller/types.hpp"
@@ -15,6 +16,8 @@
 namespace base_controller {
 
 class RosNode : public rclcpp::Node {
+  using MoveBaseAction = wheeled_humanoid_msgs::action::MoveBase;
+  using MoveBaseGoalHandle = rclcpp_action::ServerGoalHandle<MoveBaseAction>;
   using TransformStamped = geometry_msgs::msg::TransformStamped;
 
 public:
@@ -24,6 +27,10 @@ public:
                              std::string source_frame) const;
 
   void publish_transform(const TransformMsg &tf) const;
+
+  void move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle);
+
+  double move_base_step(const std::shared_ptr<const MoveBaseAction::Goal> goal) const;
 
   void joint_state_callback(sensor_msgs::msg::JointState msg);
 
@@ -47,6 +54,10 @@ private:
   tf2_ros::Buffer buffer_;
   tf2_ros::TransformListener tf_listener_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
+  // Action Server to receive desired base position
+  rclcpp_action::Server<MoveBaseAction>::SharedPtr action_server_;
+  std::shared_ptr<MoveBaseGoalHandle> active_goal_;
 };
 
 } // namespace base_controller

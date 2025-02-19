@@ -17,12 +17,12 @@ public:
 
   BasePosition get_base_displacement(double dt) const;
 
-  BasePosition p;
-  BaseVelocity v;
+  BasePosition p{0, 0, 0};
+  BaseVelocity v{0, 0};
 
 private:
   double L_, W_, wheel_radius_;
-  WheelState s_;
+  WheelState s_{0, 0, 0};
 };
 
 } // namespace base_controller

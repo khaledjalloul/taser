@@ -19,6 +19,7 @@ endforeach()
 # Generate messages
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/MoveArms.action"
+  "action/MoveBase.action"
   "srv/SetState.srv"
   DEPENDENCIES ${MSG_DEPENDENCIES}
 )

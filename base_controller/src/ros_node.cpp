@@ -15,6 +15,22 @@ RosNode::RosNode(std::string name)
 
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(this);
 
+  action_server_ = rclcpp_action::create_server<MoveBaseAction>(
+      this, "/base_controller/move_to",
+      [this](const rclcpp_action::GoalUUID & /*uuid*/,
+             std::shared_ptr<const MoveBaseAction::Goal> goal) {
+        return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+      },
+      [this](const std::shared_ptr<MoveBaseGoalHandle> /*goal_handle*/) {
+        return rclcpp_action::CancelResponse::ACCEPT;
+      },
+      [this](const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
+        auto execute_in_thread = [this, goal_handle]() {
+          return move_base(goal_handle);
+        };
+        std::thread{execute_in_thread}.detach();
+      });
+
   rclcpp::Rate r(10);
   double L = 0, W = 0, wheel_radius = 0.5;
   while (rclcpp::ok() && !L && !W) {
@@ -46,6 +62,47 @@ void RosNode::publish_transform(const TransformMsg &tf) const {
   tf_stamped.transform = tf;
 
   tf_broadcaster_->sendTransform(tf_stamped);
+}
+
+void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
+  // Cancel active goal if any is running
+  if (active_goal_ && active_goal_->is_active()) {
+    active_goal_->abort(std::make_shared<MoveBaseAction::Result>());
+  }
+  active_goal_ = goal_handle;
+
+  rclcpp::Rate r(10);
+  const auto goal = goal_handle->get_goal();
+  auto result = std::make_shared<MoveBaseAction::Result>();
+
+  while (rclcpp::ok()) {
+    if (goal_handle->is_canceling()) {
+      goal_handle->canceled(result);
+      return;
+    } else if (!goal_handle->is_active()) {
+      return;
+    }
+
+    auto err = move_base_step(goal);
+
+    if (err < 0.05) {
+      // Stop base movement by publishing zero velocities
+      std_msgs::msg::Float64MultiArray zero_vel_msg;
+      zero_vel_msg.data.resize(4);
+      wheels_joint_velocity_pub_->publish(zero_vel_msg);
+      break;
+    }
+
+    r.sleep();
+  }
+
+  goal_handle->succeed(result);
+}
+
+double RosNode::move_base_step(
+    const std::shared_ptr<const MoveBaseAction::Goal> goal) const {
+  auto err = 0;
+  return err;
 }
 
 // TODO: optimize to store msg as is, then get later as eigen, maybe a template

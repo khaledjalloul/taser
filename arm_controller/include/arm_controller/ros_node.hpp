@@ -45,7 +45,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr
       right_arm_joint_velocity_pub_;
 
-  // Action Server to receive desired positions
+  // Action Server to receive desired eef positions
   rclcpp_action::Server<MoveArmsAction>::SharedPtr action_server_;
   std::shared_ptr<MoveArmsGoalHandle> active_goal_;
 };

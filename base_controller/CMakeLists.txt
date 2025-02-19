@@ -8,7 +8,7 @@ set(PACKAGE_DEPENDENCIES
   sensor_msgs
   std_msgs
   tf2_ros
-  # wheeled_humanoid_msgs
+  wheeled_humanoid_msgs
 )
 
 # Find dependencies
