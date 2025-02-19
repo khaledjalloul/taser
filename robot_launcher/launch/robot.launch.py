@@ -23,6 +23,12 @@ def generate_launch_description():
         output="screen",
     )
 
+    base_controller_node = Node(
+        package="base_controller",
+        executable="base_controller_node",
+        output="screen",
+    )
+
     state_machine_node = Node(
         package="state_machine",
         executable="state_machine_node",
@@ -33,6 +39,7 @@ def generate_launch_description():
         [
             rviz_launch,
             arm_controller_node,
+            base_controller_node,
             state_machine_node,
         ]
     )

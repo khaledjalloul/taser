@@ -3,7 +3,9 @@ project(base_controller)
 
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES
+  geometry_msgs
   rclcpp
+  tf2_ros
   # wheeled_humanoid_msgs
 )
 
@@ -16,6 +18,7 @@ endforeach()
 # Library
 add_library(${PROJECT_NAME} SHARED
   src/ackermann_model.cpp
+  src/ros_node.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

@@ -16,10 +16,18 @@
             </visual>
         </link>
 
-        <joint name="odom_base_joint" type="fixed">
+        <link name="base_wrapper" />
+
+        <joint name="base_wrapper_base_joint" type="fixed">
             <origin xyz="0.0 0.0 2.25" rpy="0.0 0.0 0" />
-            <parent link="odom" />
+            <parent link="base_wrapper" />
             <child link="base" />
+        </joint>
+
+        <joint name="odom_base_wrapper_joint" type="fixed">
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0" />
+            <parent link="odom" />
+            <child link="base_wrapper" />
         </joint>
     </xacro:macro>
 
