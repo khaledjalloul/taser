@@ -21,7 +21,13 @@ RUN apt install -y \
 # Install Python packages
 RUN virtualenv /home/vscode/venv
 RUN echo 'export PYTHONPATH=$PYTHONPATH:/home/vscode/venv/lib/python3.12/site-packages' >> /home/vscode/venv/bin/activate
-RUN /home/vscode/venv/bin/pip install --no-input cvxpy ecos \
+RUN /home/vscode/venv/bin/pip install --no-input \
+    cvxpy \
+    ecos \
+    sympy \
+    matplotlib \
+    numpy \
+    casadi \
     # TODO: Find out why
     catkin_pkg
 
