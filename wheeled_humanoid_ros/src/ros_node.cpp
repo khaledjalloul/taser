@@ -64,7 +64,7 @@ RosNode::RosNode(std::string name)
     W = get_transform("wheel_1", "wheel_3").translation[0];
     r.sleep();
   }
-  robot_.base.set_properties(L, W);
+  robot_.base.set_L(L);
 
   RCLCPP_INFO(get_logger(), "Node started.");
 }
@@ -230,17 +230,14 @@ void RosNode::joint_state_callback(sensor_msgs::msg::JointState msg) {
   }
 
   auto dt = now().seconds() - callback_time_;
-  robot_.base.set_wheel_state(
-      {joint_velocities_[6], joint_velocities_[8], joint_positions_[7]});
-
-  auto p_delta = robot_.base.get_base_displacement(dt);
+  robot_.base.set_wheel_velocities(joint_velocities_[6], joint_velocities_[8]);
+  robot_.base.step(dt);
 
   TransformMsg tf;
-  tf.translation.x = (robot_.base.p.x += p_delta.x);
-  tf.translation.y = (robot_.base.p.y += p_delta.y);
-  robot_.base.p.theta += p_delta.theta;
-  tf.rotation.w = cos(robot_.base.p.theta / 2);
-  tf.rotation.z = sin(robot_.base.p.theta / 2);
+  tf.translation.x = robot_.base.pose.x;
+  tf.translation.y = robot_.base.pose.y;
+  tf.rotation.w = cos(robot_.base.pose.theta / 2);
+  tf.rotation.z = sin(robot_.base.pose.theta / 2);
 
   publish_transform(tf);
   callback_time_ = now().seconds();

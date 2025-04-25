@@ -5,6 +5,7 @@
 namespace wheeled_humanoid {
 
 using Vector3 = Eigen::Vector3d;
+using Vector = Eigen::VectorXd;
 using Matrix = Eigen::MatrixXd;
 
 using Axis = Vector3;
@@ -48,11 +49,7 @@ struct Transforms {
 };
 
 struct BaseVelocity {
-  double linear, angular; // base orientation rate
-};
-
-struct WheelState {
-  double v_l, v_r, steering; // steering angle
+  double v, omega;
 };
 
 } // namespace wheeled_humanoid

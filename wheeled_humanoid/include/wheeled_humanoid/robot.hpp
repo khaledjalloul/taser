@@ -5,6 +5,7 @@
 
 #include "wheeled_humanoid/arm_controller.hpp"
 #include "wheeled_humanoid/arm_kinematics.hpp"
+#include "wheeled_humanoid/base_controller.hpp"
 #include "wheeled_humanoid/base_kinematics.hpp"
 
 namespace wheeled_humanoid {
@@ -19,10 +20,13 @@ public:
   std::map<std::string, ArmKinematics> arms = {
       {"left_arm", ArmKinematics("left_arm")},
       {"right_arm", ArmKinematics("right_arm")}};
-  BaseKinematics base{0.5, 0.5, 0.1};
+
+  double dt = 0.1;
+  BaseKinematics base{0.5, 0.5, dt};
 
 private:
   ArmController arm_controller_{1.0};
+  BaseController base_controller_{dt};
 };
 
 } // namespace wheeled_humanoid

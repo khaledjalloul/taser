@@ -51,5 +51,18 @@ RUN apt install -y \
     ros-jazzy-rviz2 \
     ros-jazzy-xacro
 
+# Install Osqp and OsqpEigen
+WORKDIR /tmp
+RUN git clone --recursive --branch v0.6.3 https://github.com/osqp/osqp
+RUN mkdir -p osqp/build
+RUN cd osqp/build && cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+RUN cd osqp/build && make && make install
+
+RUN git clone --branch v0.8.1 https://github.com/robotology/osqp-eigen.git
+RUN mkdir -p osqp-eigen/build
+RUN cd osqp-eigen/build && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+RUN cd osqp-eigen/build && make && make install
+ENV OsqpEigen_DIR=/usr
+
 # Install personal CLI
 RUN apt install -y khaled-cli

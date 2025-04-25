@@ -3,8 +3,9 @@ project(wheeled_humanoid)
 
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES
-  # casadi
   Eigen3
+  osqp
+  OsqpEigen
 )
 
 # Find dependencies
@@ -17,6 +18,7 @@ endforeach()
 add_library(${PROJECT_NAME} SHARED
   src/arm_controller.cpp
   src/arm_kinematics.cpp
+  src/base_controller.cpp
   src/base_kinematics.cpp
   src/robot.cpp
 )
@@ -25,6 +27,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 ament_target_dependencies(${PROJECT_NAME} ${PACKAGE_DEPENDENCIES})
+target_link_libraries(${PROJECT_NAME}
+  Eigen3::Eigen
+  osqp::osqp
+  OsqpEigen::OsqpEigen
+)
 
 # Install
 install(DIRECTORY include/

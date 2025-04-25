@@ -1,28 +1,31 @@
 #pragma once
 
+#include <optional>
+
 #include "wheeled_humanoid/types.hpp"
 
 namespace wheeled_humanoid {
 
-// Ackermann model
+// Differential drive model
 class BaseKinematics {
 public:
-  BaseKinematics(double L, double W, double wheel_radius);
+  BaseKinematics(double L, double wheel_radius, double dt);
 
-  void set_wheel_state(const WheelState &s);
+  void set_L(double L) { L_ = L; }
 
-  void set_properties(double L, double W);
+  void set_base_velocity(double v, double omega);
 
-  BaseVelocity calculate_base_velocity() const;
+  void set_wheel_velocities(double v_l, double v_r);
 
-  Pose2D get_base_displacement(double dt) const;
+  void step(std::optional<double> dt = std::nullopt);
 
-  Pose2D p{0, 0, 0};
-  BaseVelocity v{0, 0};
+  Pose2D pose{0, 0, 0};
+  BaseVelocity base_velocity; // Base velocity
+  double v_l, v_r;            // Wheel velocities
 
 private:
-  double L_, W_, wheel_radius_ = 0.5;
-  WheelState s_{0, 0, 0};
+  double L_, wheel_radius_;
+  double dt_;
 };
 
 } // namespace wheeled_humanoid

@@ -2,46 +2,29 @@
 
 namespace wheeled_humanoid {
 
-BaseKinematics::BaseKinematics(double L, double W, double wheel_radius)
-    : L_(L), W_(W), wheel_radius_(wheel_radius) {}
+BaseKinematics::BaseKinematics(double L, double wheel_radius, double dt)
+    : L_(L), wheel_radius_(wheel_radius), dt_(dt) {}
 
-void BaseKinematics::set_wheel_state(const WheelState &s) {
-  s_.v_l = s.v_l * wheel_radius_;
-  s_.v_r = s.v_r * wheel_radius_;
-  s_.steering = s.steering;
+void BaseKinematics::set_base_velocity(double v, double omega) {
+  base_velocity.v = v;
+  base_velocity.omega = omega;
 
-  v = calculate_base_velocity();
-};
+  v_l = v - (L_ / 2) * omega;
+  v_r = v + (L_ / 2) * omega;
+}
 
-void BaseKinematics::set_properties(double L, double W) {
-  L_ = L;
-  W_ = W;
-};
+void BaseKinematics::set_wheel_velocities(double v_l, double v_r) {
+  this->v_l = v_l;
+  this->v_r = v_r;
 
-BaseVelocity BaseKinematics::calculate_base_velocity() const {
-  auto linear = (s_.v_l + s_.v_r) / 2;
+  base_velocity.v = (v_l + v_r) / 2;
+  base_velocity.omega = (v_r - v_l) / L_;
+}
 
-  auto ang1 = (s_.v_r - s_.v_l) / W_;
-  auto ang2 = linear * tan(s_.steering) / L_;
-
-  return {linear, ang1 + ang2};
-};
-
-Pose2D BaseKinematics::get_base_displacement(double dt) const {
-  if (v.angular == 0) {
-    auto x_delta = v.linear * cos(p.theta) * dt;
-    auto y_delta = v.linear * sin(p.theta) * dt;
-
-    return {x_delta, y_delta, 0};
-  }
-
-  auto x_delta =
-      (v.linear / v.angular) * (sin(v.angular * dt + p.theta) - sin(p.theta));
-  auto y_delta =
-      (v.linear / v.angular) * (-cos(v.angular * dt + p.theta) + cos(p.theta));
-  auto theta_delta = v.angular * dt;
-
-  return {x_delta, y_delta, theta_delta};
-};
+void BaseKinematics::BaseKinematics::step(std::optional<double> dt) {
+  pose.x = pose.x + base_velocity.v * cos(pose.theta) * dt.value_or(dt_);
+  pose.y = pose.y + base_velocity.v * sin(pose.theta) * dt.value_or(dt_);
+  pose.theta = pose.theta + base_velocity.omega * dt.value_or(dt_);
+}
 
 } // namespace wheeled_humanoid

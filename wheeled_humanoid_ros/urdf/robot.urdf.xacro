@@ -27,7 +27,7 @@
     <xacro:wheel index="1" parent_link="base" y_offset="1.125" z_offset="-1.75" />
     <xacro:wheel index="2" parent_link="base" y_offset="-1.125" z_offset="-1.75" />
 
-    <link name="wheel_3_base">
+    <!-- <link name="wheel_3_base">
         <visual>
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
             <geometry>
@@ -54,6 +54,6 @@
         <axis xyz="0 0 1" />
     </joint>
 
-    <xacro:wheel index="3" parent_link="wheel_3_steering" y_offset="0" z_offset="0" />
+    <xacro:wheel index="3" parent_link="wheel_3_steering" y_offset="0" z_offset="0" /> -->
 
 </robot>
