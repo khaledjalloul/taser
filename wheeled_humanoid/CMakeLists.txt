@@ -21,6 +21,7 @@ add_library(${PROJECT_NAME} SHARED
   src/base_controller.cpp
   src/base_kinematics.cpp
   src/robot.cpp
+  src/rrt_path_planner.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -46,5 +47,15 @@ install(TARGETS ${PROJECT_NAME}
 # Export
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(${PACKAGE_DEPENDENCIES})
+
+# Test
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(${PROJECT_NAME}_test
+    test/base_control_test.cpp
+  )
+  target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
+endif()
 
 ament_package()

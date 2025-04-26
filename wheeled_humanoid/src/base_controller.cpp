@@ -3,7 +3,7 @@
 namespace wheeled_humanoid {
 
 BaseController::BaseController(double dt, int N, double v_max, double omega_max)
-    : dt_(dt), N_(N), v_max_(v_max), omega_max_(omega_max) {
+    : dt_(dt), N(N), v_max_(v_max), omega_max_(omega_max) {
   nx_ = 3; // x, y, theta
   nu_ = 2; // v, omega
 
@@ -12,8 +12,8 @@ BaseController::BaseController(double dt, int N, double v_max, double omega_max)
   R_(0, 0) = 0.5;
   R_(1, 1) = 0.1;
 
-  num_vars_ = nx_ * (N_ + 1) + nu_ * N;
-  num_constraints_ = nx_ * (N_ + 1) + nx_ + N * nu_;
+  num_vars_ = nx_ * (N + 1) + nu_ * N;
+  num_constraints_ = nx_ * (N + 1) + nx_ + N * nu_;
 
   solver_.settings()->setVerbosity(false);
   solver_.data()->setNumberOfVariables(num_vars_);
@@ -24,19 +24,16 @@ BaseVelocity BaseController::step(const Pose2D &x0, const Path &desired_path) {
   Matrix A, B;
   get_linearized_model(x0, A, B);
 
-  // std::vector<Eigen::Vector2d> local_ref(inter_path.begin() + step,
-  //                                        inter_path.begin() + step + N_ + 1);
-
   set_up_QP(x0, desired_path, A, B);
 
   auto status = solver_.solveProblem();
-  if (status != OsqpEigen::ErrorExitFlag::NoError) {
-    std::cerr << "Failed to solve!";
+  if (solver_.getStatus() != OsqpEigen::Status::Solved) {
+    std::cerr << "Failed to solve MPC problem!" << std::endl;
     return BaseVelocity{0.0, 0.0};
   }
 
   Vector sol = solver_.getSolution();
-  auto u0 = sol.segment((N_ + 1) * nx_, nu_);
+  auto u0 = sol.segment((N + 1) * nx_, nu_);
 
   return BaseVelocity{u0(0), u0(1)};
 }
@@ -65,33 +62,35 @@ void BaseController::set_up_QP(const Pose2D &x0, const Path &desired_path,
   Vector lb = Vector::Zero(num_constraints_);
   Vector ub = Vector::Zero(num_constraints_);
 
-  for (int i = 0; i < N_; i++) {
+  for (int i = 0; i < N; i++) {
     int xi = i * nx_;
-    int ui = nx_ * (N_ + 1) + i * nu_;
+    int ui = nx_ * (N + 1) + i * nu_;
 
     H.block(xi, xi, 2, 2) = Q_;
     H.block(ui, ui, nu_, nu_) = R_;
 
-    g.segment(xi, 2) = -Q_ * desired_path[i];
+    Vector ref(2);
+    ref << desired_path[i].x, desired_path[i].y;
+    g.segment(xi, 2) = -Q_ * ref;
 
     Aeq.block((i + 1) * nx_, xi, nx_, nx_) = -A;
     Aeq.block((i + 1) * nx_, ui, nx_, nu_) = -B;
     Aeq.block((i + 1) * nx_, (i + 1) * nx_, nx_, nx_) =
         Matrix::Identity(nx_, nx_);
 
-    Aeq.block((N_ + 2) * nx_ + i * nu_, (N_ + 1) * nx_ + i * nu_, nu_, nu_) =
+    Aeq.block((N + 2) * nx_ + i * nu_, (N + 1) * nx_ + i * nu_, nu_, nu_) =
         Matrix::Identity(nu_, nu_);
-    lb.segment((N_ + 2) * nx_ + i * nu_, nu_) << -v_max_, -omega_max_;
-    ub.segment((N_ + 2) * nx_ + i * nu_, nu_) << v_max_, omega_max_;
+    lb.segment((N + 2) * nx_ + i * nu_, nu_) << -v_max_, -omega_max_;
+    ub.segment((N + 2) * nx_ + i * nu_, nu_) << v_max_, omega_max_;
   }
 
   Aeq.block(0, 0, nx_, nx_) = Matrix::Identity(nx_, nx_);
   lb.segment(0, nx_) << x0.x, x0.y, x0.theta;
   ub.segment(0, nx_) << x0.x, x0.y, x0.theta;
 
-  Aeq.block((N_ + 1) * nx_, N_ * nx_, 2, 2) = Matrix::Identity(2, 2);
-  lb.segment((N_ + 1) * nx_, 2) << desired_path[N_].x(), desired_path[N_].y();
-  ub.segment((N_ + 1) * nx_, 2) << desired_path[N_].x(), desired_path[N_].y();
+  Aeq.block((N + 1) * nx_, N * nx_, 2, 2) = Matrix::Identity(2, 2);
+  lb.segment((N + 1) * nx_, 2) << desired_path[N].x, desired_path[N].y;
+  ub.segment((N + 1) * nx_, 2) << desired_path[N].x, desired_path[N].y;
 
   solver_.data()->setHessianMatrix((Eigen::SparseMatrix<double>)H.sparseView());
   solver_.data()->setGradient(g);

@@ -29,4 +29,27 @@ Robot::get_arm_dq_step(const std::string &arm_name,
   return {dq_desired, err};
 }
 
+void Robot::follow_path(const Path &path) {
+  Path extended_path = rrt_.interpolate_path(path);
+  for (int i = 0; i < base_controller_.N; i++) {
+    extended_path.push_back(path.back());
+  }
+
+  for (int step = 0; step < extended_path.size() - base_controller_.N; ++step) {
+    Path local_path(extended_path.begin() + step,
+                    extended_path.begin() + step + base_controller_.N + 1);
+    auto u = base_controller_.step(base.pose, local_path);
+
+    base.set_base_velocity(u.v, u.omega);
+    base.step();
+  }
+}
+
+void Robot::move_to(const Pose2D &pose) {
+  // TODO: Get RRT path
+  Path desired_path{{0, 0, 0}, {1, 1, 0}, {2, 2, 0}, {3, 1, 0}, {4, 1, 0}};
+
+  follow_path(desired_path);
+}
+
 } // namespace wheeled_humanoid

@@ -4,8 +4,8 @@
 
 namespace wheeled_humanoid {
 
-using Vector3 = Eigen::Vector3d;
 using Vector = Eigen::VectorXd;
+using Vector3 = Eigen::Vector3d;
 using Matrix = Eigen::MatrixXd;
 
 using Axis = Vector3;
@@ -20,6 +20,8 @@ using RobotJointVelocities = Eigen::Vector<double, 10>;
 struct Pose2D {
   double x, y, theta;
 };
+
+using Path = std::vector<Pose2D>;
 
 struct Position3D {
   double x, y, z;
