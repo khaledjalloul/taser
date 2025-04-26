@@ -2,6 +2,7 @@
 
 #include "state_machine/states/idle.hpp"
 #include "state_machine/states/move_arms.hpp"
+#include "state_machine/states/move_base.hpp"
 
 namespace state_machine {
 
@@ -27,6 +28,9 @@ std::string StateMachine::set_state(StateType next_state) {
   case StateType::IDLE:
     state_obj_.reset(new Idle(ros_node_));
     return "State set to IDLE";
+  case StateType::MOVE_BASE:
+    state_obj_.reset(new MoveBase(ros_node_));
+    return "State set to MOVE_BASE";
   case StateType::REST_ARMS:
     state_obj_.reset(new RestArms(ros_node_));
     return "State set to REST_ARMS";

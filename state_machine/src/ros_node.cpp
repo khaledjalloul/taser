@@ -3,8 +3,11 @@
 namespace state_machine {
 
 RosNode::RosNode(std::string name) : rclcpp::Node(name) {
-  action_client_ = rclcpp_action::create_client<MoveArmsAction>(
+  arms_action_client_ = rclcpp_action::create_client<MoveArmsAction>(
       this, "/arm_controller/move_to");
+
+  base_action_client_ = rclcpp_action::create_client<MoveBaseAction>(
+      this, "/base_controller/move_to");
 
   executor_thread_ =
       std::thread([this]() { rclcpp::spin(this->get_node_base_interface()); });
@@ -27,7 +30,7 @@ void RosNode::create_set_state_service(
 void RosNode::send_move_arms_action(
     MoveArmsAction::Goal goal,
     std::function<void(std::optional<StateType>)> done_cb) const {
-  if (!action_client_->wait_for_action_server(std::chrono::seconds(2))) {
+  if (!arms_action_client_->wait_for_action_server(std::chrono::seconds(2))) {
     RCLCPP_ERROR(this->get_logger(),
                  "Action server not available after waiting");
     done_cb(StateType::IDLE);
@@ -41,7 +44,27 @@ void RosNode::send_move_arms_action(
         done_cb(std::nullopt);
       };
 
-  action_client_->async_send_goal(goal, goal_options);
+  arms_action_client_->async_send_goal(goal, goal_options);
+}
+
+void RosNode::send_move_base_action(
+    MoveBaseAction::Goal goal,
+    std::function<void(std::optional<StateType>)> done_cb) const {
+  if (!base_action_client_->wait_for_action_server(std::chrono::seconds(2))) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "Action server not available after waiting");
+    done_cb(StateType::IDLE);
+    return;
+  }
+
+  auto goal_options = rclcpp_action::Client<MoveBaseAction>::SendGoalOptions();
+
+  goal_options.result_callback =
+      [this, done_cb](const MoveBaseGoalHandle::WrappedResult & /*result*/) {
+        done_cb(std::nullopt);
+      };
+
+  base_action_client_->async_send_goal(goal, goal_options);
 }
 
 } // namespace state_machine

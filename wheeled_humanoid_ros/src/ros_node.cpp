@@ -158,7 +158,7 @@ double RosNode::move_arm_step(std::string name,
   // Get arm transforms
   auto tfs = get_arm_transforms(name);
 
-  auto res = robot_.get_arm_dq_step(name, p, tfs);
+  auto res = robot_.move_arm_step(name, p, tfs);
   auto dq_desired = std::get<0>(res);
   auto err = std::get<1>(res);
 
@@ -182,6 +182,8 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
   const auto goal = goal_handle->get_goal();
   auto result = std::make_shared<MoveBaseAction::Result>();
 
+  robot_.plan_path();
+
   while (rclcpp::ok()) {
     if (goal_handle->is_canceling()) {
       goal_handle->canceled(result);
@@ -190,15 +192,23 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
       return;
     }
 
-    auto err = move_base_step(goal);
+    auto res = robot_.follow_path_step();
+    auto v_l = std::get<0>(res);
+    auto v_r = std::get<1>(res);
+    auto err = std::get<2>(res);
 
-    if (err < 0.05) {
+    if (err < 0.1) {
       // Stop base movement by publishing zero velocities
       std_msgs::msg::Float64MultiArray zero_vel_msg;
-      zero_vel_msg.data.resize(4);
+      zero_vel_msg.data.resize(2);
       wheels_joint_velocity_pub_->publish(zero_vel_msg);
       break;
     }
+
+    // Publish joint velocities
+    std_msgs::msg::Float64MultiArray vel_msg;
+    vel_msg.data = {v_l, v_r};
+    wheels_joint_velocity_pub_->publish(vel_msg);
 
     r.sleep();
   }
@@ -230,8 +240,8 @@ void RosNode::joint_state_callback(sensor_msgs::msg::JointState msg) {
   }
 
   auto dt = now().seconds() - callback_time_;
-  robot_.base.set_wheel_velocities(joint_velocities_[6], joint_velocities_[8]);
-  robot_.base.step(dt);
+  // robot_.base.set_wheel_velocities(joint_velocities_[6],
+  // joint_velocities_[8]); robot_.base.step(dt);
 
   TransformMsg tf;
   tf.translation.x = robot_.base.pose.x;
