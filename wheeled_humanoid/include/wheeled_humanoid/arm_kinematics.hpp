@@ -14,13 +14,9 @@ public:
 
   Twist3D get_end_effector_twist(Transforms tfs, ArmJointVelocities dq) const;
 
-  Jacobian get_geometric_jacobian(Transforms tfs) const;
-
-  Matrix get_pseudoinverse(Matrix mat) const;
-
   // TODO
   ArmJointPositions solve_ik_for_joint_positions(Pose3D p_desired,
-                                                     Transforms tfs) const {
+                                                 Transforms tfs) const {
     return ArmJointPositions();
   }
 
@@ -28,6 +24,10 @@ public:
                                                    Transforms tfs) const;
 
 private:
+  Jacobian get_geometric_jacobian_(Transforms tfs) const;
+
+  Matrix get_pseudoinverse_(Matrix mat) const;
+
   std::string name_;
 
   // Rotation axes

@@ -22,9 +22,9 @@ BaseController::BaseController(double dt, int N, double v_max, double omega_max)
 
 BaseVelocity BaseController::step(const Pose2D &x0, const Path &desired_path) {
   Matrix A, B;
-  get_linearized_model(x0, A, B);
+  get_linearized_model_(x0, A, B);
 
-  set_up_QP(x0, desired_path, A, B);
+  set_up_QP_(x0, desired_path, A, B);
 
   auto status = solver_.solveProblem();
   if (solver_.getStatus() != OsqpEigen::Status::Solved) {
@@ -38,7 +38,7 @@ BaseVelocity BaseController::step(const Pose2D &x0, const Path &desired_path) {
   return BaseVelocity{u0(0), u0(1)};
 }
 
-void BaseController::get_linearized_model(const Pose2D &x0, Matrix &A,
+void BaseController::get_linearized_model_(const Pose2D &x0, Matrix &A,
                                           Matrix &B) const {
   A = Matrix::Identity(3, 3);
   A(0, 2) = -sin(x0.theta) * dt_;
@@ -50,7 +50,7 @@ void BaseController::get_linearized_model(const Pose2D &x0, Matrix &A,
   B(2, 1) = dt_;
 }
 
-void BaseController::set_up_QP(const Pose2D &x0, const Path &desired_path,
+void BaseController::set_up_QP_(const Pose2D &x0, const Path &desired_path,
                                const Matrix &A, const Matrix &B) {
   solver_.clearSolver();
   solver_.data()->clearHessianMatrix();

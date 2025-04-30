@@ -13,13 +13,13 @@ Pose3D ArmKinematics::get_end_effector_pose(Transform TBE) const {
 
 Twist3D ArmKinematics::get_end_effector_twist(Transforms tfs,
                                               ArmJointVelocities dq) const {
-  auto J = get_geometric_jacobian(tfs);
+  auto J = get_geometric_jacobian_(tfs);
 
   auto w = J * dq;
   return {w[0], w[1], w[2], w[3], w[4], w[5]};
 }
 
-Jacobian ArmKinematics::get_geometric_jacobian(Transforms tfs) const {
+Jacobian ArmKinematics::get_geometric_jacobian_(Transforms tfs) const {
   auto B_r0E = tfs.TBE.translation - tfs.TB0.translation;
   auto B_r1E = tfs.TBE.translation - tfs.TB1.translation;
   auto B_r2E = tfs.TBE.translation - tfs.TB2.translation;
@@ -39,7 +39,7 @@ Jacobian ArmKinematics::get_geometric_jacobian(Transforms tfs) const {
   return J;
 }
 
-Matrix ArmKinematics::get_pseudoinverse(Matrix mat) const {
+Matrix ArmKinematics::get_pseudoinverse_(Matrix mat) const {
   // if (mat.rows() == mat.cols()) {
   //   return mat.inverse();
   // } else if (mat.rows() > mat.cols()) {
@@ -55,7 +55,7 @@ Matrix ArmKinematics::get_pseudoinverse(Matrix mat) const {
 ArmJointVelocities
 ArmKinematics::solve_ik_for_joint_velocities(Twist3D w_desired,
                                              Transforms tfs) const {
-  auto J = get_geometric_jacobian(tfs);
+  auto J = get_geometric_jacobian_(tfs);
   auto J_positional = J.topRows(3);
   auto w_des =
       Vector3(w_desired.linear.x, w_desired.linear.y, w_desired.linear.z);
@@ -69,7 +69,7 @@ ArmKinematics::solve_ik_for_joint_velocities(Twist3D w_desired,
   //   }
   // }
 
-  auto J_inv = get_pseudoinverse(J_positional);
+  auto J_inv = get_pseudoinverse_(J_positional);
 
   auto dq = J_inv * w_des;
   return dq;

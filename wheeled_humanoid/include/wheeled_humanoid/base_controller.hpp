@@ -16,9 +16,9 @@ public:
   int N;
 
 private:
-  void get_linearized_model(const Pose2D &x0, Matrix &A, Matrix &B) const;
+  void get_linearized_model_(const Pose2D &x0, Matrix &A, Matrix &B) const;
 
-  void set_up_QP(const Pose2D &x0, const Path &desired_path, const Matrix &A,
+  void set_up_QP_(const Pose2D &x0, const Path &desired_path, const Matrix &A,
                  const Matrix &B);
 
   double dt_, v_max_, omega_max_;
