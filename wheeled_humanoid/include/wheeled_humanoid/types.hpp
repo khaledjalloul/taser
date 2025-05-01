@@ -19,6 +19,10 @@ using RobotJointVelocities = Eigen::Vector<double, 10>;
 
 struct Pose2D {
   double x, y, theta;
+
+  bool operator==(const Pose2D &other) const {
+    return x == other.x && y == other.y && theta == other.theta;
+  }
 };
 
 using Path = std::vector<Pose2D>;
