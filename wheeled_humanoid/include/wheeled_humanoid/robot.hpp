@@ -31,7 +31,7 @@ public:
   BaseKinematics base{0.5, 0.5, dt};
   BaseController base_controller{dt};
 
-  RRTPathPlanner rrt_{dt, 6.0};
+  RRTPathPlanner rrt_{100, dt, 6.0};
   Path planned_path;
   int planned_path_index = 0;
 };

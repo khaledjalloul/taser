@@ -1,14 +1,20 @@
 #include "wheeled_humanoid/rrt_path_planner.hpp"
 
+#include <iostream>
+
 namespace wheeled_humanoid {
 
-RRTPathPlanner::RRTPathPlanner(double dt, double T_total)
-    : dt_(dt), T_total_(T_total) {}
+RRTPathPlanner::RRTPathPlanner(int num_samples, double dt, double T_total)
+    : num_samples_{num_samples}, dt_(dt), T_total_(T_total) {}
+
+void RRTPathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
+  obstacles_ = obstacles;
+}
 
 Path RRTPathPlanner::generate_path(const Pose2D &start,
                                    const Pose2D &goal) const {
-  std::vector<Pose2D> points;
-  std::vector<int> parent_idxs;
+  std::vector<Pose2D> points{start};
+  std::vector<int> parent_idxs{-1};
   std::vector<double> distances{0};
   Path path;
 
@@ -17,6 +23,7 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
   for (int sample = 0; sample < num_samples_; sample++) {
     auto new_pt = create_halton_sample_(sample, dim);
 
+    // Radius in which to search for nearest points
     auto proximity = (log(points.size()) / points.size()) *
                      (dim.x_max - dim.x_min) * (dim.y_max - dim.y_min) / 2;
     if (proximity == 0) {
@@ -29,15 +36,15 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
     std::vector<double> potential_distances;
     std::vector<double> nearest_pt_distances;
 
-    for (int i = 0; i < points.size(); i++) {
-      auto nearest_pt = points[i];
+    for (auto nearest_pt_idx : nearest_pt_idxs) {
+      auto nearest_pt = points[nearest_pt_idx];
       auto dist = get_euclidean_distance_(new_pt, nearest_pt);
       nearest_pt_distances.push_back(dist);
 
-      auto new_dist = dist + distances[i];
+      auto new_dist = dist + distances[nearest_pt_idx];
 
-      if (!check_line_collision_(nearest_pt, new_pt)) {
-        potential_parents.push_back(i);
+      if (!check_line_collision(nearest_pt, new_pt)) {
+        potential_parents.push_back(nearest_pt_idx);
         potential_distances.push_back(new_dist);
       }
     }
@@ -68,7 +75,7 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
       auto nearest_to_new_dist = nearest_pt_distances[j];
 
       if (new_dist + nearest_to_new_dist < distances[remaining_pt_idx] &&
-          !check_line_collision_(new_pt, remaining_pt)) {
+          !check_line_collision(new_pt, remaining_pt)) {
         parent_idxs[remaining_pt_idx] = new_pt_idx;
         distances[remaining_pt_idx] = new_dist + nearest_to_new_dist;
       }
@@ -76,7 +83,8 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
   }
 
   std::vector<double> goal_distances;
-  for (int point_idx; point_idx < points.size(); point_idx++) {
+  for (int point_idx = 0; point_idx < points.size(); point_idx++) {
+
     auto distance_to_goal = get_euclidean_distance_(points[point_idx], goal);
     goal_distances.push_back(distance_to_goal + distances[point_idx]);
   }
@@ -87,7 +95,7 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
         std::min_element(goal_distances.begin(), goal_distances.end()) -
         goal_distances.begin();
     auto nearest = points[nearest_pt_idx];
-    if (check_line_collision_(nearest, goal)) {
+    if (check_line_collision(nearest, goal)) {
       goal_distances[nearest_pt_idx] = std::numeric_limits<double>::max();
       j += 1;
     } else {
@@ -194,8 +202,48 @@ std::vector<int> RRTPathPlanner::get_nearest_neighbors_(const Pose2D &new_pt,
   return nearest_pt_idxs;
 }
 
-bool RRTPathPlanner::check_line_collision_(const Pose2D &a,
-                                           const Pose2D &b) const {
+bool RRTPathPlanner::check_line_collision(const Pose2D &a,
+                                          const Pose2D &b) const {
+  auto orientation = [](const Pose2D &a, const Pose2D &b,
+                        const Pose2D &c) -> int {
+    double val = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
+    if (std::abs(val) < 1e-9)
+      return 0;
+    return (val > 0) ? 1 : 2;
+  };
+
+  auto on_segment = [](const Pose2D &p, const Pose2D &q,
+                       const Pose2D &r) -> bool {
+    return q.x <= std::max(p.x, r.x) && q.x >= std::min(p.x, r.x) &&
+           q.y <= std::max(p.y, r.y) && q.y >= std::min(p.y, r.y);
+  };
+
+  for (auto obstacle : obstacles_) {
+    for (int v_idx = 0; v_idx < obstacle.size(); v_idx++) {
+      auto v2_idx = v_idx < obstacle.size() - 1 ? v_idx + 1 : 0;
+
+      auto v = obstacle[v_idx];
+      auto v2 = obstacle[v2_idx];
+
+      int o1 = orientation(a, b, v);
+      int o2 = orientation(a, b, v2);
+      int o3 = orientation(v, v2, a);
+      int o4 = orientation(v, v2, b);
+
+      if (o1 != o2 && o3 != o4)
+        return true;
+
+      if (o1 == 0 && on_segment(a, v, b))
+        return true;
+      if (o2 == 0 && on_segment(a, v2, b))
+        return true;
+      if (o3 == 0 && on_segment(v, a, v2))
+        return true;
+      if (o4 == 0 && on_segment(v, b, v2))
+        return true;
+    }
+  }
+
   return false;
 }
 

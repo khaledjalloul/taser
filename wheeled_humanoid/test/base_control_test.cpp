@@ -29,8 +29,3 @@ TEST_F(BaseControlTest, follow_path) {
                       << ", " << robot_.planned_path.back().y
                       << "), error: " << err;
 }
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}

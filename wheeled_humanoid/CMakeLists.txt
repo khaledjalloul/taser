@@ -54,6 +54,7 @@ if(BUILD_TESTING)
 
   ament_add_gtest(${PROJECT_NAME}_test
     test/base_control_test.cpp
+    test/rrt_path_planner_test.cpp
   )
   target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
 endif()

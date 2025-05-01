@@ -13,5 +13,6 @@ build() {
 test() {
 	local package="$1"
 
+	colcon build --packages-select ${package}
 	colcon test --packages-select ${package} --event-handlers console_cohesion+
 }

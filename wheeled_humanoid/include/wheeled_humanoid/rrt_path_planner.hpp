@@ -9,18 +9,20 @@ struct Dimensions {
   double y_min, y_max;
 };
 
-struct Obstacle {
-  double x, y;
-  double radius;
-};
+// An obstacle is represented as a polygon, defined by its vertices
+using Obstacle = std::vector<Pose2D>;
 
 class RRTPathPlanner {
 public:
-  RRTPathPlanner(double dt, double T_total);
+  RRTPathPlanner(int num_samples, double dt, double T_total);
+
+  void set_obstacles(const std::vector<Obstacle> obstacles);
 
   Path generate_path(const Pose2D &start, const Pose2D &goal) const;
 
   Path interpolate_path(const Path &path) const;
+
+  bool check_line_collision(const Pose2D &a, const Pose2D &b) const;
 
 private:
   Dimensions get_dimensions_(const Pose2D &start, const Pose2D &goal) const;
@@ -33,9 +35,6 @@ private:
   std::vector<int> get_nearest_neighbors_(const Pose2D &new_pt,
                                           const Path &points,
                                           double radius) const;
-
-  // TODO
-  bool check_line_collision_(const Pose2D &a, const Pose2D &b) const;
 
   double dt_, T_total_;
   int num_samples_;
