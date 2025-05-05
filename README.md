@@ -1,73 +1,42 @@
-# Wheeled humanoid
+# Wheeled Humanoid
 
-- Torso with arms and wheels
-- In the beginning 3 wheels then maybe try to balance on 2
+## Components
 
-## Modules
-
-- simulation (gazebo, isaac sim?)
-- navigation and obstacle avoidance for the base
-  - rrt*
-- control of the wheels
-  - mpc
-  - state: current velocity/acceleration of the wheels + location of the robot
-  - input: acceleration of the wheels
-  - cost: position of the robot wrt the planned path + maybe terminal velocity
-  - constraints: dynamics of the wheels
-- navigation of the arms:
-  - rrt*
-- control of the arms
-  - pid or mpc
-  - 2 or 3 dof tbd
-  - already implemented just modify kinematics
-- sensing:
-  - detecting obstacles
-  - slam
-  - state estimation, maybe not needed in sumulation
-
-## Steps
-
-- [x] Learn what is /tf and robot state publisher and how i can use them
-- [x] Test arm to decide if 2 or 3 dof and which dof: 3 - y, z, y
-- [x] prepare ros packages
-- [x] reuse sketch follower to control one arm, keep everything the same for now just refactor the code a bit
-- [ ] set up simulation, environment, obstacles, and assume that sensing is provided (robot already knows where everything is and where it is in the environment)
-- [ ] test RRT* given the obstacles in simulation
-- [x] design base with 3 wheels
-- [ ] design base mpc controller
-- [ ] test base mpc with rrt path in the environment
-- [x] attach both arms to the base and test them with control
-- [ ] add path planning to the arms to be able to pick up objects
-- [ ] create missions for the robot to go to a location and pick up object (assume robot knows where objects are and that they are not obstacles)
-- [ ] remove hard-coded sensing, add sensors and implement slam maybe?
+- Simulation Environment: Rviz -> (TODO) Isaac Sim
+- Arms: 3 DOF
+  - (TODO) Navigation: RRT*
+  - Controller: PID with inverse kinematics
+- Base:
+  - Navigation: RRT*
+  - Controller: MPC
+- State Machine
+- (TODO) Sensing:
+  - Detecting obstacles: ?
+  - SLAM: ?
+  - State estimation: ? (maybe not needed in sumulation)
 
 ## ROS Packages / Nodes
 
-- [x] simulation and environment
-- [ ] base path planner
-- [ ] base controller, subscribes to observation and publishes input
-- [ ] arm path planners
-- [x] arm controllers
-- [ ] "sensing", publishes or idk where obstacles and objects are
-- [x] missions state machine
+- wheeled_humanoid: Robot logic (ROS-independent)
+- wheeled_humanoid_ros: ROS interface, URDF, Rviz, launch files
+- wheeled_humanoid_msgs: Custom ROS messages
+- state_machine: States and missions
 
 
-SM
--> reach base mission
--> mission planner keeps calculating error given current eef position to know when to stop (ros SM)
--> publish desired pose (ros SM)
--> path planner sees pose (ros path_planner)
--> path planner obtaints path
--> publishes the next pose to go (ros path_planner)
--> mpc sees desired pose (ros base_mpc)
--> mpc generates wheel inputs given current pose (ros base_mpc)
--> publishes wheel inputs (ros base_mpc)
+## To Do
 
-- should controller class be coupled with ros interface or can they be separated
-  - controller needs:
-    - subscriber to get desired pose
-    - joint states to calculate eef position
-    - transforms to calculate jacobian
-    - publisher to publish dq
-- controller class uses arm class without ros
-  - can the same be done with path planner and mpc?
+- [x] Learn what /tf and robot state publisher are and how to use them
+- [x] Create URDF file with ROS control and set up Rviz
+- [x] Test arm to decide if 2 or 3 DOF and which DOF -> 3: y, z, y
+- [x] Reuse sketch follower to control one arm, keep everything the same just refactor the code a bit
+- [x] Create state machine package and create action to trigger arm motion
+- [x] Create base MPC controller -> Very flaky for now
+- [x] Create RRT* path planner (no obstacles)
+- [x] Integrate path planner and base controller with state machine
+- [ ] Improve base controller to be more robust
+- [ ] Test RRT* given obstacles in the simulation
+- [ ] Create Python binder to be able to use robot logic in Isaac Sim
+- [ ] Add path planning to the arms to avoid obstacles
+- [ ] Create missions for the robot to go to a location and pick up object
+- [ ] Implement sensing such as a lidar
+- [ ] SLAM?

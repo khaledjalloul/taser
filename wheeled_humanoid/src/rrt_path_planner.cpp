@@ -4,8 +4,7 @@
 
 namespace wheeled_humanoid {
 
-RRTPathPlanner::RRTPathPlanner(int num_samples, double dt, double T_total)
-    : num_samples_{num_samples}, dt_(dt), T_total_(T_total) {}
+RRTPathPlanner::RRTPathPlanner(int num_samples) : num_samples_{num_samples} {}
 
 void RRTPathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
   obstacles_ = obstacles;
@@ -116,9 +115,9 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
   return Path(path.rbegin(), path.rend());
 }
 
-Path RRTPathPlanner::interpolate_path(const Path &path) const {
+Path RRTPathPlanner::interpolate_path(const Path &path,
+                                      int desired_n_points) const {
   int n_points = path.size();
-  int n_steps = static_cast<int>(T_total_ / dt_);
 
   Path ref_path;
 
@@ -126,11 +125,8 @@ Path RRTPathPlanner::interpolate_path(const Path &path) const {
   for (int i = 0; i < n_points; ++i)
     t_path[i] = static_cast<double>(i) / (n_points - 1);
 
-  for (int i = 0; i < n_steps; ++i) {
-    double t = static_cast<double>(i) * dt_ / T_total_;
-
-    // Clamp to [0, 1]
-    t = std::min(std::max(t, 0.0), 1.0);
+  for (int i = 0; i < desired_n_points; ++i) {
+    double t = static_cast<double>(i) / desired_n_points;
 
     // Find segment index j such that t_path[j] <= t < t_path[j+1]
     int j = 0;

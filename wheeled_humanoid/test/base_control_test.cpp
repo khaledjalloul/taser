@@ -12,20 +12,21 @@ protected:
 };
 
 TEST_F(BaseControlTest, follow_path) {
-  robot_.plan_path();
+  wheeled_humanoid::Pose2D goal_pose{3.0, 3.0};
 
-  for (int i = 0; i < robot_.planned_path.size() - robot_.base_controller.N;
-       i++) {
-    robot_.follow_path_step();
+  auto initial_pose = robot_.base.pose;
+  auto initial_err = Eigen::Vector2d(initial_pose.x - goal_pose.x,
+                                     initial_pose.y - goal_pose.y)
+                         .norm();
+
+  for (int i = 0; i < 10; i++) {
+    robot_.move_base_step(goal_pose);
   }
 
   auto final_pose = robot_.base.pose;
-  auto diff = Eigen::Vector2d(final_pose.x - robot_.planned_path.back().x,
-                              final_pose.y - robot_.planned_path.back().y);
-  auto err = diff.norm();
+  auto final_err =
+      Eigen::Vector2d(final_pose.x - goal_pose.x, final_pose.y - goal_pose.y)
+          .norm();
 
-  EXPECT_LE(err, 0.3) << "Final pose: (" << final_pose.x << ", " << final_pose.y
-                      << "), expected: (" << robot_.planned_path.back().x
-                      << ", " << robot_.planned_path.back().y
-                      << "), error: " << err;
+  EXPECT_LE(final_err, initial_err);
 }

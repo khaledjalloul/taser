@@ -17,9 +17,7 @@ public:
   move_arm_step(const std::string &arm_name, const Position3D &desired_position,
                 const Transforms &tfs) const;
 
-  void plan_path();
-
-  std::tuple<double, double, double> follow_path_step();
+  std::tuple<double, double, double> move_base_step(const Pose2D &desired_pose);
 
   double dt = 0.1;
 
@@ -30,10 +28,7 @@ public:
 
   BaseKinematics base{0.5, 0.5, dt};
   BaseController base_controller{dt};
-
-  RRTPathPlanner rrt_{100, dt, 6.0};
-  Path planned_path;
-  int planned_path_index = 0;
+  RRTPathPlanner rrt_{100};
 };
 
 } // namespace wheeled_humanoid
