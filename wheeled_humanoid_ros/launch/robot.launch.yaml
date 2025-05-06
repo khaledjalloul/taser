@@ -1,0 +1,13 @@
+launch:
+  - include:
+      file: $(find-pkg-share wheeled_humanoid_ros)/launch/rviz_control.launch.yaml
+
+  - node:
+      pkg: wheeled_humanoid_ros
+      exec: wheeled_humanoid_ros_node
+      output: screen
+
+  - node:
+      pkg: state_machine
+      exec: state_machine_node
+      output: screen
