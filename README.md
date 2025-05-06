@@ -18,6 +18,7 @@
 ## ROS Packages / Nodes
 
 - wheeled_humanoid: Robot logic (ROS-independent)
+- wheeled_humanoid_py: Python bindings of the `wheeled_humanoid` package
 - wheeled_humanoid_ros: ROS interface, URDF, Rviz, launch files
 - wheeled_humanoid_msgs: Custom ROS messages
 - state_machine: States and missions

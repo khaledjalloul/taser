@@ -3,6 +3,7 @@ project(state_machine)
 
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES
+  ament_cmake
   rclcpp
   rclcpp_action
   std_srvs
@@ -10,7 +11,6 @@ set(PACKAGE_DEPENDENCIES
 )
 
 # Find dependencies
-find_package(ament_cmake REQUIRED)
 foreach(PKG ${PACKAGE_DEPENDENCIES})
   find_package(${PKG} REQUIRED)
 endforeach()

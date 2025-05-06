@@ -7,11 +7,11 @@ set(MSG_DEPENDENCIES
 )
 set(PACKAGE_DEPENDENCIES
   ${MSG_DEPENDENCIES}
+  ament_cmake
   rosidl_default_generators
 )
 
 # Find dependencies
-find_package(ament_cmake REQUIRED)
 foreach(PKG ${PACKAGE_DEPENDENCIES})
   find_package(${PKG} REQUIRED)
 endforeach()

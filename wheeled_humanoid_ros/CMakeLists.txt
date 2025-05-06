@@ -3,6 +3,7 @@ project(wheeled_humanoid_ros)
 
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES
+  ament_cmake
   rclcpp
   rclcpp_action
   sensor_msgs
@@ -13,7 +14,6 @@ set(PACKAGE_DEPENDENCIES
 )
 
 # Find dependencies
-find_package(ament_cmake REQUIRED)
 foreach(PKG ${PACKAGE_DEPENDENCIES})
   find_package(${PKG} REQUIRED)
 endforeach()

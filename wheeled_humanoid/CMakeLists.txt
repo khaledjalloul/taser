@@ -3,13 +3,13 @@ project(wheeled_humanoid)
 
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES
+  ament_cmake
   Eigen3
   osqp
   OsqpEigen
 )
 
 # Find dependencies
-find_package(ament_cmake REQUIRED)
 foreach(PKG ${PACKAGE_DEPENDENCIES})
   find_package(${PKG} REQUIRED)
 endforeach()
