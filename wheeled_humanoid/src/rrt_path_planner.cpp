@@ -15,80 +15,22 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
   std::vector<Pose2D> points{start};
   std::vector<int> parent_idxs{-1};
   std::vector<double> distances{0};
-  Path path;
 
-  auto dim = get_dimensions_(start, goal);
+  auto dim = get_dimensions(start, goal);
 
   for (int sample = 0; sample < num_samples_; sample++) {
-    auto new_pt = create_halton_sample_(sample, dim);
-
-    // Radius in which to search for nearest points
-    auto proximity = (log(points.size()) / points.size()) *
-                     (dim.x_max - dim.x_min) * (dim.y_max - dim.y_min) / 2;
-    if (proximity == 0) {
-      proximity = (dim.x_max - dim.x_min) * (dim.y_max - dim.y_min) / 2;
-    }
-
-    auto nearest_pt_idxs = get_nearest_neighbors_(new_pt, points, proximity);
-
-    std::vector<int> potential_parents;
-    std::vector<double> potential_distances;
-    std::vector<double> nearest_pt_distances;
-
-    for (auto nearest_pt_idx : nearest_pt_idxs) {
-      auto nearest_pt = points[nearest_pt_idx];
-      auto dist = get_euclidean_distance_(new_pt, nearest_pt);
-      nearest_pt_distances.push_back(dist);
-
-      auto new_dist = dist + distances[nearest_pt_idx];
-
-      if (!check_line_collision(nearest_pt, new_pt)) {
-        potential_parents.push_back(nearest_pt_idx);
-        potential_distances.push_back(new_dist);
-      }
-    }
-
-    if (potential_distances.empty()) {
-      continue;
-    }
-
-    auto min_idx = std::min_element(potential_distances.begin(),
-                                    potential_distances.end()) -
-                   potential_distances.begin();
-    auto new_dist = potential_distances[min_idx];
-    auto new_parent_idx = potential_parents[min_idx];
-
-    points.push_back(new_pt);
-    parent_idxs.push_back(new_parent_idx);
-    distances.push_back(new_dist);
-
-    auto new_pt_idx = points.size() - 1;
-
-    for (int j = 0; j < nearest_pt_idxs.size(); j++) {
-      auto remaining_pt_idx = nearest_pt_idxs[j];
-      if (remaining_pt_idx == new_parent_idx) {
-        continue;
-      }
-
-      auto remaining_pt = points[remaining_pt_idx];
-      auto nearest_to_new_dist = nearest_pt_distances[j];
-
-      if (new_dist + nearest_to_new_dist < distances[remaining_pt_idx] &&
-          !check_line_collision(new_pt, remaining_pt)) {
-        parent_idxs[remaining_pt_idx] = new_pt_idx;
-        distances[remaining_pt_idx] = new_dist + nearest_to_new_dist;
-      }
-    }
+    sample_new_point(points, parent_idxs, distances, dim, sample);
   }
 
   std::vector<double> goal_distances;
   for (int point_idx = 0; point_idx < points.size(); point_idx++) {
 
-    auto distance_to_goal = get_euclidean_distance_(points[point_idx], goal);
+    auto distance_to_goal = get_euclidean_distance(points[point_idx], goal);
     goal_distances.push_back(distance_to_goal + distances[point_idx]);
   }
 
   int j = 0;
+  Path path;
   while (j < points.size()) {
     auto nearest_pt_idx =
         std::min_element(goal_distances.begin(), goal_distances.end()) -
@@ -115,6 +57,73 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
   return Path(path.rbegin(), path.rend());
 }
 
+std::tuple<std::vector<Pose2D>, std::vector<int>, std::vector<double>>
+RRTPathPlanner::sample_new_point(std::vector<Pose2D> &points,
+                                 std::vector<int> &parent_idxs,
+                                 std::vector<double> &distances,
+                                 const Dimensions &dim, int sample) const {
+
+  auto new_pt = create_halton_sample(sample, dim);
+
+  // Radius in which to search for nearest points
+  // TODO: Decrease dynamically based on number of points
+  auto proximity =
+      get_euclidean_distance({dim.x_min, dim.y_min}, {dim.x_max, dim.y_max});
+
+  auto nearest_pt_idxs = get_nearest_neighbors(new_pt, points, proximity);
+
+  std::vector<int> potential_parents;
+  std::vector<double> potential_distances;
+  std::vector<double> nearest_pt_distances;
+
+  for (auto nearest_pt_idx : nearest_pt_idxs) {
+    auto nearest_pt = points[nearest_pt_idx];
+    auto dist = get_euclidean_distance(new_pt, nearest_pt);
+    nearest_pt_distances.push_back(dist);
+
+    auto new_dist = dist + distances[nearest_pt_idx];
+
+    if (!check_line_collision(nearest_pt, new_pt)) {
+      potential_parents.push_back(nearest_pt_idx);
+      potential_distances.push_back(new_dist);
+    }
+  }
+
+  if (potential_distances.empty()) {
+    return {points, parent_idxs, distances};
+  }
+
+  auto min_idx =
+      std::min_element(potential_distances.begin(), potential_distances.end()) -
+      potential_distances.begin();
+  auto new_dist = potential_distances[min_idx];
+  auto new_parent_idx = potential_parents[min_idx];
+
+  points.push_back(new_pt);
+  parent_idxs.push_back(new_parent_idx);
+  distances.push_back(new_dist);
+
+  auto new_pt_idx = points.size() - 1;
+
+  for (int j = 0; j < nearest_pt_idxs.size(); j++) {
+    auto remaining_pt_idx = nearest_pt_idxs[j];
+    if (remaining_pt_idx == new_parent_idx) {
+      continue;
+    }
+
+    auto remaining_pt = points[remaining_pt_idx];
+    auto nearest_to_new_dist = nearest_pt_distances[j];
+
+    if (new_dist + nearest_to_new_dist < distances[remaining_pt_idx] &&
+        !check_line_collision(new_pt, remaining_pt)) {
+      parent_idxs[remaining_pt_idx] = new_pt_idx;
+      distances[remaining_pt_idx] = new_dist + nearest_to_new_dist;
+    }
+  }
+
+  return {points, parent_idxs, distances};
+}
+
 Path RRTPathPlanner::interpolate_path(const Path &path,
                                       int desired_n_points) const {
   int n_points = path.size();
@@ -126,7 +135,7 @@ Path RRTPathPlanner::interpolate_path(const Path &path,
     t_path[i] = static_cast<double>(i) / (n_points - 1);
 
   for (int i = 0; i < desired_n_points; ++i) {
-    double t = static_cast<double>(i) / desired_n_points;
+    double t = static_cast<double>(i) / (desired_n_points - 1);
 
     // Find segment index j such that t_path[j] <= t < t_path[j+1]
     int j = 0;
@@ -147,7 +156,7 @@ Path RRTPathPlanner::interpolate_path(const Path &path,
   return ref_path;
 }
 
-Dimensions RRTPathPlanner::get_dimensions_(const Pose2D &start,
+Dimensions RRTPathPlanner::get_dimensions(const Pose2D &start,
                                            const Pose2D &goal) const {
   Dimensions dim;
   dim.x_min = std::min(start.x, goal.x) - 2;
@@ -157,7 +166,7 @@ Dimensions RRTPathPlanner::get_dimensions_(const Pose2D &start,
   return dim;
 }
 
-Pose2D RRTPathPlanner::create_halton_sample_(int index,
+Pose2D RRTPathPlanner::create_halton_sample(int index,
                                              const Dimensions &dim) const {
   auto radical_inverse = [](int index, int base) {
     double result = 0.0;
@@ -180,17 +189,17 @@ Pose2D RRTPathPlanner::create_halton_sample_(int index,
   };
 }
 
-double RRTPathPlanner::get_euclidean_distance_(const Pose2D &a,
+double RRTPathPlanner::get_euclidean_distance(const Pose2D &a,
                                                const Pose2D &b) const {
   return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
 }
 
-std::vector<int> RRTPathPlanner::get_nearest_neighbors_(const Pose2D &new_pt,
+std::vector<int> RRTPathPlanner::get_nearest_neighbors(const Pose2D &new_pt,
                                                         const Path &points,
                                                         double radius) const {
   std::vector<int> nearest_pt_idxs;
   for (int i = 0; i < points.size(); i++) {
-    auto dist = get_euclidean_distance_(new_pt, points[i]);
+    auto dist = get_euclidean_distance(new_pt, points[i]);
     if (dist < radius) {
       nearest_pt_idxs.push_back(i);
     }
