@@ -8,7 +8,7 @@ NUM_SAMPLES = 100
 start = Pose2D()
 goal = Pose2D(3, 3)
 
-rrt = RRTPathPlanner(NUM_SAMPLES)
+rrt = RRTPathPlanner(NUM_SAMPLES, 0.1)
 obstacles = [
     [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2), Pose2D(2, 1)],
     [Pose2D(3, 1), Pose2D(3, 2), Pose2D(4, 2), Pose2D(4, 1)]

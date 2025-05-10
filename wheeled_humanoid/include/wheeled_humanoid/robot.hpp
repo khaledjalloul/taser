@@ -28,7 +28,7 @@ public:
 
   BaseKinematics base{0.5, 0.5, dt};
   BaseController base_controller{dt};
-  RRTPathPlanner rrt_{100};
+  RRTPathPlanner rrt_{100, dt};
 };
 
 } // namespace wheeled_humanoid

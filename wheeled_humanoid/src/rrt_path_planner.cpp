@@ -4,7 +4,8 @@
 
 namespace wheeled_humanoid {
 
-RRTPathPlanner::RRTPathPlanner(int num_samples) : num_samples_{num_samples} {}
+RRTPathPlanner::RRTPathPlanner(int num_samples, double dt)
+    : num_samples_(num_samples), dt_(dt) {}
 
 void RRTPathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
   obstacles_ = obstacles;
@@ -31,6 +32,7 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
 
   int j = 0;
   Path path;
+  // TODO: Fix to get jth nearest point
   while (j < points.size()) {
     auto nearest_pt_idx =
         std::min_element(goal_distances.begin(), goal_distances.end()) -
@@ -41,14 +43,16 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
       j += 1;
     } else {
       path.push_back(goal);
+      nearest.theta = std::atan2(goal.y - nearest.y, goal.x - nearest.x);
       path.push_back(nearest);
 
-      while (!(nearest == start)) {
-        nearest_pt_idx = parent_idxs[nearest_pt_idx];
-        auto parent = points[nearest_pt_idx];
-
+      auto parent_idx = parent_idxs[nearest_pt_idx];
+      while (parent_idx != -1) {
+        auto parent = points[parent_idx];
+        parent.theta =
+            std::atan2(path.back().y - parent.y, path.back().x - parent.x);
         path.push_back(parent);
-        nearest = parent;
+        parent_idx = parent_idxs[parent_idx];
       }
       break;
     }
@@ -128,7 +132,7 @@ Path RRTPathPlanner::interpolate_path(const Path &path,
                                       int desired_n_points) const {
   int n_points = path.size();
 
-  Path ref_path;
+  Path new_path;
 
   std::vector<double> t_path(n_points);
   for (int i = 0; i < n_points; ++i)
@@ -140,24 +144,48 @@ Path RRTPathPlanner::interpolate_path(const Path &path,
     // Find segment index j such that t_path[j] <= t < t_path[j+1]
     int j = 0;
     while (j < n_points - 2 && t > t_path[j + 1])
-      ++j;
+      j++;
 
     double t0 = t_path[j];
     double t1 = t_path[j + 1];
     double alpha = (t - t0) / (t1 - t0);
 
     Pose2D new_pt{(1 - alpha) * path[j].x + alpha * path[j + 1].x,
-                  (1 - alpha) * path[j].y + alpha * path[j + 1].y,
-                  (1 - alpha) * path[j].theta + alpha * path[j + 1].theta};
+                  (1 - alpha) * path[j].y + alpha * path[j + 1].y};
 
-    ref_path.push_back(new_pt);
+    new_path.push_back(new_pt);
   }
 
-  return ref_path;
+  for (int i = 0; i < new_path.size() - 1; ++i) {
+    auto &pt = new_path[i];
+    const auto &next_pt = new_path[i + 1];
+    pt.theta = std::atan2(next_pt.y - pt.y, next_pt.x - pt.x);
+  }
+
+  return new_path;
+}
+
+VelocityProfile RRTPathPlanner::get_velocity_profile(const Path &path) const {
+  VelocityProfile velocity_profile;
+
+  for (int i = 0; i < path.size() - 1; i++) {
+    auto pt = path[i];
+    auto next_pt = path[i + 1];
+
+    auto dx = next_pt.x - pt.x;
+    auto dy = next_pt.y - pt.y;
+
+    double v = std::sqrt(dx * dx + dy * dy) / dt_;
+    double omega = (next_pt.theta - pt.theta) / dt_;
+    velocity_profile.push_back(BaseVelocity{v, omega});
+  }
+  velocity_profile.push_back(BaseVelocity{0, 0});
+
+  return velocity_profile;
 }
 
 Dimensions RRTPathPlanner::get_dimensions(const Pose2D &start,
-                                           const Pose2D &goal) const {
+                                          const Pose2D &goal) const {
   Dimensions dim;
   dim.x_min = std::min(start.x, goal.x) - 2;
   dim.x_max = std::max(start.x, goal.x) + 2;
@@ -167,7 +195,7 @@ Dimensions RRTPathPlanner::get_dimensions(const Pose2D &start,
 }
 
 Pose2D RRTPathPlanner::create_halton_sample(int index,
-                                             const Dimensions &dim) const {
+                                            const Dimensions &dim) const {
   auto radical_inverse = [](int index, int base) {
     double result = 0.0;
     double f = 1.0 / base;
@@ -190,13 +218,13 @@ Pose2D RRTPathPlanner::create_halton_sample(int index,
 }
 
 double RRTPathPlanner::get_euclidean_distance(const Pose2D &a,
-                                               const Pose2D &b) const {
+                                              const Pose2D &b) const {
   return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
 }
 
 std::vector<int> RRTPathPlanner::get_nearest_neighbors(const Pose2D &new_pt,
-                                                        const Path &points,
-                                                        double radius) const {
+                                                       const Path &points,
+                                                       double radius) const {
   std::vector<int> nearest_pt_idxs;
   for (int i = 0; i < points.size(); i++) {
     auto dist = get_euclidean_distance(new_pt, points[i]);

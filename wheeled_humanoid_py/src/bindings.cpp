@@ -29,7 +29,8 @@ PYBIND11_MODULE(wheeled_humanoid_py, m) {
   // Base Controller
   py::class_<BaseController>(m, "BaseController")
       .def(py::init<double, int, double, double>())
-      .def("step", &BaseController::step);
+      .def("step", &BaseController::step)
+      .def_readwrite("N", &BaseController::N);
 
   // Base Kinematics
   py::class_<BaseKinematics>(m, "BaseKinematics")
@@ -37,7 +38,9 @@ PYBIND11_MODULE(wheeled_humanoid_py, m) {
       .def("set_L", &BaseKinematics::set_L)
       .def("set_base_velocity", &BaseKinematics::set_base_velocity)
       .def("set_wheel_velocities", &BaseKinematics::set_wheel_velocities)
-      .def("step", &BaseKinematics::step);
+      .def("step", &BaseKinematics::step)
+      .def_readwrite("pose", &BaseKinematics::pose)
+      .def_readwrite("base_velocity", &BaseKinematics::base_velocity);
 
   // Robot
   py::class_<Robot>(m, "Robot")
@@ -47,11 +50,12 @@ PYBIND11_MODULE(wheeled_humanoid_py, m) {
 
   // RRT* Path Planner
   py::class_<RRTPathPlanner>(m, "RRTPathPlanner")
-      .def(py::init<int>())
+      .def(py::init<int, double>())
       .def("set_obstacles", &RRTPathPlanner::set_obstacles)
       .def("generate_path", &RRTPathPlanner::generate_path)
       .def("sample_new_point", &RRTPathPlanner::sample_new_point)
       .def("interpolate_path", &RRTPathPlanner::interpolate_path)
+      .def("get_velocity_profile", &RRTPathPlanner::get_velocity_profile)
       .def("check_line_collision", &RRTPathPlanner::check_line_collision)
       .def("get_dimensions", &RRTPathPlanner::get_dimensions)
       .def("create_halton_sample", &RRTPathPlanner::create_halton_sample)
@@ -64,9 +68,17 @@ PYBIND11_MODULE(wheeled_humanoid_py, m) {
       .def(py::init<double>())
       .def(py::init<double, double>())
       .def(py::init<double, double, double>())
+      .def("list", &Pose2D::list)
       .def_readwrite("x", &Pose2D::x)
       .def_readwrite("y", &Pose2D::y)
       .def_readwrite("theta", &Pose2D::theta);
+
+  py::class_<BaseVelocity>(m, "BaseVelocity")
+      .def(py::init<>())
+      .def(py::init<double, double>())
+      .def("list", &BaseVelocity::list)
+      .def_readwrite("v", &BaseVelocity::v)
+      .def_readwrite("omega", &BaseVelocity::omega);
 
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())

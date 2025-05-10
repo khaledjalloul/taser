@@ -9,12 +9,9 @@ struct Dimensions {
   double y_min, y_max;
 };
 
-// An obstacle is represented as a polygon, defined by its vertices
-using Obstacle = std::vector<Pose2D>;
-
 class RRTPathPlanner {
 public:
-  RRTPathPlanner(int num_samples);
+  RRTPathPlanner(int num_samples, double dt);
 
   void set_obstacles(const std::vector<Obstacle> obstacles);
 
@@ -26,6 +23,8 @@ public:
                    int sample) const;
 
   Path interpolate_path(const Path &path, int desired_n_points) const;
+
+  VelocityProfile get_velocity_profile(const Path &path) const;
 
   bool check_line_collision(const Pose2D &a, const Pose2D &b) const;
 
@@ -42,6 +41,7 @@ public:
 
 private:
   int num_samples_;
+  double dt_;
   std::vector<Obstacle> obstacles_;
 };
 

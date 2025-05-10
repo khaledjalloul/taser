@@ -185,6 +185,7 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
   double x = ((double)std::rand() / RAND_MAX) * 10 - 5;
   double y = ((double)std::rand() / RAND_MAX) * 10 - 5;
   wheeled_humanoid::Pose2D goal_pose{x, y};
+  RCLCPP_INFO(get_logger(), "Moving to %f, %f", goal_pose.x, goal_pose.y);
 
   while (rclcpp::ok()) {
     if (goal_handle->is_canceling()) {
@@ -199,7 +200,9 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
     auto v_r = std::get<1>(res);
     auto err = std::get<2>(res);
 
-    if (err < 0.3) {
+    if (err < 0.1) {
+      RCLCPP_INFO(get_logger(), "Reached goal at %f, %f", robot_.base.pose.x,
+                  robot_.base.pose.y);
       // Stop base movement by publishing zero velocities
       std_msgs::msg::Float64MultiArray zero_vel_msg;
       zero_vel_msg.data.resize(2);

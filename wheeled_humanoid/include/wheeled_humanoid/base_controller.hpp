@@ -11,15 +11,17 @@ public:
   BaseController(double dt, int N = 10, double v_max = 1.0,
                  double omega_max = 2.0);
 
-  BaseVelocity step(const Pose2D &x0, const Path &desired_path);
+  BaseVelocity step(const Pose2D &x0, const Path &x_ref,
+                    const VelocityProfile &u_ref);
+
+  void get_linearized_model(const Pose2D &x0, const BaseVelocity &u0, Matrix &A,
+                            Matrix &B) const;
 
   int N;
 
 private:
-  void get_linearized_model_(const Pose2D &x0, Matrix &A, Matrix &B) const;
-
-  void set_up_QP_(const Pose2D &x0, const Path &desired_path, const Matrix &A,
-                 const Matrix &B);
+  void set_up_QP_(const Pose2D &x0, const Path &x_ref,
+                  const VelocityProfile &u_ref);
 
   double dt_, v_max_, omega_max_;
   int nx_, nu_, num_vars_, num_constraints_;

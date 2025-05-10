@@ -33,12 +33,9 @@ std::tuple<double, double, double>
 Robot::move_base_step(const Pose2D &desored_pose) {
   Path rrt_path = rrt_.generate_path(base.pose, desored_pose);
   rrt_path = rrt_.interpolate_path(rrt_path, base_controller.N);
+  auto rrt_path_vel = rrt_.get_velocity_profile(rrt_path);
 
-  std::cout << "Moving from " << base.pose.x << ", " << base.pose.y << " to "
-            << rrt_path.back().x << ", " << rrt_path.back().y << " "
-            << rrt_path.size() << std::endl;
-
-  auto u = base_controller.step(base.pose, rrt_path);
+  auto u = base_controller.step(base.pose, rrt_path, rrt_path_vel);
 
   base.set_base_velocity(u.v, u.omega);
   base.step();

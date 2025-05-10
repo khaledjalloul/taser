@@ -23,9 +23,9 @@ struct Pose2D {
   bool operator==(const Pose2D &other) const {
     return x == other.x && y == other.y && theta == other.theta;
   }
-};
 
-using Path = std::vector<Pose2D>;
+  std::vector<double> list() const { return {x, y, theta}; }
+};
 
 struct Position3D {
   double x, y, z;
@@ -56,6 +56,13 @@ struct Transforms {
 
 struct BaseVelocity {
   double v, omega;
+
+  std::vector<double> list() const { return {v, omega}; }
 };
+
+using Path = std::vector<Pose2D>;
+using VelocityProfile = std::vector<BaseVelocity>;
+// An obstacle is represented as a polygon, defined by its vertices
+using Obstacle = std::vector<Pose2D>;
 
 } // namespace wheeled_humanoid
