@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(state_machine)
+project(wheeled_humanoid_state_machine)
 
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES

@@ -8,6 +8,6 @@ launch:
       output: screen
 
   - node:
-      pkg: state_machine
-      exec: state_machine_node
+      pkg: wheeled_humanoid_state_machine
+      exec: wheeled_humanoid_state_machine_node
       output: screen

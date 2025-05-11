@@ -16,3 +16,5 @@ test() {
 	colcon build --packages-select ${package}
 	colcon test --packages-select ${package} --event-handlers console_cohesion+
 }
+
+alias launch='ros2 launch wheeled_humanoid_ros robot.launch.yaml'

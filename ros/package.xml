@@ -22,12 +22,12 @@
   <depend>geometry_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
-  <depend>state_machine</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>wheeled_humanoid</depend>
   <depend>wheeled_humanoid_msgs</depend>
+  <depend>wheeled_humanoid_state_machine</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

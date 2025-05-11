@@ -3,7 +3,7 @@
 <package format="3">
   <name>wheeled_humanoid</name>
   <version>0.0.0</version>
-  <description>Main wheeled humanoid package containing all ROS-independent robot logic</description>
+  <description>Core wheeled humanoid package containing all ROS-independent robot logic</description>
 
   <maintainer email="khaled.jalloul@hotmail.com">Khaled Jalloul</maintainer>
 
