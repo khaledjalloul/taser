@@ -1,6 +1,10 @@
 {
-    // "image": "khaledjalloul/devcontainer",
     "dockerFile": "Dockerfile",
+    "build": {
+        // "target": "ros-jazzy"
+        // "target": "isaaclab"
+        "target": "isaaclab-ros-humble"
+    },
     "postCreateCommand": "bash src/.devcontainer/post_create.bash",
     "customizations": {
         "vscode": {
@@ -9,7 +13,6 @@
                 "ms-python.python",
                 "ms-python.autopep8",
                 "ms-python.vscode-pylance",
-                // "detachhead.basedpyright",
                 // C++
                 "ms-vscode.cpptools",
                 "ms-vscode.cpptools-extension-pack",
@@ -30,10 +33,6 @@
             "settings": {
                 "python.defaultInterpreterPath": "/home/vscode/venv/bin/python3.12",
                 "python.analysis.typeCheckingMode": "strict",
-                // "basedpyright.analysis.typeCheckingMode": "strict",
-                // "basedpyright.analysis.inlayHints.callArgumentNames": false,
-                // "basedpyright.analysis.inlayHints.functionReturnTypes": false,
-                // "basedpyright.analysis.inlayHints.variableTypes": false,
                 "C_Cpp.default.includePath": [
                     "${workspaceFolder}/**",
                     "/opt/ros/jazzy/include/**"
@@ -51,12 +50,16 @@
         // Enable Docker-in-Docker
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
         // Enable volume persistence
-        "source=devcontainer-vscode-settings,target=/workspace/colcon_ws/.vscode,type=volume"
+        "source=wheed_humanoid-devcontainer-vscode-settings,target=/workspace/colcon_ws/.vscode,type=volume",
+        // Enable colcon_ws persistence
+        "source=wheed_humanoid-devcontainer-colcon_ws,target=/workspace/colcon_ws/build,type=volume",
+        "source=wheed_humanoid-devcontainer-colcon_ws,target=/workspace/colcon_ws/install,type=volume"
     ],
     "runArgs": [
-        "--env",
-        "DISPLAY=${env:DISPLAY}",
-        "--device",
-        "/dev/dri"
-    ]
+        "--device=/dev/dri"
+    ],
+    "containerEnv": {
+        // Enable GUI
+        "DISPLAY": "${env:DISPLAY}"
+    }
 }

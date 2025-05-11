@@ -1,6 +1,6 @@
 kj setup cli-completion
 
-sudo chown -R $USER .
+sudo chown -R $(whoami) .
 
 # rosdep update
 # rosdep install -iry --from-paths src 
