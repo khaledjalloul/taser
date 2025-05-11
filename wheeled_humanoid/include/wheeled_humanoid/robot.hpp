@@ -11,12 +11,35 @@
 
 namespace wheeled_humanoid {
 
+/**
+ * Main class combining all components of the robot:
+ * - Arm kinematics
+ * - Arm controller
+ * - Base kinematics
+ * - Base controller
+ * - RRT* path planner
+ */
 class Robot {
 public:
+  /**
+   * Get the desired arm joint velocities using the arm controller and IK solver
+   * @param arm_name Name of the arm (left_arm or right_arm)
+   * @param desired_position Desired end effector position
+   * @param tfs Transforms from the base frame to each of the end effector link
+   * frames
+   * @return Tuple of joint velocities and error
+   */
   std::tuple<ArmJointVelocities, double>
   move_arm_step(const std::string &arm_name, const Position3D &desired_position,
                 const Transforms &tfs) const;
 
+  /**
+   * Get the desired base wheel velocities using the RRT* path planner and base
+   * controller
+   * @details Updates the base pose internally
+   * @param desired_pose Desired base pose
+   * @return Tuple of left and right wheel velocities and error
+   */
   std::tuple<double, double, double> move_base_step(const Pose2D &desired_pose);
 
   double dt = 0.1;

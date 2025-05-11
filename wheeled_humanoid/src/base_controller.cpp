@@ -41,16 +41,23 @@ void BaseController::get_linearized_model(const Pose2D &x0,
                                           const BaseVelocity &u0, Matrix &A,
                                           Matrix &B) const {
   /**
-   * TODO: Describe how linearization is done
+   * Linearization:
+   * - x_dot = f(x,u) = f(x0,u0) + df/dx(x0,u0) * (x-x0) + df/du(x0,u0) * (u-u0)
+   * - delta_x_dot = A * delta_x + B * delta_u
    */
 
   A = Matrix::Identity(nx_, nx_);
-  A(0, 2) = -sin(x0.theta) * u0.v * dt_;
-  A(1, 2) = cos(x0.theta) * u0.v * dt_;
-
   B = Matrix::Zero(nx_, nu_);
-  B(0, 0) = dt_ * cos(x0.theta);
-  B(1, 0) = dt_ * sin(x0.theta);
+
+  // x_dot = v * cos(theta)
+  A(0, 2) = -sin(x0.theta) * u0.v * dt_;
+  B(0, 0) = cos(x0.theta) * dt_;
+
+  // y_dot = v * sin(theta)
+  A(1, 2) = cos(x0.theta) * u0.v * dt_;
+  B(1, 0) = sin(x0.theta) * dt_;
+
+  // theta_dot = omega
   B(2, 1) = dt_;
 }
 
