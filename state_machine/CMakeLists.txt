@@ -46,6 +46,9 @@ install(TARGETS ${PROJECT_NAME}
 install(TARGETS ${PROJECT_NAME}_node
   DESTINATION lib/${PROJECT_NAME}
 )
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
 
 # Export
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)

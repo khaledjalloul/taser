@@ -7,7 +7,7 @@
 namespace wheeled_humanoid {
 
 /**
- * Base position controller using Model Predictive Control
+ * Tracking controller for the base using Model Predictive Control
  */
 class BaseController {
 public:
