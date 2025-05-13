@@ -38,7 +38,7 @@
 - [x] Create Python bindings to be able to use robot logic in Isaac Sim
 - [x] Improve base controller to be more robust
 - [x] Start with Isaac Lab environment
-- [ ] Inflate RRT* obstacles and test in simulation
+- [x] Inflate RRT* obstacles and test in simulation
 - [ ] Create missions for the robot to go to a location and pick up object
 - [ ] Add path planning to the arms to avoid obstacles or train with RL
 - [ ] Improve RRT* to use Dubins paths

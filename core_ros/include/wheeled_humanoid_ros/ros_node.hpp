@@ -33,6 +33,8 @@ public:
 
   void publish_transform(const TransformMsg &tf) const;
 
+  void spawn_obstacles();
+
   void move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle);
   double move_arm_step(std::string name, wheeled_humanoid::Position3D p) const;
 

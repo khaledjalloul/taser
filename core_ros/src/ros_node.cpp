@@ -1,6 +1,7 @@
 #include "wheeled_humanoid_ros/ros_node.hpp"
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 namespace wheeled_humanoid_ros {
 
@@ -58,6 +59,8 @@ RosNode::RosNode(std::string name)
       });
 
   RCLCPP_INFO(get_logger(), "Node started.");
+
+  spawn_obstacles();
 }
 
 wheeled_humanoid::Transform
@@ -96,6 +99,42 @@ void RosNode::publish_transform(const TransformMsg &tf) const {
   tf_stamped.transform = tf;
 
   tf_broadcaster_->sendTransform(tf_stamped);
+}
+
+void RosNode::spawn_obstacles() {
+  auto qos = rclcpp::QoS(10).transient_local();
+  auto obstacles_pub =
+      create_publisher<visualization_msgs::msg::Marker>("/obstacles", qos);
+
+  while (rclcpp::ok() && obstacles_pub->get_subscription_count() == 0) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  std::vector<wheeled_humanoid::Obstacle> obstacles = {
+      {{6, -3}, {6, 3}, {8, 3}, {8, -3}}};
+  robot_.rrt.set_obstacles(obstacles);
+
+  visualization_msgs::msg::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = get_clock()->now();
+  marker.ns = "wheeled_humanoid";
+  marker.id = 0;
+  marker.type = visualization_msgs::msg::Marker::CUBE;
+  marker.action = visualization_msgs::msg::Marker::ADD;
+  marker.pose.position.x = 7.0;
+  marker.pose.position.y = 0.0;
+  marker.pose.position.z = 2.5;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 2.0;
+  marker.scale.y = 6.0;
+  marker.scale.z = 5.0;
+  marker.color.r = 0.5f;
+  marker.color.g = 0.5f;
+  marker.color.b = 0.5f;
+  marker.color.a = 0.8f;
+  marker.lifetime = rclcpp::Duration::from_seconds(0.0); // 0 = forever
+
+  obstacles_pub->publish(marker);
 }
 
 void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
@@ -173,8 +212,8 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
   const auto goal = goal_handle->get_goal();
   auto result = std::make_shared<MoveBaseAction::Result>();
 
-  double x = ((double)std::rand() / RAND_MAX) * 10 - 5;
-  double y = ((double)std::rand() / RAND_MAX) * 10 - 5;
+  double x = ((double)std::rand() / RAND_MAX) * 3 + 10;
+  double y = ((double)std::rand() / RAND_MAX) * 6 - 3;
   wheeled_humanoid::Pose2D goal_pose{x, y};
   RCLCPP_INFO(get_logger(), "Moving to %f, %f", goal_pose.x, goal_pose.y);
 

@@ -9,6 +9,7 @@ set(PACKAGE_DEPENDENCIES
   sensor_msgs
   std_msgs
   tf2_ros
+  visualization_msgs
   wheeled_humanoid
   wheeled_humanoid_msgs
 )

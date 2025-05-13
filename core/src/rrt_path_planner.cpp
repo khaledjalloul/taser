@@ -224,10 +224,10 @@ VelocityProfile RRTPathPlanner::get_velocity_profile(const Path &path) const {
 Dimensions RRTPathPlanner::get_dimensions(const Pose2D &start,
                                           const Pose2D &goal) const {
   Dimensions dim;
-  dim.x_min = std::min(start.x, goal.x) - 2;
-  dim.x_max = std::max(start.x, goal.x) + 2;
-  dim.y_min = std::min(start.y, goal.y) - 2;
-  dim.y_max = std::max(start.y, goal.y) + 2;
+  dim.x_min = std::min({start.x, start.y, goal.x, goal.y}) - 2;
+  dim.x_max = std::max({start.x, start.y, goal.x, goal.y}) + 2;
+  dim.y_min = std::min({start.x, start.y, goal.x, goal.y}) - 2;
+  dim.y_max = std::max({start.x, start.y, goal.x, goal.y}) + 2;
   return dim;
 }
 

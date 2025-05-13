@@ -51,8 +51,8 @@ public:
 
   // L = 2.25, obtained using transform from left wheel to right wheel
   BaseKinematics base{2.25, 0.5, dt};
-  BaseController base_controller{dt};
-  RRTPathPlanner rrt_{100, dt, 2.25};
+  BaseController base_controller{dt, 30};
+  RRTPathPlanner rrt{200, dt, 2.25};
 };
 
 } // namespace wheeled_humanoid
