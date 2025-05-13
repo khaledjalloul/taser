@@ -19,12 +19,6 @@ public:
   BaseKinematics(double L, double wheel_radius, double dt);
 
   /**
-   * Set the distance between the wheels
-   * @param L Distance between the wheels
-   */
-  void set_L(double L) { L_ = L; }
-
-  /**
    * Set the base velocity which internally updates the wheel velocities
    * @param v Linear velocity
    * @param omega Angular velocity

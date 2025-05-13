@@ -42,7 +42,6 @@ PYBIND11_MODULE(wheeled_humanoid_py, m) {
   py::class_<BaseKinematics>(m, "BaseKinematics")
       .def(py::init<double, double, double>(), py::arg("L"),
            py::arg("wheel_radius"), py::arg("dt"))
-      .def("set_L", &BaseKinematics::set_L, py::arg("L"))
       .def("set_base_velocity", &BaseKinematics::set_base_velocity,
            py::arg("v"), py::arg("omega"))
       .def("set_wheel_velocities", &BaseKinematics::set_wheel_velocities,
@@ -60,7 +59,8 @@ PYBIND11_MODULE(wheeled_humanoid_py, m) {
 
   // RRT* Path Planner
   py::class_<RRTPathPlanner>(m, "RRTPathPlanner")
-      .def(py::init<int, double>(), py::arg("num_samples"), py::arg("dt"))
+      .def(py::init<int, double, double>(), py::arg("num_samples"),
+           py::arg("dt"), py::arg("L"))
       .def("set_obstacles", &RRTPathPlanner::set_obstacles,
            py::arg("obstacles"))
       .def("generate_path", &RRTPathPlanner::generate_path, py::arg("start"),

@@ -4,6 +4,7 @@ project(wheeled_humanoid)
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES
   ament_cmake
+  Clipper2
   Eigen3
   osqp
   OsqpEigen
@@ -29,6 +30,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 ament_target_dependencies(${PROJECT_NAME} ${PACKAGE_DEPENDENCIES})
 target_link_libraries(${PROJECT_NAME}
+  Clipper2::Clipper2
   Eigen3::Eigen
   osqp::osqp
   OsqpEigen::OsqpEigen

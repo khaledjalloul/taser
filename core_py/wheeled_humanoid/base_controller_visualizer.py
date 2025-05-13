@@ -18,17 +18,17 @@ omega_max = 2.0
 
 base = BaseKinematics(L, wheel_radius, dt)
 controller = BaseController(dt, N, v_max, omega_max)
+rrt = RRTPathPlanner(RRT_NUM_SAMPLES, dt, L)
 
-start = Pose2D(0, 0, np.random.uniform(0, 2 * math.pi))
+start = Pose2D(0, 0, -math.pi / 4)
 goal = Pose2D(3, 3, math.pi / 4)
 base.pose = start
 
-rrt = RRTPathPlanner(RRT_NUM_SAMPLES, dt)
 obstacles = [
-    [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2), Pose2D(2, 1)],
+    [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2), Pose2D(2, 1), Pose2D(1, 0.5)],
     [Pose2D(3, 1), Pose2D(3, 2), Pose2D(4, 2), Pose2D(4, 1)]
 ]
-rrt.set_obstacles(obstacles)
+inflated_obstacles = rrt.set_obstacles(obstacles)
 
 for _ in range(50):
     if np.sqrt((base.pose.x - goal.x) ** 2 + (base.pose.y - goal.y) ** 2) < 0.1:
@@ -42,6 +42,13 @@ for _ in range(50):
     plt.grid()
     plt.xlim(-1, 4)
     plt.ylim(-1, 4)
+    ax = plt.gca()
+    ax.set_aspect('equal', adjustable='box')
+
+    for obstacle in inflated_obstacles:
+        x = [vertex.x for vertex in obstacle]
+        y = [vertex.y for vertex in obstacle]
+        plt.fill(x, y, color="pink", alpha=0.5)
 
     for obstacle in obstacles:
         x = [vertex.x for vertex in obstacle]
@@ -55,7 +62,8 @@ for _ in range(50):
             marker="o", color="blue", linewidth=0.5, markersize=3)
 
     plt.scatter(start.x, start.y, marker="o", color="green")
-    plt.scatter(base.pose.x, base.pose.y, marker="o", color="purple")
+    ax.add_patch(plt.Circle((base.pose.x, base.pose.y),
+                 L / 2, fill=False, color='purple'))
     plt.scatter(goal.x, goal.y, marker="o", color="orange")
 
     plt.ginput(1, timeout=0.1)

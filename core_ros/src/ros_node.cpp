@@ -57,15 +57,6 @@ RosNode::RosNode(std::string name)
         std::thread{execute_in_thread}.detach();
       });
 
-  rclcpp::Rate r(10);
-  double L = 0, W = 0;
-  while (rclcpp::ok() && !L && !W) {
-    L = get_transform("wheel_2", "wheel_1").translation[1];
-    W = get_transform("wheel_1", "wheel_3").translation[0];
-    r.sleep();
-  }
-  robot_.base.set_L(L);
-
   RCLCPP_INFO(get_logger(), "Node started.");
 }
 

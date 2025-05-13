@@ -22,6 +22,19 @@ BaseController::BaseController(double dt, int N, double v_max, double omega_max)
 
 BaseVelocity BaseController::step(const Pose2D &x0, const Path &x_ref,
                                   const VelocityProfile &u_ref) {
+  if (x_ref.size() < N) {
+    std::cerr << "Cannot step base MPC controller, reference path x_ref has "
+                 "less than N elements."
+              << std::endl;
+    return BaseVelocity();
+  }
+  if (u_ref.size() < N) {
+    std::cerr << "Cannot step base MPC controller, reference velocity profile "
+                 "u_ref has less than N elements."
+              << std::endl;
+    return BaseVelocity();
+  }
+
   set_up_QP_(x0, x_ref, u_ref);
 
   auto status = solver_.solveProblem();

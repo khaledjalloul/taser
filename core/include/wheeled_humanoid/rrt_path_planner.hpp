@@ -17,14 +17,17 @@ public:
   /**
    * @param num_samples Number of samples to generate when searching for a path
    * @param dt Time step
+   * @param L Distance between the robot wheels
    */
-  RRTPathPlanner(int num_samples, double dt);
+  RRTPathPlanner(int num_samples, double dt, double L);
 
   /**
-   * Set the obstacles in the environment
+   * Set the obstacles in the environment and inflate them based on the distance
+   * between the robot wheels
    * @param obstacles List of obstacles
+   * @return Inflated obstacles (Also stored in a member variable)
    */
-  void set_obstacles(const std::vector<Obstacle> obstacles);
+  std::vector<Obstacle> set_obstacles(const std::vector<Obstacle> obstacles);
 
   /**
    * Generate a path (vector of poses) from start to goal pose
@@ -111,8 +114,8 @@ public:
 
 private:
   int num_samples_;
-  double dt_;
-  std::vector<Obstacle> obstacles_;
+  double dt_, L_;
+  std::vector<Obstacle> obstacles_, inflated_obstacles_;
 };
 
 } // namespace wheeled_humanoid

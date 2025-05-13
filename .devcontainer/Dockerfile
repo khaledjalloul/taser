@@ -53,7 +53,7 @@ RUN apt update
 RUN mkdir -p /etc/ros/rosdep/sources.list.d && echo "yaml file:///workspace/colcon_ws/src/rosdep.yaml" | tee /etc/ros/rosdep/sources.list.d/1-custom-deps.list
 RUN rosdep init
 
-# Install Osqp and OsqpEigen
+# Install Osqp, OsqpEigen, and Clipper2
 WORKDIR /tmp
 RUN git clone --recursive --branch v0.6.3 https://github.com/osqp/osqp
 RUN mkdir -p osqp/build
@@ -65,6 +65,10 @@ RUN mkdir -p osqp-eigen/build
 RUN cd osqp-eigen/build && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
 RUN cd osqp-eigen/build && make && make install
 ENV OsqpEigen_DIR=/usr
+
+RUN git clone https://github.com/AngusJohnson/Clipper2.git
+RUN mkdir -p Clipper2/CPP/build
+RUN cd Clipper2/CPP/build && cmake .. && make && make install
 
 # Install rosdep dependencies to cache them in the image
 RUN apt install -y \

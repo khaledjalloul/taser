@@ -1,14 +1,40 @@
 #include "wheeled_humanoid/rrt_path_planner.hpp"
 
+#include <clipper2/clipper.h>
+
 #include <iostream>
 
 namespace wheeled_humanoid {
 
-RRTPathPlanner::RRTPathPlanner(int num_samples, double dt)
-    : num_samples_(num_samples), dt_(dt) {}
+RRTPathPlanner::RRTPathPlanner(int num_samples, double dt, double L)
+    : num_samples_(num_samples), dt_(dt), L_(L) {}
 
-void RRTPathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
+std::vector<Obstacle>
+RRTPathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
   obstacles_ = obstacles;
+  inflated_obstacles_.clear();
+
+  for (const auto &obstacle : obstacles) {
+    Clipper2Lib::PathD original, inflated;
+
+    for (const auto &vertex : obstacle) {
+      original.push_back(Clipper2Lib::PointD({vertex.x, vertex.y}));
+    }
+
+    inflated = Clipper2Lib::InflatePaths(
+                   Clipper2Lib::PathsD{original}, (L_ / 2) * 1.2,
+                   Clipper2Lib::JoinType::Miter, Clipper2Lib::EndType::Polygon)
+                   .front();
+
+    Obstacle inflated_obstacle;
+    for (const auto &vertex : inflated) {
+      inflated_obstacle.push_back(Pose2D{vertex.x, vertex.y});
+    }
+
+    inflated_obstacles_.push_back(inflated_obstacle);
+  }
+
+  return inflated_obstacles_;
 }
 
 Path RRTPathPlanner::generate_path(const Pose2D &start,
@@ -130,6 +156,12 @@ RRTPathPlanner::sample_new_point(std::vector<Pose2D> &points,
 
 Path RRTPathPlanner::interpolate_path(const Path &path,
                                       int desired_n_points) const {
+  if (path.empty()) {
+    std::cerr << "Cannot interpolate path, original path is empty."
+              << std::endl;
+    return Path();
+  }
+
   int n_points = path.size();
 
   Path new_path;
@@ -166,6 +198,11 @@ Path RRTPathPlanner::interpolate_path(const Path &path,
 }
 
 VelocityProfile RRTPathPlanner::get_velocity_profile(const Path &path) const {
+  if (path.empty()) {
+    std::cerr << "Cannot get velocity profile, path is empty." << std::endl;
+    return VelocityProfile();
+  }
+
   VelocityProfile velocity_profile;
 
   for (int i = 0; i < path.size() - 1; i++) {
@@ -251,7 +288,7 @@ bool RRTPathPlanner::check_line_collision(const Pose2D &a,
            q.y <= std::max(p.y, r.y) && q.y >= std::min(p.y, r.y);
   };
 
-  for (auto obstacle : obstacles_) {
+  for (auto obstacle : inflated_obstacles_) {
     for (int v_idx = 0; v_idx < obstacle.size(); v_idx++) {
       auto v2_idx = v_idx < obstacle.size() - 1 ? v_idx + 1 : 0;
 

@@ -8,7 +8,7 @@ protected:
 
   void TearDown() override {}
 
-  wheeled_humanoid::RRTPathPlanner rrt_{200, 0.1};
+  wheeled_humanoid::RRTPathPlanner rrt_{200, 0.1, 0.5};
 };
 
 TEST_F(RRTPathPlannerTest, check_collision) {

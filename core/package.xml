@@ -11,7 +11,10 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>Clipper2</depend>
   <depend>Eigen3</depend>
+  <depend>osqp</depend>
+  <depend>OsqpEigen</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
 
