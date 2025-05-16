@@ -11,13 +11,12 @@ class StateMachine {
 public:
   StateMachine(std::shared_ptr<RosNode> ros_node);
 
-  std::string set_state(StateType desired_state);
+  std::string set_states(SetStatesMsg::Request::SharedPtr req);
 
   void update();
 
 private:
-  StateType state_;
-  std::unique_ptr<State> state_obj_;
+  StatePtr state_;
   std::shared_ptr<RosNode> ros_node_;
   std::mutex set_state_mutex_;
 };

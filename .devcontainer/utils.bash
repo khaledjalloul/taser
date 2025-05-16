@@ -1,7 +1,7 @@
-state() {
-	local state="$1"
+states() {
+	local states="$1"
 
-	ros2 service call /state_machine/set_state wheeled_humanoid_msgs/srv/SetState "{state: ${state}}"
+	ros2 service call /state_machine/set_states wheeled_humanoid_msgs/srv/SetStates "{states: ${states}}"
 }
 
 build() {

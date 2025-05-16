@@ -8,18 +8,24 @@
 
 namespace state_machine {
 
+class State;
+using StatePtr = std::unique_ptr<State>;
+
 class State {
 public:
   State(std::shared_ptr<RosNode> ros_node, const std::string &name)
-      : ros_node_(ros_node), name_(name) {
-    RCLCPP_INFO(ros_node->get_logger(), "Reached state %s.", name.c_str());
-  }
+      : ros_node_(ros_node), name(name) {}
 
-  virtual StateType update() const = 0;
+  virtual void enter() = 0;
+
+  virtual Status update() const = 0;
+
+  const std::string name;
+  StatePtr on_success = nullptr;
+  StatePtr on_failure = nullptr;
 
 protected:
   std::shared_ptr<RosNode> ros_node_;
-  const std::string name_;
 };
 
 } // namespace state_machine

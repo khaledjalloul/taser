@@ -1,5 +1,5 @@
 # Request
-int8 state
+int8[] states
 ---
 # Response
 string data

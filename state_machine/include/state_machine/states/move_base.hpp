@@ -6,15 +6,15 @@ namespace state_machine {
 
 class MoveBase : public State {
 public:
-  MoveBase(std::shared_ptr<RosNode> ros_node);
+  MoveBase(std::shared_ptr<RosNode> ros_node) : State(ros_node, "MOVE_BASE") {}
 
-  void publish_goal(StateType desired_next_state);
+  void enter() override;
 
-  StateType update() const override;
+  Status update() const override;
 
 private:
   MoveBaseAction::Goal goal_;
-  StateType next_state_ = StateType::IDLE;
+  Status status_ = Status::RUNNING;
 };
 
 } // namespace state_machine

@@ -6,19 +6,16 @@ namespace state_machine {
 
 class MoveArms : public State {
 public:
-  MoveArms(std::shared_ptr<RosNode> ros_node, StateType state,
-           const std::string &name)
-      : State(ros_node, name), next_state_(state) {}
+  MoveArms(std::shared_ptr<RosNode> ros_node, const std::string &name)
+      : State(ros_node, name) {}
 
-  StateType update() const override;
+  void enter() override;
 
-  void publish_goal(StateType desired_next_state);
+  Status update() const override;
 
 protected:
   MoveArmsAction::Goal goal_;
-
-private:
-  StateType next_state_;
+  Status status_ = Status::RUNNING;
 };
 
 class RestArms : public MoveArms {
@@ -38,8 +35,7 @@ public:
 
 class Wave : public MoveArms {
 public:
-  Wave(std::shared_ptr<RosNode> ros_node)
-      : MoveArms(ros_node, StateType::WAVE, "WAVE") {}
+  Wave(std::shared_ptr<RosNode> ros_node) : MoveArms(ros_node, "WAVE") {}
 };
 
 } // namespace state_machine

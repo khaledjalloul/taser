@@ -5,7 +5,7 @@
 
 #include <wheeled_humanoid_msgs/action/move_arms.hpp>
 #include <wheeled_humanoid_msgs/action/move_base.hpp>
-#include <wheeled_humanoid_msgs/srv/set_state.hpp>
+#include <wheeled_humanoid_msgs/srv/set_states.hpp>
 
 #include "state_machine/types.hpp"
 
@@ -15,27 +15,25 @@ using MoveArmsAction = wheeled_humanoid_msgs::action::MoveArms;
 using MoveArmsGoalHandle = rclcpp_action::ClientGoalHandle<MoveArmsAction>;
 using MoveBaseAction = wheeled_humanoid_msgs::action::MoveBase;
 using MoveBaseGoalHandle = rclcpp_action::ClientGoalHandle<MoveBaseAction>;
-using SetStateMsg = wheeled_humanoid_msgs::srv::SetState;
+using SetStatesMsg = wheeled_humanoid_msgs::srv::SetStates;
 
 class RosNode : public rclcpp::Node {
 public:
   RosNode(std::string name);
   ~RosNode();
 
-  void create_set_state_service(
-      std::function<void(int state, std::string &state_name_res)> callback);
+  void create_set_states_service(
+      std::function<void(SetStatesMsg::Request::SharedPtr,
+                         SetStatesMsg::Response::SharedPtr)>
+          callback);
 
-  void send_move_arms_action(
-      MoveArmsAction::Goal goal,
-      std::function<void(std::optional<StateType>)> done_cb) const;
+  void send_move_arms_action(MoveArmsAction::Goal goal, Status &status) const;
 
-  void send_move_base_action(
-      MoveBaseAction::Goal goal,
-      std::function<void(std::optional<StateType>)> done_cb) const;
+  void send_move_base_action(MoveBaseAction::Goal goal, Status &status) const;
 
 private:
   // Service to set the state of the state machine
-  rclcpp::Service<SetStateMsg>::SharedPtr set_state_srv_;
+  rclcpp::Service<SetStatesMsg>::SharedPtr set_states_srv_;
 
   // Action client to move the arms
   rclcpp_action::Client<MoveArmsAction>::SharedPtr arms_action_client_;

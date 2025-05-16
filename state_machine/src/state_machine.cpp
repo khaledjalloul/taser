@@ -6,50 +6,91 @@
 
 namespace state_machine {
 
+// TODO: Handle state inputs (target position)
 StateMachine::StateMachine(std::shared_ptr<RosNode> ros_node)
-    : ros_node_(ros_node), state_{StateType::IDLE},
-      state_obj_(new Idle(ros_node)) {
+    : ros_node_(ros_node) {
 
-  ros_node->create_set_state_service([this](int state, std::string &res) {
-    set_state_mutex_.lock();
-    res = set_state(static_cast<StateType>(state));
-    set_state_mutex_.unlock();
-  });
+  ros_node->create_set_states_service(
+      [this](SetStatesMsg::Request::SharedPtr req,
+             SetStatesMsg::Response::SharedPtr res) {
+        set_state_mutex_.lock();
+        res->data = set_states(req);
+        set_state_mutex_.unlock();
+      });
 }
 
-std::string StateMachine::set_state(StateType next_state) {
-  if (next_state == state_)
-    return "State is already active";
+std::string StateMachine::set_states(SetStatesMsg::Request::SharedPtr req) {
+  if (req->states.empty())
+    return "No states provided";
 
-  auto old_state = state_;
-  state_ = next_state;
+  StatePtr first_state = nullptr;
+  for (int i = req->states.size() - 1; i >= 0; i--) {
+    auto state_type = req->states[i];
+    StatePtr new_state;
 
-  switch (next_state) {
-  case StateType::IDLE:
-    state_obj_.reset(new Idle(ros_node_));
-    return "State set to IDLE";
-  case StateType::MOVE_BASE:
-    state_obj_.reset(new MoveBase(ros_node_));
-    return "State set to MOVE_BASE";
-  case StateType::REST_ARMS:
-    state_obj_.reset(new RestArms(ros_node_));
-    return "State set to REST_ARMS";
-  case StateType::GRAB:
-    state_obj_.reset(new Grab(ros_node_));
-    return "State set to GRAB";
-  case StateType::LIFT:
-    state_obj_.reset(new Lift(ros_node_));
-    return "State set to LIFT";
-  default:
-    state_ = old_state;
-    return "Invalid state";
+    switch (state_type) {
+    case StateType::IDLE:
+      new_state = std::make_unique<Idle>(ros_node_);
+      break;
+    case StateType::MOVE_BASE:
+      new_state = std::make_unique<MoveBase>(ros_node_);
+      break;
+    case StateType::REST_ARMS:
+      new_state = std::make_unique<RestArms>(ros_node_);
+      break;
+    case StateType::GRAB:
+      new_state = std::make_unique<Grab>(ros_node_);
+      break;
+    case StateType::LIFT:
+      new_state = std::make_unique<Lift>(ros_node_);
+      break;
+    default:
+      return "Invalid state: " + state_type;
+    }
+
+    new_state->on_success = std::move(first_state);
+    first_state = std::move(new_state);
   }
+
+  state_ = std::move(first_state);
+  RCLCPP_INFO(ros_node_->get_logger(), "Reached state %s.",
+              state_->name.c_str());
+  state_->enter();
+
+  return "Created state(s)";
 }
 
 void StateMachine::update() {
+  if (!state_)
+    return;
+
+  // Lock mutex to avoid executing and setting states at the same time
   set_state_mutex_.lock();
-  auto next_state = state_obj_->update();
-  (void)set_state(next_state);
+
+  auto status = state_->update();
+
+  // Do nothing if current state is running
+  if (status == Status::RUNNING)
+    return;
+
+  if (status == Status::SUCCESS) {
+    RCLCPP_INFO(ros_node_->get_logger(), "Finished state %s.",
+                state_->name.c_str());
+    state_ = std::move(state_->on_success);
+  }
+
+  if (status == Status::FAILURE) {
+    RCLCPP_INFO(ros_node_->get_logger(), "Failed state %s.",
+                state_->name.c_str());
+    state_ = std::move(state_->on_failure);
+  }
+
+  if (state_) {
+    RCLCPP_INFO(ros_node_->get_logger(), "Reached state %s.",
+                state_->name.c_str());
+    state_->enter();
+  }
+
   set_state_mutex_.unlock();
 }
 
