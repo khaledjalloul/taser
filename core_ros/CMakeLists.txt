@@ -8,6 +8,7 @@ set(PACKAGE_DEPENDENCIES
   rclcpp_action
   sensor_msgs
   std_msgs
+  std_srvs
   tf2_ros
   visualization_msgs
   wheeled_humanoid

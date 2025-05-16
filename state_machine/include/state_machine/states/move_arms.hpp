@@ -11,7 +11,7 @@ public:
 
   void enter() override;
 
-  Status update() const override;
+  Status update() override;
 
 protected:
   MoveArmsAction::Goal goal_;

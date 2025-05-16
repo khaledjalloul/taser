@@ -3,6 +3,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 
+#include <visualization_msgs/msg/marker.hpp>
 #include <wheeled_humanoid_msgs/action/move_arms.hpp>
 #include <wheeled_humanoid_msgs/action/move_base.hpp>
 #include <wheeled_humanoid_msgs/srv/set_states.hpp>
@@ -11,6 +12,7 @@
 
 namespace state_machine {
 
+using Marker = visualization_msgs::msg::Marker;
 using MoveArmsAction = wheeled_humanoid_msgs::action::MoveArms;
 using MoveArmsGoalHandle = rclcpp_action::ClientGoalHandle<MoveArmsAction>;
 using MoveBaseAction = wheeled_humanoid_msgs::action::MoveBase;
@@ -31,9 +33,14 @@ public:
 
   void send_move_base_action(MoveBaseAction::Goal goal, Status &status) const;
 
+  std::vector<Marker> targets;
+
 private:
   // Service to set the state of the state machine
   rclcpp::Service<SetStatesMsg>::SharedPtr set_states_srv_;
+
+  // Subscription to target markers
+  rclcpp::Subscription<Marker>::SharedPtr target_sub_;
 
   // Action client to move the arms
   rclcpp_action::Client<MoveArmsAction>::SharedPtr arms_action_client_;

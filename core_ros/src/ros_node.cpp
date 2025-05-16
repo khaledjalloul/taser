@@ -1,7 +1,6 @@
 #include "wheeled_humanoid_ros/ros_node.hpp"
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
-#include <visualization_msgs/msg/marker.hpp>
 
 namespace wheeled_humanoid_ros {
 
@@ -58,6 +57,16 @@ RosNode::RosNode(std::string name)
         std::thread{execute_in_thread}.detach();
       });
 
+  auto qos = rclcpp::QoS(10).transient_local();
+  targets_pub_ = create_publisher<Marker>("/targets", qos);
+
+  spawn_target_srv_ = create_service<std_srvs::srv::Trigger>(
+      "/spawn_random_target",
+      [this](const std_srvs::srv::Trigger::Request::SharedPtr /*req*/,
+             const std_srvs::srv::Trigger::Response::SharedPtr /*res*/) {
+        spawn_random_target();
+      });
+
   RCLCPP_INFO(get_logger(), "Node started.");
 
   spawn_obstacles();
@@ -103,8 +112,7 @@ void RosNode::publish_transform(const TransformMsg &tf) const {
 
 void RosNode::spawn_obstacles() {
   auto qos = rclcpp::QoS(10).transient_local();
-  auto obstacles_pub =
-      create_publisher<visualization_msgs::msg::Marker>("/obstacles", qos);
+  auto obstacles_pub = create_publisher<Marker>("/obstacles", qos);
 
   while (rclcpp::ok() && obstacles_pub->get_subscription_count() == 0) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -114,13 +122,13 @@ void RosNode::spawn_obstacles() {
       {{6, -3}, {6, 3}, {8, 3}, {8, -3}}};
   robot_.rrt.set_obstacles(obstacles);
 
-  visualization_msgs::msg::Marker marker;
+  Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = get_clock()->now();
   marker.ns = "wheeled_humanoid";
   marker.id = 0;
-  marker.type = visualization_msgs::msg::Marker::CUBE;
-  marker.action = visualization_msgs::msg::Marker::ADD;
+  marker.type = Marker::CUBE;
+  marker.action = Marker::ADD;
   marker.pose.position.x = 7.0;
   marker.pose.position.y = 0.0;
   marker.pose.position.z = 2.5;
@@ -135,6 +143,33 @@ void RosNode::spawn_obstacles() {
   marker.lifetime = rclcpp::Duration::from_seconds(0.0); // 0 = forever
 
   obstacles_pub->publish(marker);
+}
+
+void RosNode::spawn_random_target() {
+  double x = ((double)std::rand() / RAND_MAX) * 3 + 10;
+  double y = ((double)std::rand() / RAND_MAX) * 6 - 3;
+
+  Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = get_clock()->now();
+  marker.ns = "wheeled_humanoid";
+  marker.id = num_spawned_targets_++;
+  marker.type = Marker::CUBE;
+  marker.action = Marker::ADD;
+  marker.pose.position.x = x;
+  marker.pose.position.y = y;
+  marker.pose.position.z = 0.5;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 1.0;
+  marker.scale.y = 1.0;
+  marker.scale.z = 1.0;
+  marker.color.r = 0.0f;
+  marker.color.g = 1.0f;
+  marker.color.b = 0.0f;
+  marker.color.a = 1.0f;
+  marker.lifetime = rclcpp::Duration::from_seconds(20);
+
+  targets_pub_->publish(marker);
 }
 
 void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
@@ -210,12 +245,8 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
 
   rclcpp::Rate r(10);
   const auto goal = goal_handle->get_goal();
+  wheeled_humanoid::Pose2D goal_pose{goal->x, goal->y};
   auto result = std::make_shared<MoveBaseAction::Result>();
-
-  double x = ((double)std::rand() / RAND_MAX) * 3 + 10;
-  double y = ((double)std::rand() / RAND_MAX) * 6 - 3;
-  wheeled_humanoid::Pose2D goal_pose{x, y};
-  RCLCPP_INFO(get_logger(), "Moving to %f, %f", goal_pose.x, goal_pose.y);
 
   while (rclcpp::ok()) {
     if (goal_handle->is_canceling()) {
@@ -230,9 +261,18 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
     auto v_r = std::get<1>(res);
     auto err = std::get<2>(res);
 
-    if (err < 0.1) {
-      RCLCPP_INFO(get_logger(), "Reached goal at %f, %f", robot_.base.pose.x,
-                  robot_.base.pose.y);
+    // 1.5 units away from the target to pick it up
+    if (err < 1.5) {
+      if (err == -1) {
+        RCLCPP_INFO(get_logger(), "Base movement aborted early at %f, %f",
+                    robot_.base.pose.x, robot_.base.pose.y);
+        goal_handle->abort(result);
+      } else {
+        RCLCPP_INFO(get_logger(), "Reached goal at %f, %f", robot_.base.pose.x,
+                    robot_.base.pose.y);
+        goal_handle->succeed(result);
+      }
+
       // Stop base movement by publishing zero velocities
       std_msgs::msg::Float64MultiArray zero_vel_msg;
       zero_vel_msg.data.resize(2);
@@ -247,8 +287,6 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
 
     r.sleep();
   }
-
-  goal_handle->succeed(result);
 }
 
 double RosNode::move_base_step(

@@ -4,7 +4,7 @@ namespace state_machine {
 
 void MoveArms::enter() { ros_node_->send_move_arms_action(goal_, status_); }
 
-Status MoveArms::update() const { return status_; }
+Status MoveArms::update() { return status_; }
 
 RestArms::RestArms(std::shared_ptr<RosNode> ros_node)
     : MoveArms(ros_node, "REST_ARMS") {

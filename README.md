@@ -22,7 +22,7 @@
 - core_ros (wheeled_humanoid_ros): ROS interface, URDF, Rviz, launch files
 - isaaclab: Isaac Lab environment for RL training
 - msgs (wheeled_humanoid_msgs): Custom ROS messages
-- state_machine (wheeled_humanoid_state_machine): States and missions
+- state_machine (state_machine): States and missions
 
 
 ## To Do
@@ -39,7 +39,7 @@
 - [x] Improve base controller to be more robust
 - [x] Start with Isaac Lab environment
 - [x] Inflate RRT* obstacles and test in simulation
-- [ ] Create missions for the robot to go to a location and pick up object
+- [x] Create mission for the robot to go to a location and pick up object
 - [ ] Add path planning to the arms to avoid obstacles or train with RL
 - [ ] Improve RRT* to use Dubins paths
 - [ ] Enable gravity and train robot to stay in balance

@@ -37,11 +37,12 @@ RUN echo 'export PYTHONPATH=$PYTHONPATH:/home/vscode/venv/lib/python3.12/site-pa
 
 # Install Python packages
 RUN /home/vscode/venv/bin/pip install --no-input \
+    catkin_pkg \
     cvxpy \
+    empy \
+    lark \
     matplotlib \
-    numpy \
-    # TODO: Find out why
-    catkin_pkg
+    numpy
 
 USER root
 
@@ -155,11 +156,12 @@ USER vscode
 
 # Install Python packages
 RUN /home/vscode/venv/bin/pip install --no-input \
+    catkin_pkg \
     cvxpy \
+    empy \
+    lark \
     matplotlib \
-    numpy \
-    # TODO: Find out why
-    catkin_pkg
+    numpy
 
 ########################################
 

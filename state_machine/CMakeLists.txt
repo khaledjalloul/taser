@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(wheeled_humanoid_state_machine)
+project(state_machine)
 
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES
@@ -7,6 +7,8 @@ set(PACKAGE_DEPENDENCIES
   rclcpp
   rclcpp_action
   std_srvs
+  visualization_msgs
+  wheeled_humanoid
   wheeled_humanoid_msgs
 )
 
@@ -19,6 +21,7 @@ endforeach()
 add_library(${PROJECT_NAME} SHARED
   src/ros_node.cpp
   src/state_machine.cpp
+  src/states/idle.cpp
   src/states/move_arms.cpp
   src/states/move_base.cpp
 )

@@ -18,7 +18,7 @@ public:
 
   virtual void enter() = 0;
 
-  virtual Status update() const = 0;
+  virtual Status update() = 0;
 
   const std::string name;
   StatePtr on_success = nullptr;

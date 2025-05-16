@@ -1,6 +1,7 @@
-# Goal: Desired position
-geometry_msgs/Vector3 position
-geometry_msgs/Quaternion orientation
+# Goal: Desired pose
+float64 x
+float64 y
+float64 theta
 ---
 # Result
 ---

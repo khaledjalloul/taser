@@ -6,7 +6,6 @@
 
 namespace state_machine {
 
-// TODO: Handle state inputs (target position)
 StateMachine::StateMachine(std::shared_ptr<RosNode> ros_node)
     : ros_node_(ros_node) {
 
@@ -17,6 +16,9 @@ StateMachine::StateMachine(std::shared_ptr<RosNode> ros_node)
         res->data = set_states(req);
         set_state_mutex_.unlock();
       });
+
+  state_ = std::make_unique<Idle>(ros_node_);
+  state_->enter();
 }
 
 std::string StateMachine::set_states(SetStatesMsg::Request::SharedPtr req) {
@@ -61,17 +63,16 @@ std::string StateMachine::set_states(SetStatesMsg::Request::SharedPtr req) {
 }
 
 void StateMachine::update() {
-  if (!state_)
-    return;
-
   // Lock mutex to avoid executing and setting states at the same time
   set_state_mutex_.lock();
 
   auto status = state_->update();
 
   // Do nothing if current state is running
-  if (status == Status::RUNNING)
+  if (status == Status::RUNNING) {
+    set_state_mutex_.unlock();
     return;
+  }
 
   if (status == Status::SUCCESS) {
     RCLCPP_INFO(ros_node_->get_logger(), "Finished state %s.",
@@ -85,11 +86,12 @@ void StateMachine::update() {
     state_ = std::move(state_->on_failure);
   }
 
-  if (state_) {
-    RCLCPP_INFO(ros_node_->get_logger(), "Reached state %s.",
-                state_->name.c_str());
-    state_->enter();
-  }
+  if (!state_)
+    state_ = std::make_unique<Idle>(ros_node_);
+
+  RCLCPP_INFO(ros_node_->get_logger(), "Reached state %s.",
+              state_->name.c_str());
+  state_->enter();
 
   set_state_mutex_.unlock();
 }

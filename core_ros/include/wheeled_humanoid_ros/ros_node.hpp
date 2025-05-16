@@ -9,6 +9,8 @@
 #include <geometry_msgs/msg/transform.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
+#include <std_srvs/srv/trigger.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 #include <wheeled_humanoid_msgs/action/move_arms.hpp>
 #include <wheeled_humanoid_msgs/action/move_base.hpp>
 
@@ -17,6 +19,7 @@
 namespace wheeled_humanoid_ros {
 
 class RosNode : public rclcpp::Node {
+  using Marker = visualization_msgs::msg::Marker;
   using MoveArmsAction = wheeled_humanoid_msgs::action::MoveArms;
   using MoveArmsGoalHandle = rclcpp_action::ServerGoalHandle<MoveArmsAction>;
   using MoveBaseAction = wheeled_humanoid_msgs::action::MoveBase;
@@ -35,6 +38,8 @@ public:
 
   void spawn_obstacles();
 
+  void spawn_random_target();
+
   void move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle);
   double move_arm_step(std::string name, wheeled_humanoid::Position3D p) const;
 
@@ -47,6 +52,7 @@ public:
 private:
   wheeled_humanoid::Robot robot_;
   double callback_time_ = -1;
+  int num_spawned_targets_ = 0;
 
   // Transform listener and broadcaster
   tf2_ros::Buffer buffer_;
@@ -74,6 +80,12 @@ private:
   // Action Server to receive desired base position
   rclcpp_action::Server<MoveBaseAction>::SharedPtr base_action_server_;
   std::shared_ptr<MoveBaseGoalHandle> base_active_goal_;
+
+  // Publish targets to visualize and follow
+  rclcpp::Publisher<Marker>::SharedPtr targets_pub_;
+
+  // Service to spawn a random target
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr spawn_target_srv_;
 
   // Joint states
   wheeled_humanoid::RobotJointPositions joint_positions_{0, 0, 0, 0, 0,
