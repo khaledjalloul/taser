@@ -1,14 +1,21 @@
 #pragma once
 
+#include <boost/geometry.hpp>
+
 #include "wheeled_humanoid/base/utils.hpp"
 #include "wheeled_humanoid/types.hpp"
 
 namespace wheeled_humanoid::base {
 
+namespace bg = boost::geometry;
+
 /**
  * RRT* path planner
  */
 class PathPlanner {
+  using BoostPolygon = bg::model::polygon<bg::model::d2::point_xy<double>>;
+  using BoostPoint = bg::model::d2::point_xy<double>;
+
 public:
   /**
    * @param num_samples Number of samples to generate when searching for a path
@@ -21,7 +28,7 @@ public:
    * Set the obstacles in the environment and inflate them based on the distance
    * between the robot wheels
    * @param obstacles List of obstacles
-   * @return Inflated obstacles (Also stored in a member variable)
+   * @return Inflated obstacles (using custom Obstacle type instead of Boost)
    */
   std::vector<Obstacle> set_obstacles(const std::vector<Obstacle> obstacles);
 
@@ -65,6 +72,13 @@ public:
   VelocityProfile get_velocity_profile(const Path &path) const;
 
   /**
+   * Check if a dubins segment collides with any obstacles in the environment
+   * @param segment Dubins segment
+   * @return True if there is a collision, false otherwise
+   */
+  bool check_collision(const DubinsSegment &segment) const;
+
+  /**
    * Create a Halton sample in the environment
    * @param index Index of the sample
    * @param dim Dimensions of the environment
@@ -87,7 +101,7 @@ public:
 private:
   int num_samples_;
   double dt_, L_, dubins_radius_;
-  std::vector<Obstacle> obstacles_, inflated_obstacles_;
+  std::vector<BoostPolygon> obstacles_, inflated_obstacles_;
 };
 
 } // namespace wheeled_humanoid::base

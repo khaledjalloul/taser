@@ -1,9 +1,5 @@
 #include "wheeled_humanoid/base/path_planner.hpp"
 
-#include <clipper2/clipper.h>
-
-#include <iostream>
-
 namespace wheeled_humanoid::base {
 
 PathPlanner::PathPlanner(int num_samples, double dt, double L)
@@ -13,30 +9,43 @@ PathPlanner::PathPlanner(int num_samples, double dt, double L)
 
 std::vector<Obstacle>
 PathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
-  obstacles_ = obstacles;
+  obstacles_.clear();
   inflated_obstacles_.clear();
+  std::vector<Obstacle> inflated_to_returns;
+
+  namespace buffer = bg::strategy::buffer;
+  buffer::distance_symmetric<double> distance_strategy((L_ / 2) * 1.2);
+  buffer::side_straight side_strategy;
+  buffer::join_miter join_strategy;
+  buffer::end_flat end_strategy;
+  buffer::point_circle point_strategy;
 
   for (const auto &obstacle : obstacles) {
-    Clipper2Lib::PathD original, inflated;
+    BoostPolygon original;
+    bg::model::multi_polygon<BoostPolygon> inflated;
+    Obstacle inflated_to_return;
 
-    for (const auto &vertex : obstacle) {
-      original.push_back(Clipper2Lib::PointD({vertex.x, vertex.y}));
+    // Convert from custom Obstacle type to Boost polygon
+    for (const auto &vertex : obstacle)
+      bg::append(original, BoostPoint(vertex.x, vertex.y));
+    bg::append(original, BoostPoint(obstacle.front().x, obstacle.front().y));
+
+    bg::buffer(original, inflated, distance_strategy, side_strategy,
+               join_strategy, end_strategy, point_strategy);
+
+    if (inflated.size() > 0) {
+      // Convert from Boost polygon to custom Obstacle type
+      for (const auto &vertex : inflated[0].outer())
+        inflated_to_return.push_back(
+            Pose2D{bg::get<0>(vertex), bg::get<1>(vertex), 0.0});
+
+      obstacles_.push_back(original);
+      inflated_obstacles_.push_back(inflated[0]);
+      inflated_to_returns.push_back(inflated_to_return);
     }
-
-    inflated = Clipper2Lib::InflatePaths(
-                   Clipper2Lib::PathsD{original}, (L_ / 2) * 1.2,
-                   Clipper2Lib::JoinType::Miter, Clipper2Lib::EndType::Polygon)
-                   .front();
-
-    Obstacle inflated_obstacle;
-    for (const auto &vertex : inflated) {
-      inflated_obstacle.push_back(Pose2D{vertex.x, vertex.y});
-    }
-
-    inflated_obstacles_.push_back(inflated_obstacle);
   }
 
-  return inflated_obstacles_;
+  return inflated_to_returns;
 }
 
 DubinsPath PathPlanner::generate_path(const Pose2D &start,
@@ -70,7 +79,8 @@ DubinsPath PathPlanner::generate_path(const Pose2D &start,
         goal_distances.begin();
     auto nearest = points[nearest_pt_idx];
     auto dubins_seg_to_goal = get_dubins_segment(nearest, goal, dubins_radius_);
-    if (dubins_seg_to_goal.collides_with(inflated_obstacles_)) {
+
+    if (check_collision(dubins_seg_to_goal)) {
       goal_distances[nearest_pt_idx] = std::numeric_limits<double>::max();
       j += 1;
     } else {
@@ -83,7 +93,9 @@ DubinsPath PathPlanner::generate_path(const Pose2D &start,
 
         dubins_path.push_back(path);
         parent_idx = parent_idxs[parent_idx];
+        nearest = parent;
       }
+
       break;
     }
   }
@@ -115,9 +127,8 @@ PathPlanner::sample_new_point(std::vector<Pose2D> &points,
 
     auto dubins_seg = get_dubins_segment(nearest_pt, new_pt, dubins_radius_);
 
-    if (!dubins_seg.collides_with(inflated_obstacles_)) {
+    if (!check_collision(dubins_seg)) {
       auto dist = dubins_seg.length;
-      std::cout << "dist: " << dist << std::endl;
       auto new_dist = dist + distances[nearest_pt_idx];
 
       potential_parents.push_back(nearest_pt_idx);
@@ -136,12 +147,6 @@ PathPlanner::sample_new_point(std::vector<Pose2D> &points,
   auto dubins_seg = potential_dubins_segs[min_idx];
   auto new_dist = potential_distances[min_idx];
   auto new_parent_idx = potential_parents[min_idx];
-
-  std::cout << "x: " << new_pt.x << " y: " << new_pt.y
-            << " th: " << new_pt.theta << std::endl;
-  std::cout << "x: " << dubins_seg.line.end.x << " y: " << dubins_seg.line.end.y
-            << " th: " << dubins_seg.line.end.theta << std::endl;
-  std::cout << "------------" << std::endl;
 
   new_pt.theta = dubins_seg.line.end.theta;
 
@@ -163,7 +168,7 @@ PathPlanner::sample_new_point(std::vector<Pose2D> &points,
     auto nearest_to_new_dist = remaining_dubins_seg.length;
 
     if (new_dist + nearest_to_new_dist < distances[remaining_pt_idx] &&
-        !remaining_dubins_seg.collides_with(inflated_obstacles_)) {
+        !check_collision(remaining_dubins_seg)) {
       points[remaining_pt_idx].theta = remaining_dubins_seg.line.end.theta;
       parent_idxs[remaining_pt_idx] = new_pt_idx;
       distances[remaining_pt_idx] = new_dist + nearest_to_new_dist;
@@ -290,6 +295,19 @@ VelocityProfile PathPlanner::get_velocity_profile(const Path &path) const {
   velocity_profile.push_back(BaseVelocity{0, 0});
 
   return velocity_profile;
+}
+
+bool PathPlanner::check_collision(const DubinsSegment &segment) const {
+  bg::model::linestring<BoostPoint> line;
+  bg::append(line, BoostPoint(segment.line.start.x, segment.line.start.y));
+  bg::append(line, BoostPoint(segment.line.end.x, segment.line.end.y));
+
+  for (const auto &obstacle : inflated_obstacles_) {
+    if (bg::intersects(line, obstacle) || bg::within(line, obstacle))
+      return true;
+  }
+
+  return false;
 }
 
 Pose2D PathPlanner::create_halton_sample(int index,

@@ -7,7 +7,10 @@ from wheeled_humanoid import Pose2D
 from wheeled_humanoid.base import Direction, DubinsSegment, Circle, get_dubins_segment, get_tangent, get_turning_circles
 
 
-def plot_dubins_segment(segment: DubinsSegment, ax: plt.Axes):
+def plot_dubins_segment(segment: DubinsSegment,
+                        ax: plt.Axes,
+                        color: str = "purple",
+                        linewidth: float = 1) -> None:
     arc = segment.arc
     arc_start_theta_vec = (arc.start.x - arc.center.x,
                            arc.start.y - arc.center.y)
@@ -21,19 +24,20 @@ def plot_dubins_segment(segment: DubinsSegment, ax: plt.Axes):
         height=2 * arc.radius,
         width=2 * arc.radius,
         facecolor="none",
-        edgecolor="purple",
+        edgecolor=color,
         theta1=arc_start_theta * 180 / np.pi,
         theta2=(arc_start_theta + arc.arc_angle) * 180 / np.pi,
         angle=arc_rot_angle,
-        zorder=2
+        zorder=2,
+        linewidth=linewidth,
     ))
 
     line = segment.line
     plt.plot(
         [line.start.x, line.end.x],
         [line.start.y, line.end.y],
-        color="purple",
-        linewidth=1
+        color=color,
+        linewidth=linewidth,
     )
 
 

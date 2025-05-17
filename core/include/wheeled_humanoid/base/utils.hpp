@@ -37,13 +37,6 @@ struct Arc {
         radius(radius), arc_angle(arc_angle) {
     length = radius * arc_angle;
   }
-
-  /**
-   * Check for collision with given obstacles
-   * @param obstacles Vector of obstacles in the environment
-   * @return True if there is a collision with any obstacle, false otherwise
-   */
-  bool collides_with(const std::vector<Obstacle> &obstacles) const;
 };
 
 struct Line {
@@ -55,13 +48,6 @@ struct Line {
   Line(const Pose2D &start, const Pose2D &end) : start(start), end(end) {
     length = get_euclidean_distance(start, end);
   }
-
-  /**
-   * Check for collision with given obstacles
-   * @param obstacles Vector of obstacles in the environment
-   * @return True if there is a collision with any obstacle, false otherwise
-   */
-  bool collides_with(const std::vector<Obstacle> &obstacles) const;
 };
 
 struct DubinsSegment {
@@ -73,13 +59,6 @@ struct DubinsSegment {
   DubinsSegment(const Arc &arc, const Line &line) : arc(arc), line(line) {
     length = arc.length + line.length;
   }
-
-  /**
-   * Check for collision with given obstacles
-   * @param obstacles Vector of obstacles in the environment
-   * @return True if there is a collision with any obstacle, false otherwise
-   */
-  bool collides_with(const std::vector<Obstacle> &obstacles) const;
 };
 
 using DubinsPath = std::vector<DubinsSegment>;

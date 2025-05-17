@@ -71,6 +71,8 @@ PYBIND11_MODULE(wheeled_humanoid_py, m) {
            py::arg("path"), py::arg("desired_n_points"))
       .def("get_velocity_profile", &base::PathPlanner::get_velocity_profile,
            py::arg("path"))
+      .def("check_collision", &base::PathPlanner::check_collision,
+           py::arg("segment"))
       .def("create_halton_sample", &base::PathPlanner::create_halton_sample,
            py::arg("index"), py::arg("dim"))
       .def("get_nearest_neighbors", &base::PathPlanner::get_nearest_neighbors,
@@ -110,25 +112,21 @@ PYBIND11_MODULE(wheeled_humanoid_py, m) {
       .def_readwrite("direction", &base::Arc::direction)
       .def_readwrite("radius", &base::Arc::radius)
       .def_readwrite("arc_angle", &base::Arc::arc_angle)
-      .def_readwrite("length", &base::Arc::length)
-      .def("collides_with", &base::Arc::collides_with, py::arg("obstacles"));
+      .def_readwrite("length", &base::Arc::length);
 
   py::class_<base::Line>(base, "Line")
       .def(py::init<>())
       .def(py::init<Pose2D, Pose2D>(), py::arg("start"), py::arg("end"))
       .def_readwrite("start", &base::Line::start)
       .def_readwrite("end", &base::Line::end)
-      .def_readwrite("length", &base::Line::length)
-      .def("collides_with", &base::Line::collides_with, py::arg("obstacles"));
+      .def_readwrite("length", &base::Line::length);
 
   py::class_<base::DubinsSegment>(base, "DubinsSegment")
       .def(py::init<>())
       .def(py::init<base::Arc, base::Line>(), py::arg("arc"), py::arg("line"))
       .def_readwrite("arc", &base::DubinsSegment::arc)
       .def_readwrite("line", &base::DubinsSegment::line)
-      .def_readwrite("length", &base::DubinsSegment::length)
-      .def("collides_with", &base::DubinsSegment::collides_with,
-           py::arg("obstacles"));
+      .def_readwrite("length", &base::DubinsSegment::length);
 
   // Base Utils
   base.def("get_car_turning_radius", &base::get_car_turning_radius,

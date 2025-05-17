@@ -16,14 +16,23 @@ TEST_F(PathPlannerTest, check_collision) {
       {{1, 1}, {1, 2}, {2, 2}, {2, 1}}};
   rrt_.set_obstacles(obstacles);
 
-  wheeled_humanoid::base::Line diagonal{{0, 0}, {3, 3}};
-  EXPECT_TRUE(diagonal.collides_with(obstacles));
+  wheeled_humanoid::base::DubinsSegment dubins_seg;
 
-  wheeled_humanoid::base::Line horizontal{{0, 2}, {2, 2}};
-  EXPECT_TRUE(horizontal.collides_with(obstacles));
+  // Diagonal
+  dubins_seg.line = {{0, 0}, {3, 3}};
+  EXPECT_TRUE(rrt_.check_collision(dubins_seg));
 
-  wheeled_humanoid::base::Line vertical{{0, 0}, {0, 3}};
-  EXPECT_FALSE(vertical.collides_with(obstacles));
+  // Horizontal
+  dubins_seg.line = {{0, 2}, {2, 2}};
+  EXPECT_TRUE(rrt_.check_collision(dubins_seg));
+
+  // Inside
+  dubins_seg.line = {{1, 1}, {2, 2}};
+  EXPECT_TRUE(rrt_.check_collision(dubins_seg));
+
+  // Outside
+  dubins_seg.line = {{0, 0}, {0, 3}};
+  EXPECT_FALSE(rrt_.check_collision(dubins_seg));
 }
 
 TEST_F(PathPlannerTest, generate_path_no_obstacles) {

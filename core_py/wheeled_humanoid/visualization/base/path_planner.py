@@ -11,7 +11,6 @@ from dubins import plot_dubins_segment
 if __name__ == "__main__":
     NUM_SAMPLES = 100
     L = 0.5
-
     dubins_radius = get_car_turning_radius(L, math.pi / 4)
 
     start = Pose2D()
@@ -19,10 +18,11 @@ if __name__ == "__main__":
 
     rrt = PathPlanner(NUM_SAMPLES, 0.1, L)
     obstacles = [
-        [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2), Pose2D(2, 1)],
+        [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2),
+         Pose2D(2, 1), Pose2D(1, 0.5)],
         [Pose2D(3, 1), Pose2D(3, 2), Pose2D(4, 2), Pose2D(4, 1)]
     ]
-    rrt.set_obstacles(obstacles)
+    inflated_obstacles = rrt.set_obstacles(obstacles)
 
     points = [start]
     parent_idxs = [-1]
@@ -43,6 +43,11 @@ if __name__ == "__main__":
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='box')
 
+        for obstacle in inflated_obstacles:
+            x = [vertex.x for vertex in obstacle]
+            y = [vertex.y for vertex in obstacle]
+            plt.fill(x, y, color="pink", alpha=0.5)
+
         for obstacle in obstacles:
             x = [vertex.x for vertex in obstacle]
             y = [vertex.y for vertex in obstacle]
@@ -54,13 +59,10 @@ if __name__ == "__main__":
                     points[parent_idxs[i]], point, dubins_radius)
                 plot_dubins_segment(segment, ax)
 
-        plt.ginput(1, timeout=1)
+        plt.ginput(1, timeout=0.0001)
 
     path = rrt.generate_path(start, goal)
-    for i in range(len(path) - 1):
-        plt.plot(
-            [path[i].x, path[i + 1].x],
-            [path[i].y, path[i + 1].y],
-            marker="o", color="green", linewidth=5)
+    for segment in path:
+        plot_dubins_segment(segment, ax, 'green', linewidth=3)
 
     plt.show()

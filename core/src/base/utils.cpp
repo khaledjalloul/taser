@@ -2,94 +2,6 @@
 
 namespace wheeled_humanoid::base {
 
-// TODO
-bool Arc::collides_with(const std::vector<Obstacle> &obstacles) const {
-
-  // bool DubinsPathPlanner::check_arc_collision(const DubinsArc& arc, double
-  // resolution) const {
-  //     double angle_diff = arc.end_angle - arc.start_angle;
-  //     if (arc.is_left) {
-  //         if (angle_diff < 0) angle_diff += 2 * M_PI;
-  //     } else {
-  //         if (angle_diff > 0) angle_diff -= 2 * M_PI;
-  //     }
-
-  //     int num_checks = std::ceil(std::abs(angle_diff * arc.radius) /
-  //     resolution); if (num_checks < 2) num_checks = 2;
-
-  //     Pose2D prev_point;
-  //     for (int i = 0; i <= num_checks; ++i) {
-  //         double t = static_cast<double>(i) / num_checks;
-  //         double angle = arc.start_angle + t * angle_diff;
-
-  //         Pose2D point;
-  //         point.x = arc.center.x + arc.radius * std::cos(angle);
-  //         point.y = arc.center.y + arc.radius * std::sin(angle);
-  //         point.theta = angle + (arc.is_left ? M_PI/2 : -M_PI/2);
-
-  //         if (i > 0 && collision_check_(prev_point, point)) {
-  //             return true;  // Collision detected
-  //         }
-  //         prev_point = point;
-  //     }
-  //     return false;  // No collision
-  // }
-
-  return false;
-}
-
-bool Line::collides_with(const std::vector<Obstacle> &obstacles) const {
-  const Pose2D &a = start;
-  const Pose2D &b = end;
-
-  auto orientation = [](const Pose2D &a, const Pose2D &b,
-                        const Pose2D &c) -> int {
-    double val = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
-    if (std::abs(val) < 1e-9)
-      return 0;
-    return (val > 0) ? 1 : 2;
-  };
-
-  auto on_segment = [](const Pose2D &p, const Pose2D &q,
-                       const Pose2D &r) -> bool {
-    return q.x <= std::max(p.x, r.x) && q.x >= std::min(p.x, r.x) &&
-           q.y <= std::max(p.y, r.y) && q.y >= std::min(p.y, r.y);
-  };
-
-  for (auto obstacle : obstacles) {
-    for (int v_idx = 0; v_idx < obstacle.size(); v_idx++) {
-      auto v2_idx = v_idx < obstacle.size() - 1 ? v_idx + 1 : 0;
-
-      auto v = obstacle[v_idx];
-      auto v2 = obstacle[v2_idx];
-
-      int o1 = orientation(a, b, v);
-      int o2 = orientation(a, b, v2);
-      int o3 = orientation(v, v2, a);
-      int o4 = orientation(v, v2, b);
-
-      if (o1 != o2 && o3 != o4)
-        return true;
-
-      if (o1 == 0 && on_segment(a, v, b))
-        return true;
-      if (o2 == 0 && on_segment(a, v2, b))
-        return true;
-      if (o3 == 0 && on_segment(v, a, v2))
-        return true;
-      if (o4 == 0 && on_segment(v, b, v2))
-        return true;
-    }
-  }
-
-  return false;
-}
-
-bool DubinsSegment::collides_with(
-    const std::vector<Obstacle> &obstacles) const {
-  return arc.collides_with(obstacles) || line.collides_with(obstacles);
-}
-
 double get_car_turning_radius(double wheel_base, double max_steering_angle) {
   return wheel_base / std::tan(max_steering_angle);
 }
@@ -144,16 +56,16 @@ double get_euclidean_distance(const Pose2D &a, const Pose2D &b) {
 }
 
 Line get_tangent(const Circle &circle, const Pose2D &target) {
-  auto C1 = circle.center;
+  auto C = circle.center;
   auto R = circle.radius;
-  auto C1P = get_euclidean_distance(C1, target);
+  auto CP = get_euclidean_distance(C, target);
   auto direction = circle.direction;
 
-  if (R > C1P)
+  if (R > CP)
     return {};
 
-  Eigen::Vector2d vec(target.x - C1.x, target.y - C1.y);
-  auto th = std::acos(R / C1P);
+  Eigen::Vector2d vec(target.x - C.x, target.y - C.y);
+  auto th = std::acos(R / CP);
 
   Eigen::Matrix2d rot_mat;
   if (direction == Direction::RIGHT)
@@ -162,11 +74,10 @@ Line get_tangent(const Circle &circle, const Pose2D &target) {
     rot_mat << std::cos(-th), -std::sin(-th), std::sin(-th), std::cos(-th);
 
   Eigen::Vector2d vec_perp = rot_mat * vec;
-  vec_perp = Eigen::Vector2d(vec_perp(0) / C1P * R, vec_perp(1) / C1P * R);
+  vec_perp = Eigen::Vector2d(vec_perp(0) / CP * R, vec_perp(1) / CP * R);
 
-  Pose2D tangent_pt{C1.x + vec_perp(0), C1.y + vec_perp(1)};
-  Eigen::Vector2d tangent_vec(target.x - tangent_pt.x, target.y - tangent_pt.y);
-  auto theta = std::atan2(tangent_vec(1), tangent_vec(1));
+  Pose2D tangent_pt{C.x + vec_perp(0), C.y + vec_perp(1)};
+  auto theta = std::atan2(target.y - tangent_pt.y, target.x - tangent_pt.x);
 
   return Line(Pose2D{tangent_pt.x, tangent_pt.y, theta},
               Pose2D{target.x, target.y, theta});
