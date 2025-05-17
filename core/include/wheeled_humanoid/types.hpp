@@ -62,7 +62,6 @@ struct BaseVelocity {
 
 using Path = std::vector<Pose2D>;
 using VelocityProfile = std::vector<BaseVelocity>;
-// An obstacle is represented as a polygon, defined by its vertices
-using Obstacle = std::vector<Pose2D>;
+using Obstacle = std::vector<Pose2D>; // Polygon, defined by its vertices
 
 } // namespace wheeled_humanoid

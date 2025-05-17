@@ -1,14 +1,15 @@
 # type: ignore
 import matplotlib.pyplot as plt
 
-from wheeled_humanoid import Pose2D, RRTPathPlanner
+from wheeled_humanoid import Pose2D
+from wheeled_humanoid.base import Dimensions, PathPlanner
 
 NUM_SAMPLES = 100
 
 start = Pose2D()
 goal = Pose2D(3, 3)
 
-rrt = RRTPathPlanner(NUM_SAMPLES, 0.1, 0.0)
+rrt = PathPlanner(NUM_SAMPLES, 0.1, 0.0)
 obstacles = [
     [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2), Pose2D(2, 1)],
     [Pose2D(3, 1), Pose2D(3, 2), Pose2D(4, 2), Pose2D(4, 1)]
@@ -19,7 +20,7 @@ points = [start]
 parent_idxs = [-1]
 distances = [0]
 
-dim = rrt.get_dimensions(start, goal)
+dim = Dimensions(-2, -2, 5, 5)
 
 for sample in range(NUM_SAMPLES):
     points, parent_idxs, distances = rrt.sample_new_point(

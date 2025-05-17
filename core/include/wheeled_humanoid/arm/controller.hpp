@@ -2,17 +2,17 @@
 
 #include "wheeled_humanoid/types.hpp"
 
-namespace wheeled_humanoid {
+namespace wheeled_humanoid::arm {
 
 /**
  * Position controller for the arm
  */
-class ArmController {
+class Controller {
 public:
   /**
    * @param kp Proportional gain
    */
-  ArmController(double kp);
+  Controller(double kp);
 
   /**
    * Compute the desired end effector velocity command
@@ -26,4 +26,4 @@ private:
   double kp_;
 };
 
-} // namespace wheeled_humanoid
+} // namespace wheeled_humanoid::arm

@@ -1,10 +1,10 @@
-#include "wheeled_humanoid/arm_controller.hpp"
+#include "wheeled_humanoid/arm/controller.hpp"
 
-namespace wheeled_humanoid {
+namespace wheeled_humanoid::arm {
 
-ArmController::ArmController(double kp) : kp_(kp) {}
+Controller::Controller(double kp) : kp_(kp) {}
 
-Twist3D ArmController::step(Pose3D x0, Pose3D x_ss) const {
+Twist3D Controller::step(Pose3D x0, Pose3D x_ss) const {
   Twist3D err;
 
   err.linear.x = kp_ * (x_ss.position.x - x0.position.x);
@@ -17,4 +17,4 @@ Twist3D ArmController::step(Pose3D x0, Pose3D x_ss) const {
   return err;
 }
 
-} // namespace wheeled_humanoid
+} // namespace wheeled_humanoid::arm

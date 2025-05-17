@@ -17,12 +17,13 @@ endforeach()
 
 # Library
 add_library(${PROJECT_NAME} SHARED
-  src/arm_controller.cpp
-  src/arm_kinematics.cpp
-  src/base_controller.cpp
-  src/base_kinematics.cpp
+  src/arm/controller.cpp
+  src/arm/kinematics.cpp
+  src/base/controller.cpp
+  src/base/kinematics.cpp
+  src/base/path_planner.cpp
+  src/base/utils.cpp
   src/robot.cpp
-  src/rrt_path_planner.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -56,7 +57,7 @@ if(BUILD_TESTING)
 
   ament_add_gtest(${PROJECT_NAME}_test
     test/base_control_test.cpp
-    test/rrt_path_planner_test.cpp
+    test/path_planner_test.cpp
   )
   target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
 endif()

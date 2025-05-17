@@ -4,17 +4,17 @@
 
 #include "wheeled_humanoid/types.hpp"
 
-namespace wheeled_humanoid {
+namespace wheeled_humanoid::arm {
 
 /**
  * Arm kinematics class to solve inverse kinematics for the 3-DOF arm
  */
-class ArmKinematics {
+class Kinematics {
 public:
   /**
    * @param name Name of the arm (left_arm or right_arm)
    */
-  ArmKinematics(std::string name);
+  Kinematics(std::string name);
 
   /**
    * Get the end effector pose
@@ -79,4 +79,4 @@ private:
   Axis n2_{0, 1, 0};
 };
 
-} // namespace wheeled_humanoid
+} // namespace wheeled_humanoid::arm

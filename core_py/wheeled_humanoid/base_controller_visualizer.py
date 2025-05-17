@@ -3,9 +3,10 @@
 import math
 import matplotlib.pyplot as plt
 import numpy as np
-# from base_controller import BaseController
-from wheeled_humanoid import BaseController
-from wheeled_humanoid import BaseKinematics, Pose2D, RRTPathPlanner
+from wheeled_humanoid import Pose2D
+from wheeled_humanoid.base import Kinematics, PathPlanner
+from wheeled_humanoid.base import Controller
+# from base_controller import Controller
 
 
 RRT_NUM_SAMPLES = 100
@@ -16,9 +17,9 @@ N = 10
 v_max = 1.0
 omega_max = 2.0
 
-base = BaseKinematics(L, wheel_radius, dt)
-controller = BaseController(dt, N, v_max, omega_max)
-rrt = RRTPathPlanner(RRT_NUM_SAMPLES, dt, L)
+base = Kinematics(L, wheel_radius, dt)
+controller = Controller(dt, N, v_max, omega_max)
+rrt = PathPlanner(RRT_NUM_SAMPLES, dt, L)
 
 start = Pose2D(0, 0, -math.pi / 4)
 goal = Pose2D(3, 3, math.pi / 4)

@@ -1,25 +1,25 @@
-#include "wheeled_humanoid/arm_kinematics.hpp"
+#include "wheeled_humanoid/arm/kinematics.hpp"
 
-namespace wheeled_humanoid {
+namespace wheeled_humanoid::arm {
 
-ArmKinematics::ArmKinematics(std::string name) : name_(name) {}
+Kinematics::Kinematics(std::string name) : name_(name) {}
 
-Pose3D ArmKinematics::get_end_effector_pose(Transform TBE) const {
+Pose3D Kinematics::get_end_effector_pose(Transform TBE) const {
   auto orientation = TBE.rotation.toRotationMatrix().eulerAngles(0, 1, 2);
 
   return {TBE.translation[0], TBE.translation[1], TBE.translation[2],
           orientation[0],     orientation[1],     orientation[2]};
 }
 
-Twist3D ArmKinematics::get_end_effector_twist(Transforms tfs,
-                                              ArmJointVelocities dq) const {
+Twist3D Kinematics::get_end_effector_twist(Transforms tfs,
+                                           ArmJointVelocities dq) const {
   auto J = get_geometric_jacobian_(tfs);
 
   auto w = J * dq;
   return {w[0], w[1], w[2], w[3], w[4], w[5]};
 }
 
-Jacobian ArmKinematics::get_geometric_jacobian_(Transforms tfs) const {
+Jacobian Kinematics::get_geometric_jacobian_(Transforms tfs) const {
   auto B_r0E = tfs.TBE.translation - tfs.TB0.translation;
   auto B_r1E = tfs.TBE.translation - tfs.TB1.translation;
   auto B_r2E = tfs.TBE.translation - tfs.TB2.translation;
@@ -39,7 +39,7 @@ Jacobian ArmKinematics::get_geometric_jacobian_(Transforms tfs) const {
   return J;
 }
 
-Matrix ArmKinematics::get_pseudoinverse_(Matrix mat) const {
+Matrix Kinematics::get_pseudoinverse_(Matrix mat) const {
   // if (mat.rows() == mat.cols()) {
   //   return mat.inverse();
   // } else if (mat.rows() > mat.cols()) {
@@ -53,8 +53,8 @@ Matrix ArmKinematics::get_pseudoinverse_(Matrix mat) const {
 }
 
 ArmJointVelocities
-ArmKinematics::solve_ik_for_joint_velocities(Twist3D w_desired,
-                                             Transforms tfs) const {
+Kinematics::solve_ik_for_joint_velocities(Twist3D w_desired,
+                                          Transforms tfs) const {
   auto J = get_geometric_jacobian_(tfs);
   auto J_positional = J.topRows(3);
   auto w_des =
@@ -75,4 +75,4 @@ ArmKinematics::solve_ik_for_joint_velocities(Twist3D w_desired,
   return dq;
 }
 
-} // namespace wheeled_humanoid
+} // namespace wheeled_humanoid::arm

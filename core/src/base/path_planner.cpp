@@ -1,16 +1,16 @@
-#include "wheeled_humanoid/rrt_path_planner.hpp"
+#include "wheeled_humanoid/base/path_planner.hpp"
 
 #include <clipper2/clipper.h>
 
 #include <iostream>
 
-namespace wheeled_humanoid {
+namespace wheeled_humanoid::base {
 
-RRTPathPlanner::RRTPathPlanner(int num_samples, double dt, double L)
+PathPlanner::PathPlanner(int num_samples, double dt, double L)
     : num_samples_(num_samples), dt_(dt), L_(L) {}
 
 std::vector<Obstacle>
-RRTPathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
+PathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
   obstacles_ = obstacles;
   inflated_obstacles_.clear();
 
@@ -37,13 +37,16 @@ RRTPathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
   return inflated_obstacles_;
 }
 
-Path RRTPathPlanner::generate_path(const Pose2D &start,
-                                   const Pose2D &goal) const {
+Path PathPlanner::generate_path(const Pose2D &start, const Pose2D &goal) const {
   std::vector<Pose2D> points{start};
   std::vector<int> parent_idxs{-1};
   std::vector<double> distances{0};
 
-  auto dim = get_dimensions(start, goal);
+  Dimensions dim;
+  dim.x_min = std::min({start.x, start.y, goal.x, goal.y}) - 2;
+  dim.x_max = std::max({start.x, start.y, goal.x, goal.y}) + 2;
+  dim.y_min = std::min({start.x, start.y, goal.x, goal.y}) - 2;
+  dim.y_max = std::max({start.x, start.y, goal.x, goal.y}) + 2;
 
   for (int sample = 0; sample < num_samples_; sample++) {
     sample_new_point(points, parent_idxs, distances, dim, sample);
@@ -51,47 +54,50 @@ Path RRTPathPlanner::generate_path(const Pose2D &start,
 
   std::vector<double> goal_distances;
   for (int point_idx = 0; point_idx < points.size(); point_idx++) {
-
     auto distance_to_goal = get_euclidean_distance(points[point_idx], goal);
-    goal_distances.push_back(distance_to_goal + distances[point_idx]);
+    goal_distances.push_back(distances[point_idx] + distance_to_goal);
   }
 
+  double dubins_radius = 1;
+
   int j = 0;
-  Path path;
+  std::vector<DubinsSegment> dubins_path;
   // TODO: Fix to get jth nearest point
   while (j < points.size()) {
     auto nearest_pt_idx =
         std::min_element(goal_distances.begin(), goal_distances.end()) -
         goal_distances.begin();
     auto nearest = points[nearest_pt_idx];
-    if (check_line_collision(nearest, goal)) {
+    auto dubins_seg_to_goal = get_dubins_segment(nearest, goal, dubins_radius);
+    if (dubins_seg_to_goal.collides_with(inflated_obstacles_)) {
       goal_distances[nearest_pt_idx] = std::numeric_limits<double>::max();
       j += 1;
     } else {
-      path.push_back(goal);
-      nearest.theta = std::atan2(goal.y - nearest.y, goal.x - nearest.x);
-      path.push_back(nearest);
-
+      dubins_path.push_back(dubins_seg_to_goal);
       auto parent_idx = parent_idxs[nearest_pt_idx];
+
       while (parent_idx != -1) {
         auto parent = points[parent_idx];
-        parent.theta =
-            std::atan2(path.back().y - parent.y, path.back().x - parent.x);
-        path.push_back(parent);
+        auto path = get_dubins_segment(parent, nearest, dubins_radius);
+
+        dubins_path.push_back(path);
         parent_idx = parent_idxs[parent_idx];
       }
       break;
     }
   }
 
-  return Path(path.rbegin(), path.rend());
+  // Interpolate
+  // Path path;
+
+  return Path();
 }
 
 std::tuple<std::vector<Pose2D>, std::vector<int>, std::vector<double>>
-RRTPathPlanner::sample_new_point(std::vector<Pose2D> &points,
-                                 std::vector<int> &parent_idxs,
-                                 std::vector<double> &distances,
-                                 const Dimensions &dim, int sample) const {
+PathPlanner::sample_new_point(std::vector<Pose2D> &points,
+                              std::vector<int> &parent_idxs,
+                              std::vector<double> &distances,
+                              const Dimensions &dim, int sample) const {
 
   auto new_pt = create_halton_sample(sample, dim);
 
@@ -102,32 +108,45 @@ RRTPathPlanner::sample_new_point(std::vector<Pose2D> &points,
 
   auto nearest_pt_idxs = get_nearest_neighbors(new_pt, points, proximity);
 
+  double dubins_radius = 1;
+
   std::vector<int> potential_parents;
+  std::vector<DubinsSegment> potential_dubins_segs;
   std::vector<double> potential_distances;
-  std::vector<double> nearest_pt_distances;
 
   for (auto nearest_pt_idx : nearest_pt_idxs) {
     auto nearest_pt = points[nearest_pt_idx];
-    auto dist = get_euclidean_distance(new_pt, nearest_pt);
-    nearest_pt_distances.push_back(dist);
 
-    auto new_dist = dist + distances[nearest_pt_idx];
+    auto dubins_seg = get_dubins_segment(nearest_pt, new_pt, dubins_radius);
 
-    if (!check_line_collision(nearest_pt, new_pt)) {
+    if (!dubins_seg.collides_with(inflated_obstacles_)) {
+      auto dist = dubins_seg.length();
+      auto new_dist = dist + distances[nearest_pt_idx];
+
       potential_parents.push_back(nearest_pt_idx);
+      potential_dubins_segs.push_back(dubins_seg);
       potential_distances.push_back(new_dist);
     }
   }
 
-  if (potential_distances.empty()) {
+  if (potential_dubins_segs.empty()) {
     return {points, parent_idxs, distances};
   }
 
   auto min_idx =
       std::min_element(potential_distances.begin(), potential_distances.end()) -
       potential_distances.begin();
+  auto dubins_seg = potential_dubins_segs[min_idx];
   auto new_dist = potential_distances[min_idx];
   auto new_parent_idx = potential_parents[min_idx];
+
+  std::cout << "x: " << new_pt.x << " y: " << new_pt.y
+            << " th: " << new_pt.theta << std::endl;
+  std::cout << "x: " << dubins_seg.line.end.x << " y: " << dubins_seg.line.end.y
+            << " th: " << dubins_seg.line.end.theta << std::endl;
+  std::cout << "------------" << std::endl;
+
+  new_pt.theta = dubins_seg.line.end.theta;
 
   points.push_back(new_pt);
   parent_idxs.push_back(new_parent_idx);
@@ -142,10 +161,13 @@ RRTPathPlanner::sample_new_point(std::vector<Pose2D> &points,
     }
 
     auto remaining_pt = points[remaining_pt_idx];
-    auto nearest_to_new_dist = nearest_pt_distances[j];
+    auto remaining_dubins_seg =
+        get_dubins_segment(new_pt, remaining_pt, dubins_radius);
+    auto nearest_to_new_dist = remaining_dubins_seg.length();
 
     if (new_dist + nearest_to_new_dist < distances[remaining_pt_idx] &&
-        !check_line_collision(new_pt, remaining_pt)) {
+        !remaining_dubins_seg.collides_with(inflated_obstacles_)) {
+      points[remaining_pt_idx].theta = remaining_dubins_seg.line.end.theta;
       parent_idxs[remaining_pt_idx] = new_pt_idx;
       distances[remaining_pt_idx] = new_dist + nearest_to_new_dist;
     }
@@ -154,8 +176,8 @@ RRTPathPlanner::sample_new_point(std::vector<Pose2D> &points,
   return {points, parent_idxs, distances};
 }
 
-Path RRTPathPlanner::interpolate_path(const Path &path,
-                                      int desired_n_points) const {
+Path PathPlanner::interpolate_path(const Path &path,
+                                   int desired_n_points) const {
   if (path.empty()) {
     std::cerr << "Cannot interpolate path, original path is empty."
               << std::endl;
@@ -197,7 +219,7 @@ Path RRTPathPlanner::interpolate_path(const Path &path,
   return new_path;
 }
 
-VelocityProfile RRTPathPlanner::get_velocity_profile(const Path &path) const {
+VelocityProfile PathPlanner::get_velocity_profile(const Path &path) const {
   if (path.empty()) {
     std::cerr << "Cannot get velocity profile, path is empty." << std::endl;
     return VelocityProfile();
@@ -221,18 +243,8 @@ VelocityProfile RRTPathPlanner::get_velocity_profile(const Path &path) const {
   return velocity_profile;
 }
 
-Dimensions RRTPathPlanner::get_dimensions(const Pose2D &start,
-                                          const Pose2D &goal) const {
-  Dimensions dim;
-  dim.x_min = std::min({start.x, start.y, goal.x, goal.y}) - 2;
-  dim.x_max = std::max({start.x, start.y, goal.x, goal.y}) + 2;
-  dim.y_min = std::min({start.x, start.y, goal.x, goal.y}) - 2;
-  dim.y_max = std::max({start.x, start.y, goal.x, goal.y}) + 2;
-  return dim;
-}
-
-Pose2D RRTPathPlanner::create_halton_sample(int index,
-                                            const Dimensions &dim) const {
+Pose2D PathPlanner::create_halton_sample(int index,
+                                         const Dimensions &dim) const {
   auto radical_inverse = [](int index, int base) {
     double result = 0.0;
     double f = 1.0 / base;
@@ -254,14 +266,9 @@ Pose2D RRTPathPlanner::create_halton_sample(int index,
   };
 }
 
-double RRTPathPlanner::get_euclidean_distance(const Pose2D &a,
-                                              const Pose2D &b) const {
-  return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
-}
-
-std::vector<int> RRTPathPlanner::get_nearest_neighbors(const Pose2D &new_pt,
-                                                       const Path &points,
-                                                       double radius) const {
+std::vector<int> PathPlanner::get_nearest_neighbors(const Pose2D &new_pt,
+                                                    const Path &points,
+                                                    double radius) const {
   std::vector<int> nearest_pt_idxs;
   for (int i = 0; i < points.size(); i++) {
     auto dist = get_euclidean_distance(new_pt, points[i]);
@@ -272,49 +279,4 @@ std::vector<int> RRTPathPlanner::get_nearest_neighbors(const Pose2D &new_pt,
   return nearest_pt_idxs;
 }
 
-bool RRTPathPlanner::check_line_collision(const Pose2D &a,
-                                          const Pose2D &b) const {
-  auto orientation = [](const Pose2D &a, const Pose2D &b,
-                        const Pose2D &c) -> int {
-    double val = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
-    if (std::abs(val) < 1e-9)
-      return 0;
-    return (val > 0) ? 1 : 2;
-  };
-
-  auto on_segment = [](const Pose2D &p, const Pose2D &q,
-                       const Pose2D &r) -> bool {
-    return q.x <= std::max(p.x, r.x) && q.x >= std::min(p.x, r.x) &&
-           q.y <= std::max(p.y, r.y) && q.y >= std::min(p.y, r.y);
-  };
-
-  for (auto obstacle : inflated_obstacles_) {
-    for (int v_idx = 0; v_idx < obstacle.size(); v_idx++) {
-      auto v2_idx = v_idx < obstacle.size() - 1 ? v_idx + 1 : 0;
-
-      auto v = obstacle[v_idx];
-      auto v2 = obstacle[v2_idx];
-
-      int o1 = orientation(a, b, v);
-      int o2 = orientation(a, b, v2);
-      int o3 = orientation(v, v2, a);
-      int o4 = orientation(v, v2, b);
-
-      if (o1 != o2 && o3 != o4)
-        return true;
-
-      if (o1 == 0 && on_segment(a, v, b))
-        return true;
-      if (o2 == 0 && on_segment(a, v2, b))
-        return true;
-      if (o3 == 0 && on_segment(v, a, v2))
-        return true;
-      if (o4 == 0 && on_segment(v, b, v2))
-        return true;
-    }
-  }
-
-  return false;
-}
-
-} // namespace wheeled_humanoid
+} // namespace wheeled_humanoid::base

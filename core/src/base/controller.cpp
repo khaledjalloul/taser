@@ -1,8 +1,8 @@
-#include "wheeled_humanoid/base_controller.hpp"
+#include "wheeled_humanoid/base/controller.hpp"
 
-namespace wheeled_humanoid {
+namespace wheeled_humanoid::base {
 
-BaseController::BaseController(double dt, int N, double v_max, double omega_max)
+Controller::Controller(double dt, int N, double v_max, double omega_max)
     : dt_(dt), N(N), v_max_(v_max), omega_max_(omega_max) {
   nx_ = 3; // x, y, theta
   nu_ = 2; // v, omega
@@ -20,8 +20,8 @@ BaseController::BaseController(double dt, int N, double v_max, double omega_max)
   solver_.data()->setNumberOfConstraints(num_constraints_);
 }
 
-BaseVelocity BaseController::step(const Pose2D &x0, const Path &x_ref,
-                                  const VelocityProfile &u_ref) {
+BaseVelocity Controller::step(const Pose2D &x0, const Path &x_ref,
+                              const VelocityProfile &u_ref) {
   if (x_ref.size() < N) {
     std::cerr << "Cannot step base MPC controller, reference path x_ref has "
                  "less than N elements."
@@ -50,9 +50,8 @@ BaseVelocity BaseController::step(const Pose2D &x0, const Path &x_ref,
   return u0;
 }
 
-void BaseController::get_linearized_model(const Pose2D &x0,
-                                          const BaseVelocity &u0, Matrix &A,
-                                          Matrix &B) const {
+void Controller::get_linearized_model(const Pose2D &x0, const BaseVelocity &u0,
+                                      Matrix &A, Matrix &B) const {
   /**
    * Linearization:
    * - x_dot = f(x,u) = f(x0,u0) + df/dx(x0,u0) * (x-x0) + df/du(x0,u0) * (u-u0)
@@ -74,8 +73,8 @@ void BaseController::get_linearized_model(const Pose2D &x0,
   B(2, 1) = dt_;
 }
 
-void BaseController::set_up_QP_(const Pose2D &x0, const Path &x_ref,
-                                const VelocityProfile &u_ref) {
+void Controller::set_up_QP_(const Pose2D &x0, const Path &x_ref,
+                            const VelocityProfile &u_ref) {
   solver_.clearSolver();
   solver_.data()->clearHessianMatrix();
   solver_.data()->clearLinearConstraintsMatrix();
@@ -167,4 +166,4 @@ void BaseController::set_up_QP_(const Pose2D &x0, const Path &x_ref,
   solver_.initSolver();
 }
 
-} // namespace wheeled_humanoid
+} // namespace wheeled_humanoid::base

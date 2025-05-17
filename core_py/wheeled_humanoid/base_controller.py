@@ -6,7 +6,7 @@ import cvxpy as cp
 from wheeled_humanoid import Pose2D, BaseVelocity
 
 
-class BaseController:
+class Controller:
     def __init__(self, dt: float, N: int, v_max: float, omega_max: float):
         self.dt = dt
         self.N = N

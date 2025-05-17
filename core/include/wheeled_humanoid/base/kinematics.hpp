@@ -4,19 +4,19 @@
 
 #include "wheeled_humanoid/types.hpp"
 
-namespace wheeled_humanoid {
+namespace wheeled_humanoid::base {
 
 /**
  * Kinematics class for the robot's differential drive base
  */
-class BaseKinematics {
+class Kinematics {
 public:
   /**
    * @param L Distance between the wheels
    * @param wheel_radius Radius of the wheels
    * @param dt Time step
    */
-  BaseKinematics(double L, double wheel_radius, double dt);
+  Kinematics(double L, double wheel_radius, double dt);
 
   /**
    * Set the base velocity which internally updates the wheel velocities
@@ -48,4 +48,4 @@ private:
   double dt_;
 };
 
-} // namespace wheeled_humanoid
+} // namespace wheeled_humanoid::base

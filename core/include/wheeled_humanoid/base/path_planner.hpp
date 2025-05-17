@@ -1,25 +1,21 @@
 #pragma once
 
+#include "wheeled_humanoid/base/utils.hpp"
 #include "wheeled_humanoid/types.hpp"
 
-namespace wheeled_humanoid {
-
-struct Dimensions {
-  double x_min, x_max;
-  double y_min, y_max;
-};
+namespace wheeled_humanoid::base {
 
 /**
  * RRT* path planner
  */
-class RRTPathPlanner {
+class PathPlanner {
 public:
   /**
    * @param num_samples Number of samples to generate when searching for a path
    * @param dt Time step
    * @param L Distance between the robot wheels
    */
-  RRTPathPlanner(int num_samples, double dt, double L);
+  PathPlanner(int num_samples, double dt, double L);
 
   /**
    * Set the obstacles in the environment and inflate them based on the distance
@@ -68,37 +64,12 @@ public:
   VelocityProfile get_velocity_profile(const Path &path) const;
 
   /**
-   * Check if a line segment between two points collides with any obstacles in
-   * the environment
-   * @param a Start point of the line segment
-   * @param b End point of the line segment
-   * @return True if there is a collision, false otherwise
-   */
-  bool check_line_collision(const Pose2D &a, const Pose2D &b) const;
-
-  /**
-   * Get the dimensions of the environment based on the start and goal poses
-   * @param start Start pose
-   * @param goal Goal pose
-   * @return Dimensions of the environment
-   */
-  Dimensions get_dimensions(const Pose2D &start, const Pose2D &goal) const;
-
-  /**
    * Create a Halton sample in the environment
    * @param index Index of the sample
    * @param dim Dimensions of the environment
    * @return Halton sample
    */
   Pose2D create_halton_sample(int index, const Dimensions &dim) const;
-
-  /**
-   * Get the Euclidean distance between two points
-   * @param a First point
-   * @param b Second point
-   * @return Euclidean distance between the two points
-   */
-  double get_euclidean_distance(const Pose2D &a, const Pose2D &b) const;
 
   /**
    * Get the nearest neighbors of a point in the environment. TODO: Change to
@@ -118,4 +89,4 @@ private:
   std::vector<Obstacle> obstacles_, inflated_obstacles_;
 };
 
-} // namespace wheeled_humanoid
+} // namespace wheeled_humanoid::base

@@ -3,11 +3,11 @@
 #include <map>
 #include <string>
 
-#include "wheeled_humanoid/arm_controller.hpp"
-#include "wheeled_humanoid/arm_kinematics.hpp"
-#include "wheeled_humanoid/base_controller.hpp"
-#include "wheeled_humanoid/base_kinematics.hpp"
-#include "wheeled_humanoid/rrt_path_planner.hpp"
+#include "wheeled_humanoid/arm/controller.hpp"
+#include "wheeled_humanoid/arm/kinematics.hpp"
+#include "wheeled_humanoid/base/controller.hpp"
+#include "wheeled_humanoid/base/kinematics.hpp"
+#include "wheeled_humanoid/base/path_planner.hpp"
 
 namespace wheeled_humanoid {
 
@@ -44,15 +44,15 @@ public:
 
   double dt = 0.1;
 
-  std::map<std::string, ArmKinematics> arms = {
-      {"left_arm", ArmKinematics("left_arm")},
-      {"right_arm", ArmKinematics("right_arm")}};
-  ArmController arm_controller{1.0};
+  std::map<std::string, arm::Kinematics> arms = {
+      {"left_arm", arm::Kinematics("left_arm")},
+      {"right_arm", arm::Kinematics("right_arm")}};
+  arm::Controller arm_controller{1.0};
 
   // L = 2.25, obtained using transform from left wheel to right wheel
-  BaseKinematics base{2.25, 0.5, dt};
-  BaseController base_controller{dt, 30};
-  RRTPathPlanner rrt{200, dt, 2.25};
+  base::Kinematics base{2.25, 0.5, dt};
+  base::Controller base_controller{dt, 30};
+  base::PathPlanner rrt{200, dt, 2.25};
 };
 
 } // namespace wheeled_humanoid

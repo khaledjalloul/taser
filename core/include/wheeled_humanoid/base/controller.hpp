@@ -4,12 +4,12 @@
 
 #include "wheeled_humanoid/types.hpp"
 
-namespace wheeled_humanoid {
+namespace wheeled_humanoid::base {
 
 /**
  * Tracking controller for the base using Model Predictive Control
  */
-class BaseController {
+class Controller {
 public:
   /**
    * @param dt Time step
@@ -17,8 +17,7 @@ public:
    * @param v_max Maximum linear velocity
    * @param omega_max Maximum angular velocity
    */
-  BaseController(double dt, int N = 10, double v_max = 1.0,
-                 double omega_max = 2.0);
+  Controller(double dt, int N = 10, double v_max = 1.0, double omega_max = 2.0);
 
   /**
    * Compute the desired base velocity command
@@ -58,4 +57,4 @@ private:
   OsqpEigen::Solver solver_;
 };
 
-} // namespace wheeled_humanoid
+} // namespace wheeled_humanoid::base
