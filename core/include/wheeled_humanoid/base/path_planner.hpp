@@ -31,7 +31,7 @@ public:
    * @param goal Goal pose
    * @return Path from start to goal
    */
-  Path generate_path(const Pose2D &start, const Pose2D &goal) const;
+  DubinsPath generate_path(const Pose2D &start, const Pose2D &goal) const;
 
   /**
    * Sample a new point in the environment, used internally in `generate_path`
@@ -54,7 +54,8 @@ public:
    * @param desired_n_points Number of points to interpolate to
    * @return Interpolated path
    */
-  Path interpolate_path(const Path &path, int desired_n_points) const;
+  Path interpolate_path(const DubinsPath &dubins_path,
+                        int desired_n_points) const;
 
   /**
    * Get the velocity profile (vector of base velocities) for the path
@@ -85,7 +86,7 @@ public:
 
 private:
   int num_samples_;
-  double dt_, L_;
+  double dt_, L_, dubins_radius_;
   std::vector<Obstacle> obstacles_, inflated_obstacles_;
 };
 

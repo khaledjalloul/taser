@@ -7,7 +7,9 @@
 namespace wheeled_humanoid::base {
 
 PathPlanner::PathPlanner(int num_samples, double dt, double L)
-    : num_samples_(num_samples), dt_(dt), L_(L) {}
+    : num_samples_(num_samples), dt_(dt), L_(L) {
+  dubins_radius_ = get_car_turning_radius(L, M_PI / 4);
+}
 
 std::vector<Obstacle>
 PathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
@@ -37,7 +39,8 @@ PathPlanner::set_obstacles(const std::vector<Obstacle> obstacles) {
   return inflated_obstacles_;
 }
 
-Path PathPlanner::generate_path(const Pose2D &start, const Pose2D &goal) const {
+DubinsPath PathPlanner::generate_path(const Pose2D &start,
+                                      const Pose2D &goal) const {
   std::vector<Pose2D> points{start};
   std::vector<int> parent_idxs{-1};
   std::vector<double> distances{0};
@@ -58,8 +61,6 @@ Path PathPlanner::generate_path(const Pose2D &start, const Pose2D &goal) const {
     goal_distances.push_back(distances[point_idx] + distance_to_goal);
   }
 
-  double dubins_radius = 1;
-
   int j = 0;
   std::vector<DubinsSegment> dubins_path;
   // TODO: Fix to get jth nearest point
@@ -68,7 +69,7 @@ Path PathPlanner::generate_path(const Pose2D &start, const Pose2D &goal) const {
         std::min_element(goal_distances.begin(), goal_distances.end()) -
         goal_distances.begin();
     auto nearest = points[nearest_pt_idx];
-    auto dubins_seg_to_goal = get_dubins_segment(nearest, goal, dubins_radius);
+    auto dubins_seg_to_goal = get_dubins_segment(nearest, goal, dubins_radius_);
     if (dubins_seg_to_goal.collides_with(inflated_obstacles_)) {
       goal_distances[nearest_pt_idx] = std::numeric_limits<double>::max();
       j += 1;
@@ -78,7 +79,7 @@ Path PathPlanner::generate_path(const Pose2D &start, const Pose2D &goal) const {
 
       while (parent_idx != -1) {
         auto parent = points[parent_idx];
-        auto path = get_dubins_segment(parent, nearest, dubins_radius);
+        auto path = get_dubins_segment(parent, nearest, dubins_radius_);
 
         dubins_path.push_back(path);
         parent_idx = parent_idxs[parent_idx];
@@ -87,10 +88,7 @@ Path PathPlanner::generate_path(const Pose2D &start, const Pose2D &goal) const {
     }
   }
 
-  // Interpolate
-  // Path path;
-
-  return Path();
+  return dubins_path;
 }
 
 std::tuple<std::vector<Pose2D>, std::vector<int>, std::vector<double>>
@@ -108,8 +106,6 @@ PathPlanner::sample_new_point(std::vector<Pose2D> &points,
 
   auto nearest_pt_idxs = get_nearest_neighbors(new_pt, points, proximity);
 
-  double dubins_radius = 1;
-
   std::vector<int> potential_parents;
   std::vector<DubinsSegment> potential_dubins_segs;
   std::vector<double> potential_distances;
@@ -117,10 +113,11 @@ PathPlanner::sample_new_point(std::vector<Pose2D> &points,
   for (auto nearest_pt_idx : nearest_pt_idxs) {
     auto nearest_pt = points[nearest_pt_idx];
 
-    auto dubins_seg = get_dubins_segment(nearest_pt, new_pt, dubins_radius);
+    auto dubins_seg = get_dubins_segment(nearest_pt, new_pt, dubins_radius_);
 
     if (!dubins_seg.collides_with(inflated_obstacles_)) {
-      auto dist = dubins_seg.length();
+      auto dist = dubins_seg.length;
+      std::cout << "dist: " << dist << std::endl;
       auto new_dist = dist + distances[nearest_pt_idx];
 
       potential_parents.push_back(nearest_pt_idx);
@@ -162,8 +159,8 @@ PathPlanner::sample_new_point(std::vector<Pose2D> &points,
 
     auto remaining_pt = points[remaining_pt_idx];
     auto remaining_dubins_seg =
-        get_dubins_segment(new_pt, remaining_pt, dubins_radius);
-    auto nearest_to_new_dist = remaining_dubins_seg.length();
+        get_dubins_segment(new_pt, remaining_pt, dubins_radius_);
+    auto nearest_to_new_dist = remaining_dubins_seg.length;
 
     if (new_dist + nearest_to_new_dist < distances[remaining_pt_idx] &&
         !remaining_dubins_seg.collides_with(inflated_obstacles_)) {
@@ -176,17 +173,20 @@ PathPlanner::sample_new_point(std::vector<Pose2D> &points,
   return {points, parent_idxs, distances};
 }
 
-Path PathPlanner::interpolate_path(const Path &path,
+Path PathPlanner::interpolate_path(const DubinsPath &dubins_path,
                                    int desired_n_points) const {
-  if (path.empty()) {
+  if (dubins_path.empty()) {
     std::cerr << "Cannot interpolate path, original path is empty."
               << std::endl;
     return Path();
   }
 
-  int n_points = path.size();
+  int n_points = dubins_path.size();
+  double full_path_length = 0;
+  for (const auto &segment : dubins_path)
+    full_path_length += segment.length;
 
-  Path new_path;
+  Path path;
 
   std::vector<double> t_path(n_points);
   for (int i = 0; i < n_points; ++i)
@@ -207,16 +207,65 @@ Path PathPlanner::interpolate_path(const Path &path,
     Pose2D new_pt{(1 - alpha) * path[j].x + alpha * path[j + 1].x,
                   (1 - alpha) * path[j].y + alpha * path[j + 1].y};
 
-    new_path.push_back(new_pt);
+    path.push_back(new_pt);
   }
 
-  for (int i = 0; i < new_path.size() - 1; ++i) {
-    auto &pt = new_path[i];
-    const auto &next_pt = new_path[i + 1];
+  for (int i = 0; i < path.size() - 1; ++i) {
+    auto &pt = path[i];
+    const auto &next_pt = path[i + 1];
     pt.theta = std::atan2(next_pt.y - pt.y, next_pt.x - pt.x);
   }
 
-  return new_path;
+  return path;
+
+  // Path DubinsPathPlanner::interpolate_path(
+  //     const DubinsPath& dubins_path, double step_size) const {
+
+  //     Path path;
+  //     const auto& arc = dubins_path.initial_arc;
+
+  //     // Interpolate initial arc
+  //     double angle_diff = arc.end_angle - arc.start_angle;
+  //     if (arc.is_left) {
+  //         if (angle_diff < 0) angle_diff += 2 * M_PI;
+  //     } else {
+  //         if (angle_diff > 0) angle_diff -= 2 * M_PI;
+  //     }
+
+  //     int num_arc_steps = std::abs(angle_diff * arc.radius / step_size);
+  //     for (int i = 0; i <= num_arc_steps; ++i) {
+  //         double t = static_cast<double>(i) / num_arc_steps;
+  //         double angle = arc.start_angle + t * angle_diff;
+
+  //         Pose2D point;
+  //         point.x = arc.center.x + arc.radius * std::cos(angle);
+  //         point.y = arc.center.y + arc.radius * std::sin(angle);
+  //         point.theta = angle + (arc.is_left ? M_PI/2 : -M_PI/2);
+  //         path.push_back(point);
+  //     }
+
+  //     // Interpolate tangent line
+  //     if (dubins_path.tangent_line.size() == 2) {
+  //         const auto& start = dubins_path.tangent_line[0];
+  //         const auto& end = dubins_path.tangent_line[1];
+
+  //         double dx = end.x - start.x;
+  //         double dy = end.y - start.y;
+  //         double line_length = std::sqrt(dx*dx + dy*dy);
+
+  //         int num_line_steps = line_length / step_size;
+  //         for (int i = 1; i <= num_line_steps; ++i) {
+  //             double t = static_cast<double>(i) / num_line_steps;
+  //             Pose2D point;
+  //             point.x = start.x + t * dx;
+  //             point.y = start.y + t * dy;
+  //             point.theta = std::atan2(dy, dx);
+  //             path.push_back(point);
+  //         }
+  //     }
+
+  //     return path;
+  // }
 }
 
 VelocityProfile PathPlanner::get_velocity_profile(const Path &path) const {

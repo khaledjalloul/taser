@@ -4,6 +4,37 @@ namespace wheeled_humanoid::base {
 
 // TODO
 bool Arc::collides_with(const std::vector<Obstacle> &obstacles) const {
+
+  // bool DubinsPathPlanner::check_arc_collision(const DubinsArc& arc, double
+  // resolution) const {
+  //     double angle_diff = arc.end_angle - arc.start_angle;
+  //     if (arc.is_left) {
+  //         if (angle_diff < 0) angle_diff += 2 * M_PI;
+  //     } else {
+  //         if (angle_diff > 0) angle_diff -= 2 * M_PI;
+  //     }
+
+  //     int num_checks = std::ceil(std::abs(angle_diff * arc.radius) /
+  //     resolution); if (num_checks < 2) num_checks = 2;
+
+  //     Pose2D prev_point;
+  //     for (int i = 0; i <= num_checks; ++i) {
+  //         double t = static_cast<double>(i) / num_checks;
+  //         double angle = arc.start_angle + t * angle_diff;
+
+  //         Pose2D point;
+  //         point.x = arc.center.x + arc.radius * std::cos(angle);
+  //         point.y = arc.center.y + arc.radius * std::sin(angle);
+  //         point.theta = angle + (arc.is_left ? M_PI/2 : -M_PI/2);
+
+  //         if (i > 0 && collision_check_(prev_point, point)) {
+  //             return true;  // Collision detected
+  //         }
+  //         prev_point = point;
+  //     }
+  //     return false;  // No collision
+  // }
+
   return false;
 }
 
@@ -54,8 +85,6 @@ bool Line::collides_with(const std::vector<Obstacle> &obstacles) const {
   return false;
 }
 
-double DubinsSegment::length() { return arc.length + line.length; }
-
 bool DubinsSegment::collides_with(
     const std::vector<Obstacle> &obstacles) const {
   return arc.collides_with(obstacles) || line.collides_with(obstacles);
@@ -74,37 +103,33 @@ DubinsSegment get_dubins_segment(const Pose2D &start, const Pose2D &goal,
   DubinsSegment seg;
   double length = std::numeric_limits<double>::max();
 
-  for (const auto &start_circle : start_circles) {
-    auto tangent = get_tangent(start_circle, goal);
-
-    auto arc_length1 = std::sqrt(std::pow(start.x - tangent[0].start.x, 2) +
-                                 std::pow(start.y - tangent[0].start.y, 2));
-    if (arc_length1 > 2 * radius)
+  for (const auto &circle : start_circles) {
+    auto tangent = get_tangent(circle, goal);
+    if (tangent.length == 0)
       continue;
 
-    auto arc_angle1 =
-        std::acos(2 * std::pow(radius, 2) -
-                  std::pow(arc_length1, 2) / (2 * std::pow(radius, 2)));
+    auto chord_length = get_euclidean_distance(start, tangent.start);
+    if (chord_length > 2 * radius)
+      continue;
 
-    auto c1 = (start.x - start_circle.center.x) *
-                  (tangent[0].start.y + start_circle.center.y) -
-              (start.y - start_circle.center.y) *
-                  (tangent[0].start.x - start_circle.center.x);
+    auto arc_angle = 2 * std::asin(chord_length / (2 * radius));
 
-    if ((c1 > 0 && start_circle.direction == Direction::RIGHT) ||
-        (c1 < 0 && start_circle.direction == Direction::LEFT))
-      arc_angle1 = 2 * M_PI - arc_angle1;
+    auto orientation =
+        (start.x - circle.center.x) * (tangent.start.y - circle.center.y) -
+        (start.y - circle.center.y) * (tangent.start.x - circle.center.x);
 
-    auto line_len =
-        std::sqrt(std::pow(tangent[0].start.x - tangent[0].end.x, 2) +
-                  std::pow(tangent[0].start.y - tangent[0].end.y, 2));
+    // Flip the arc angle if the orientation of the tangent is opposite to the
+    // circle's
+    if ((orientation > 0 && circle.direction == Direction::RIGHT) ||
+        (orientation < 0 && circle.direction == Direction::LEFT)) {
+      arc_angle = 2 * M_PI - arc_angle;
+    }
 
-    DubinsSegment temp_seg{Arc{start, tangent[0].start, start_circle.center,
-                               start_circle.direction, radius, arc_angle1,
-                               radius * arc_angle1},
-                           Line{tangent[0].start, tangent[0].end, line_len}};
+    DubinsSegment temp_seg(Arc(start, tangent.start, circle.center,
+                               circle.direction, radius, arc_angle),
+                           Line(tangent.start, tangent.end));
 
-    auto temp_length = temp_seg.length();
+    auto temp_length = temp_seg.length;
     if (temp_length < length) {
       seg = temp_seg;
       length = temp_length;
@@ -118,17 +143,14 @@ double get_euclidean_distance(const Pose2D &a, const Pose2D &b) {
   return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
 }
 
-std::vector<Line> get_tangent(const Circle &circle, const Pose2D &target) {
+Line get_tangent(const Circle &circle, const Pose2D &target) {
   auto C1 = circle.center;
   auto R = circle.radius;
-  auto C1P =
-      std::sqrt(std::pow(C1.x - target.x, 2) + std::pow(C1.y - target.y, 2));
+  auto C1P = get_euclidean_distance(C1, target);
   auto direction = circle.direction;
 
   if (R > C1P)
     return {};
-
-  std::vector<Line> tangents;
 
   Eigen::Vector2d vec(target.x - C1.x, target.y - C1.y);
   auto th = std::acos(R / C1P);
@@ -146,10 +168,8 @@ std::vector<Line> get_tangent(const Circle &circle, const Pose2D &target) {
   Eigen::Vector2d tangent_vec(target.x - tangent_pt.x, target.y - tangent_pt.y);
   auto theta = std::atan2(tangent_vec(1), tangent_vec(1));
 
-  tangents.push_back(Line{Pose2D{tangent_pt.x, tangent_pt.y, theta},
-                          Pose2D{target.x, target.y, theta}});
-
-  return tangents;
+  return Line(Pose2D{tangent_pt.x, tangent_pt.y, theta},
+              Pose2D{target.x, target.y, theta});
 }
 
 std::tuple<Circle, Circle> get_turning_circles(const Pose2D &pose,

@@ -86,9 +86,65 @@ PYBIND11_MODULE(wheeled_humanoid_py, m) {
       .def_readwrite("y_min", &base::Dimensions::y_min)
       .def_readwrite("y_max", &base::Dimensions::y_max);
 
+  py::enum_<base::Direction>(base, "Direction")
+      .value("LEFT", base::Direction::LEFT)
+      .value("RIGHT", base::Direction::RIGHT)
+      .export_values();
+
+  py::class_<base::Circle>(base, "Circle")
+      .def(py::init<Pose2D, double>(), py::arg("center"), py::arg("radius"))
+      .def(py::init<Pose2D, double, base::Direction>(), py::arg("center"),
+           py::arg("radius"), py::arg("direction"))
+      .def_readwrite("center", &base::Circle::center)
+      .def_readwrite("radius", &base::Circle::radius)
+      .def_readwrite("direction", &base::Circle::direction);
+
+  py::class_<base::Arc>(base, "Arc")
+      .def(py::init<>())
+      .def(py::init<Pose2D, Pose2D, Pose2D, base::Direction, double, double>(),
+           py::arg("start"), py::arg("end"), py::arg("center"),
+           py::arg("direction"), py::arg("radius"), py::arg("arc_angle"))
+      .def_readwrite("start", &base::Arc::start)
+      .def_readwrite("end", &base::Arc::end)
+      .def_readwrite("center", &base::Arc::center)
+      .def_readwrite("direction", &base::Arc::direction)
+      .def_readwrite("radius", &base::Arc::radius)
+      .def_readwrite("arc_angle", &base::Arc::arc_angle)
+      .def_readwrite("length", &base::Arc::length)
+      .def("collides_with", &base::Arc::collides_with, py::arg("obstacles"));
+
+  py::class_<base::Line>(base, "Line")
+      .def(py::init<>())
+      .def(py::init<Pose2D, Pose2D>(), py::arg("start"), py::arg("end"))
+      .def_readwrite("start", &base::Line::start)
+      .def_readwrite("end", &base::Line::end)
+      .def_readwrite("length", &base::Line::length)
+      .def("collides_with", &base::Line::collides_with, py::arg("obstacles"));
+
+  py::class_<base::DubinsSegment>(base, "DubinsSegment")
+      .def(py::init<>())
+      .def(py::init<base::Arc, base::Line>(), py::arg("arc"), py::arg("line"))
+      .def_readwrite("arc", &base::DubinsSegment::arc)
+      .def_readwrite("line", &base::DubinsSegment::line)
+      .def_readwrite("length", &base::DubinsSegment::length)
+      .def("collides_with", &base::DubinsSegment::collides_with,
+           py::arg("obstacles"));
+
   // Base Utils
+  base.def("get_car_turning_radius", &base::get_car_turning_radius,
+           py::arg("wheel_base"), py::arg("max_steering_angle"));
+
+  base.def("get_dubins_segment", &base::get_dubins_segment, py::arg("start"),
+           py::arg("goal"), py::arg("radius"));
+
   base.def("get_euclidean_distance", &base::get_euclidean_distance,
            py::arg("a"), py::arg("b"));
+
+  base.def("get_tangent", &base::get_tangent, py::arg("circle"),
+           py::arg("target"));
+
+  base.def("get_turning_circles", &base::get_turning_circles, py::arg("pose"),
+           py::arg("radius"));
 
   // Main module
 

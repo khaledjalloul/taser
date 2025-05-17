@@ -4,6 +4,14 @@
 
 namespace wheeled_humanoid::base {
 
+/**
+ * Get the Euclidean distance between two points
+ * @param a First point
+ * @param b Second point
+ * @return Euclidean distance between the two points
+ */
+double get_euclidean_distance(const Pose2D &a, const Pose2D &b);
+
 enum Direction { LEFT, RIGHT };
 
 struct Dimensions {
@@ -20,7 +28,15 @@ struct Circle {
 struct Arc {
   Pose2D start, end, center;
   Direction direction;
-  double radius, arc_angle, length = 0;
+  double radius, arc_angle, length;
+
+  Arc() = default;
+  Arc(const Pose2D &start, const Pose2D &end, const Pose2D &center,
+      Direction direction, double radius, double arc_angle)
+      : start(start), end(end), center(center), direction(direction),
+        radius(radius), arc_angle(arc_angle) {
+    length = radius * arc_angle;
+  }
 
   /**
    * Check for collision with given obstacles
@@ -33,7 +49,12 @@ struct Arc {
 struct Line {
   Pose2D start;
   Pose2D end;
-  double length = 0;
+  double length;
+
+  Line() = default;
+  Line(const Pose2D &start, const Pose2D &end) : start(start), end(end) {
+    length = get_euclidean_distance(start, end);
+  }
 
   /**
    * Check for collision with given obstacles
@@ -44,11 +65,14 @@ struct Line {
 };
 
 struct DubinsSegment {
-
   Arc arc;
   Line line;
+  double length;
 
-  double length();
+  DubinsSegment() = default;
+  DubinsSegment(const Arc &arc, const Line &line) : arc(arc), line(line) {
+    length = arc.length + line.length;
+  }
 
   /**
    * Check for collision with given obstacles
@@ -58,20 +82,14 @@ struct DubinsSegment {
   bool collides_with(const std::vector<Obstacle> &obstacles) const;
 };
 
+using DubinsPath = std::vector<DubinsSegment>;
+
 double get_car_turning_radius(double wheel_base, double max_steering_angle);
 
 DubinsSegment get_dubins_segment(const Pose2D &start, const Pose2D &goal,
                                  double radius);
 
-/**
- * Get the Euclidean distance between two points
- * @param a First point
- * @param b Second point
- * @return Euclidean distance between the two points
- */
-double get_euclidean_distance(const Pose2D &a, const Pose2D &b);
-
-std::vector<Line> get_tangent(const Circle &circle, const Pose2D &target);
+Line get_tangent(const Circle &circle, const Pose2D &target);
 
 std::tuple<Circle, Circle> get_turning_circles(const Pose2D &pose,
                                                double radius);

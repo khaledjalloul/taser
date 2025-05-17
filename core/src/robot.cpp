@@ -31,23 +31,20 @@ Robot::move_arm_step(const std::string &arm_name,
 
 std::tuple<double, double, double>
 Robot::move_base_step(const Pose2D &desored_pose) {
-  Path rrt_path = rrt.generate_path(base.pose, desored_pose);
-  if (rrt_path.empty()) {
+  auto dubins_path = rrt.generate_path(base.pose, desored_pose);
+  if (dubins_path.empty()) {
     std::cerr << "Cannot move base, RRT* path not found." << std::endl;
     return {0, 0, -1};
   }
-  rrt_path = rrt.interpolate_path(rrt_path, base_controller.N);
-  auto rrt_path_vel = rrt.get_velocity_profile(rrt_path);
+  auto path = rrt.interpolate_path(dubins_path, base_controller.N);
+  auto path_vel = rrt.get_velocity_profile(path);
 
-  auto u = base_controller.step(base.pose, rrt_path, rrt_path_vel);
+  auto u = base_controller.step(base.pose, path, path_vel);
 
   base.set_base_velocity(u.v, u.omega);
   base.step();
 
-  auto err = pow(base.pose.x - rrt_path.back().x, 2) +
-             pow(base.pose.y - rrt_path.back().y, 2);
-  err = sqrt(err);
-
+  auto err = base::get_euclidean_distance(base.pose, path.back());
   return {base.v_l, base.v_r, err};
 }
 
