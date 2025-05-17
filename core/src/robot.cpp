@@ -36,7 +36,7 @@ Robot::move_base_step(const Pose2D &desored_pose) {
     std::cerr << "Cannot move base, RRT* path not found." << std::endl;
     return {0, 0, -1};
   }
-  auto path = rrt.interpolate_path(dubins_path, base_controller.N);
+  auto path = rrt.sample_path(dubins_path, base_controller.N);
   auto path_vel = rrt.get_velocity_profile(path);
 
   auto u = base_controller.step(base.pose, path, path_vel);

@@ -56,13 +56,12 @@ public:
                    int sample) const;
 
   /**
-   * Interpolate the path to get a smoother trajectory
-   * @param path Path to interpolate
-   * @param desired_n_points Number of points to interpolate to
-   * @return Interpolated path
+   * Sample a dubins path to get a vector of poses
+   * @param path Dubins path
+   * @param num_samples Number of samples
+   * @return Sampled path
    */
-  Path interpolate_path(const DubinsPath &dubins_path,
-                        int desired_n_points) const;
+  Path sample_path(const DubinsPath &dubins_path, int num_samples) const;
 
   /**
    * Get the velocity profile (vector of base velocities) for the path

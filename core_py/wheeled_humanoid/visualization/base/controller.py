@@ -27,17 +27,17 @@ if __name__ == "__main__":
 
     obstacles = [
         [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2),
-        Pose2D(2, 1), Pose2D(1, 0.5)],
+         Pose2D(2, 1), Pose2D(1, 0.5)],
         [Pose2D(3, 1), Pose2D(3, 2), Pose2D(4, 2), Pose2D(4, 1)]
     ]
     inflated_obstacles = rrt.set_obstacles(obstacles)
 
-   for _ in range(50):
+    for _ in range(50):
         if get_euclidean_distance(base.pose, goal) < 0.1:
             break
 
-        path = rrt.generate_path(base.pose, goal)
-        path = rrt.interpolate_path(path, N)
+        dubins_path = rrt.generate_path(base.pose, goal)
+        path = rrt.sample_path(dubins_path, N)
         path_vel = rrt.get_velocity_profile(path)
 
         plt.clf()

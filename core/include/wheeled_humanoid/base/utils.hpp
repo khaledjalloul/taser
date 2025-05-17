@@ -37,6 +37,8 @@ struct Arc {
         radius(radius), arc_angle(arc_angle) {
     length = radius * arc_angle;
   }
+
+  Path sample(int N) const;
 };
 
 struct Line {
@@ -48,6 +50,8 @@ struct Line {
   Line(const Pose2D &start, const Pose2D &end) : start(start), end(end) {
     length = get_euclidean_distance(start, end);
   }
+
+  Path sample(int N) const;
 };
 
 struct DubinsSegment {

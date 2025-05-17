@@ -2,6 +2,44 @@
 
 namespace wheeled_humanoid::base {
 
+Path Arc::sample(int N) const {
+  double r = hypot(start.x - center.x, start.y - center.y);
+  double theta1 = atan2(start.y - center.y, start.x - center.x);
+  double theta2 = atan2(end.y - center.y, end.x - center.x);
+
+  // Normalize to [0, 2π)
+  if (theta1 < 0)
+    theta1 += 2 * M_PI;
+  if (theta2 < 0)
+    theta2 += 2 * M_PI;
+
+  double delta = theta2 - theta1;
+  if (direction == Direction::RIGHT && delta > 0)
+    delta -= 2 * M_PI;
+  else if (direction == Direction::LEFT && delta < 0)
+    delta += 2 * M_PI;
+
+  std::vector<Pose2D> samples;
+  for (int i = 0; i <= N; i++) {
+    double theta = theta1 + (delta * i / N);
+    double x = center.x + r * cos(theta);
+    double y = center.y + r * sin(theta);
+    samples.push_back(Pose2D{x, y, theta});
+  }
+  return samples;
+}
+
+Path Line::sample(int N) const {
+  std::vector<Pose2D> samples;
+  for (int i = 0; i <= N; i++) {
+    double t = static_cast<double>(i) / N;
+    double x = start.x + t * (end.x - start.x);
+    double y = start.y + t * (end.y - start.y);
+    samples.push_back(Pose2D{x, y, start.theta});
+  }
+  return samples;
+}
+
 double get_car_turning_radius(double wheel_base, double max_steering_angle) {
   return wheel_base / std::tan(max_steering_angle);
 }
@@ -52,7 +90,7 @@ DubinsSegment get_dubins_segment(const Pose2D &start, const Pose2D &goal,
 }
 
 double get_euclidean_distance(const Pose2D &a, const Pose2D &b) {
-  return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
+  return std::hypot(a.x - b.x, a.y - b.y);
 }
 
 Line get_tangent(const Circle &circle, const Pose2D &target) {

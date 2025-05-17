@@ -67,8 +67,8 @@ PYBIND11_MODULE(wheeled_humanoid_py, m) {
       .def("sample_new_point", &base::PathPlanner::sample_new_point,
            py::arg("points"), py::arg("parent_idxs"), py::arg("distances"),
            py::arg("dim"), py::arg("sample"))
-      .def("interpolate_path", &base::PathPlanner::interpolate_path,
-           py::arg("path"), py::arg("desired_n_points"))
+      .def("sample_path", &base::PathPlanner::sample_path,
+           py::arg("dubins_path"), py::arg("num_samples"))
       .def("get_velocity_profile", &base::PathPlanner::get_velocity_profile,
            py::arg("path"))
       .def("check_collision", &base::PathPlanner::check_collision,
