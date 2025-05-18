@@ -2,6 +2,20 @@
 
 namespace wheeled_humanoid {
 
+Robot::Robot(double dt, double arm_controller_kp, double base_L,
+             double base_wheel_radius, double base_velocity,
+             int base_rrt_num_samples, int base_mpc_horizon)
+    : dt(dt) {
+  arms = {{"left_arm", arm::Kinematics("left_arm")},
+          {"right_arm", arm::Kinematics("right_arm")}};
+  arm_controller = std::make_unique<arm::Controller>(arm_controller_kp);
+
+  base = std::make_unique<base::Kinematics>(base_L, base_wheel_radius, dt);
+  base_controller = std::make_unique<base::Controller>(dt, base_mpc_horizon);
+  rrt = std::make_unique<base::PathPlanner>(base_rrt_num_samples, dt, base_L,
+                                            base_velocity);
+}
+
 std::tuple<ArmJointVelocities, double>
 Robot::move_arm_step(const std::string &arm_name,
                      const Position3D &desired_position,
@@ -14,7 +28,7 @@ Robot::move_arm_step(const std::string &arm_name,
   Pose3D p_desired = {desired_position, {0, 0, 0}};
 
   // Get control output and solve for joint velocities
-  auto w_desired = arm_controller.step(p_cur, p_desired);
+  auto w_desired = arm_controller->step(p_cur, p_desired);
   auto dq_desired = arm.solve_ik_for_joint_velocities(w_desired, tfs);
 
   // Limit joint velocities
@@ -30,16 +44,16 @@ Robot::move_arm_step(const std::string &arm_name,
 }
 
 void Robot::plan_path(const Pose2D &goal) {
-  auto dubins_path = rrt.generate_path(base.pose, goal);
+  auto dubins_path = rrt->generate_path(base->pose, goal);
   if (dubins_path.empty()) {
     std::cerr << "RRT* path not found." << std::endl;
     return;
   }
-  path_ = rrt.sample_path(dubins_path, T / dt);
-  for (int i = 0; i < 2 * base_controller.N; i++) {
+  path_ = rrt->sample_path(dubins_path);
+  for (int i = 0; i < 2 * base_controller->N; i++) {
     path_.push_back(path_.back());
   }
-  path_vel_ = rrt.get_velocity_profile(path_);
+  path_vel_ = rrt->get_velocity_profile(path_);
   path_step_ = 0;
 }
 
@@ -50,19 +64,21 @@ std::tuple<double, double, double> Robot::move_base_step() {
   }
 
   auto local_path = Path(path_.begin() + path_step_,
-                         path_.begin() + path_step_ + base_controller.N);
+                         path_.begin() + path_step_ + base_controller->N);
   auto local_path_vel =
       VelocityProfile(path_vel_.begin() + path_step_,
-                      path_vel_.begin() + path_step_ + base_controller.N);
+                      path_vel_.begin() + path_step_ + base_controller->N);
 
-  auto u = base_controller.step(base.pose, local_path, local_path_vel);
+  auto u = base_controller->step(base->pose, local_path, local_path_vel);
 
-  base.set_base_velocity(u.v, u.omega);
-  base.step();
+  // TODO: Don't update the base pose here, only return wheel velocities and
+  // move the robot in the ROS node
+  base->set_base_velocity(u.v, u.omega);
+  base->step();
   path_step_ += 1;
 
-  auto err = base::get_euclidean_distance(base.pose, path_.back());
-  return {base.v_l, base.v_r, err};
+  auto err = base::get_euclidean_distance(base->pose, path_.back());
+  return {base->v_l, base->v_r, err};
 }
 
 } // namespace wheeled_humanoid

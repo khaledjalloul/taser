@@ -8,13 +8,13 @@ protected:
 
   void TearDown() override {}
 
-  wheeled_humanoid::Robot robot_;
+  wheeled_humanoid::Robot robot_{0.1, 1, 1, 0.5, 1, 100, 10};
 };
 
 TEST_F(BaseControlTest, follow_path) {
   wheeled_humanoid::Pose2D goal_pose{3.0, 3.0};
 
-  auto initial_pose = robot_.base.pose;
+  auto initial_pose = robot_.base->pose;
   auto initial_err = Eigen::Vector2d(initial_pose.x - goal_pose.x,
                                      initial_pose.y - goal_pose.y)
                          .norm();
@@ -24,7 +24,7 @@ TEST_F(BaseControlTest, follow_path) {
     robot_.move_base_step();
   }
 
-  auto final_pose = robot_.base.pose;
+  auto final_pose = robot_.base->pose;
   auto final_err =
       Eigen::Vector2d(final_pose.x - goal_pose.x, final_pose.y - goal_pose.y)
           .norm();

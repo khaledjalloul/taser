@@ -51,24 +51,22 @@ def plot_controller_step(ax: plt.Axes, base: Kinematics, start: Pose2D, goal: Po
             [path[i].x, path[i + 1].x],
             [path[i].y, path[i + 1].y],
             marker="o", color="blue", linewidth=0.5, markersize=3)
-        ax.quiver(path[i].x, path[i].y, np.cos(path[i].theta), np.sin(path[i].theta),
-                  color='black', scale_units='xy', zorder=2, scale=3, width=0.005)
+        # ax.quiver(path[i].x, path[i].y, np.cos(path[i].theta), np.sin(path[i].theta),
+        #           color='black', scale_units='xy', zorder=2, scale=3, width=0.005)
 
 
 if __name__ == "__main__":
     RRT_NUM_SAMPLES = 100
     L = 0.5
     wheel_radius = 0.3
-    T = 3  # Time to reach the goal
     dt = 0.1  # Time step
     N = 10  # MPC horizon
-    v_max = 1.0
-    omega_max = 2.0
+    V = 3.0  # Desired velocity
 
     base_mpc = Kinematics(L, wheel_radius, dt)
     base_no_mpc = Kinematics(L, wheel_radius, dt)
-    controller = Controller(dt, N, v_max, omega_max)
-    rrt = PathPlanner(RRT_NUM_SAMPLES, dt, L)
+    controller = Controller(dt, N, 0.0, 0.0)
+    rrt = PathPlanner(RRT_NUM_SAMPLES, dt, L, V)
 
     start = Pose2D(0, 0, -math.pi / 4)
     goal = Pose2D(3, 3, math.pi / 4)
@@ -83,7 +81,7 @@ if __name__ == "__main__":
     inflated_obstacles = rrt.set_obstacles(obstacles)
 
     dubins_path = rrt.generate_path(start, goal)
-    path = rrt.sample_path(dubins_path, int(T / dt))
+    path = rrt.sample_path(dubins_path)
     path.extend([path[-1] for _ in range(2 * N)])
     path_vel = rrt.get_velocity_profile(path)
 

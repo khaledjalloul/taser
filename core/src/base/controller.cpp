@@ -61,15 +61,18 @@ void Controller::get_linearized_model(const Pose2D &x0, const BaseVelocity &u0,
   A = Matrix::Identity(nx_, nx_);
   B = Matrix::Zero(nx_, nu_);
 
-  // x_dot = v * cos(theta)
+  // x_dot = v * cos(theta) * dt
+  // delta_x_dot = cos(theta) * dt * delta_v - v * sin(theta) * dt * delta_theta
   A(0, 2) = -sin(x0.theta) * u0.v * dt_;
   B(0, 0) = cos(x0.theta) * dt_;
 
-  // y_dot = v * sin(theta)
+  // y_dot = v * sin(theta) * dt
+  // delta_y_dot = sin(theta) * dt * delta_v + v * cos(theta) * dt * delta_theta
   A(1, 2) = cos(x0.theta) * u0.v * dt_;
   B(1, 0) = sin(x0.theta) * dt_;
 
-  // theta_dot = omega
+  // theta_dot = omega * dt
+  // delta_theta_dot = dt * delta_omega
   B(2, 1) = dt_;
 }
 
@@ -156,7 +159,8 @@ void Controller::set_up_QP_(const Pose2D &x0, const Path &x_ref,
       x0.theta - x_ref[0].theta;
 
   // Terminal constraint
-  // A_constr.block((N + 1) * nx_, N * nx_, nx_, nx_) = Matrix::Identity(nx_, nx_);
+  // A_constr.block((N + 1) * nx_, N * nx_, nx_, nx_) = Matrix::Identity(nx_,
+  // nx_);
 
   solver_.data()->setHessianMatrix((Eigen::SparseMatrix<double>)H.sparseView());
   solver_.data()->setGradient(g);

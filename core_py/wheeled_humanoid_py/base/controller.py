@@ -59,12 +59,12 @@ class Controller:
 
     def get_linearized_model(self, x0: Pose2D, u0: BaseVelocity) -> tuple[np.ndarray, np.ndarray]:
         A = np.eye(self.nx)
-        A[0, 2] = -np.sin(x0.theta) * self.dt * u0.v
-        A[1, 2] = np.cos(x0.theta) * self.dt * u0.v
+        A[0, 2] = -np.sin(x0.theta) * u0.v * self.dt
+        A[1, 2] = np.cos(x0.theta) * u0.v * self.dt
 
         B = np.zeros((self.nx, self.nu))
-        B[0, 0] = self.dt * np.cos(x0.theta)
-        B[1, 0] = self.dt * np.sin(x0.theta)
+        B[0, 0] = np.cos(x0.theta) * self.dt
+        B[1, 0] = np.sin(x0.theta) * self.dt
         B[2, 1] = self.dt
 
         return A, B

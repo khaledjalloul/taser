@@ -18,11 +18,13 @@ class PathPlanner {
 
 public:
   /**
+   * Constructor
    * @param num_samples Number of samples to generate when searching for a path
    * @param dt Time step
    * @param L Distance between the robot wheels
+   * @param desired_velocity Desired velocity of the robot
    */
-  PathPlanner(int num_samples, double dt, double L);
+  PathPlanner(int num_samples, double dt, double L, double desired_velocity);
 
   /**
    * Set the obstacles in the environment and inflate them based on the distance
@@ -57,11 +59,10 @@ public:
 
   /**
    * Sample a dubins path to get a vector of poses
-   * @param path Dubins path
-   * @param num_samples Number of samples
+   * @param dubins_path Dubins path
    * @return Sampled path
    */
-  Path sample_path(const DubinsPath &dubins_path, int num_samples) const;
+  Path sample_path(const DubinsPath &dubins_path) const;
 
   /**
    * Get the velocity profile (vector of base velocities) for the path
@@ -99,7 +100,7 @@ public:
 
 private:
   int num_samples_;
-  double dt_, L_, dubins_radius_;
+  double dt_, L_, dubins_radius_, desired_velocity_;
   std::vector<BoostPolygon> obstacles_, inflated_obstacles_;
 };
 

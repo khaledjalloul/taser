@@ -29,6 +29,8 @@ class RosNode : public rclcpp::Node {
 public:
   RosNode(std::string name);
 
+  void create_robot_instance();
+
   wheeled_humanoid::Transform get_transform(std::string target_frame,
                                             std::string source_frame) const;
 
@@ -50,7 +52,7 @@ public:
   void joint_state_callback(sensor_msgs::msg::JointState msg);
 
 private:
-  wheeled_humanoid::Robot robot_;
+  std::unique_ptr<wheeled_humanoid::Robot> robot_;
   double callback_time_ = -1;
   int num_spawned_targets_ = 0;
 

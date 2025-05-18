@@ -2,8 +2,10 @@
 
 namespace wheeled_humanoid::base {
 
-PathPlanner::PathPlanner(int num_samples, double dt, double L)
-    : num_samples_(num_samples), dt_(dt), L_(L) {
+PathPlanner::PathPlanner(int num_samples, double dt, double L,
+                         double desired_velocity)
+    : num_samples_(num_samples), dt_(dt), L_(L),
+      desired_velocity_(desired_velocity) {
   dubins_radius_ = get_car_turning_radius(L, M_PI / 4);
 }
 
@@ -178,8 +180,7 @@ PathPlanner::sample_new_point(std::vector<Pose2D> &points,
   return {points, parent_idxs, distances};
 }
 
-Path PathPlanner::sample_path(const DubinsPath &dubins_path,
-                              int num_samples) const {
+Path PathPlanner::sample_path(const DubinsPath &dubins_path) const {
   if (dubins_path.empty()) {
     std::cerr << "Cannot interpolate path, original path is empty."
               << std::endl;
@@ -189,6 +190,8 @@ Path PathPlanner::sample_path(const DubinsPath &dubins_path,
   double full_path_length = 0;
   for (const auto &segment : dubins_path)
     full_path_length += segment.length;
+  auto full_path_time = full_path_length / desired_velocity_;
+  auto num_samples = std::ceil(full_path_time / dt_);
 
   Path path{dubins_path.front().arc.start};
 

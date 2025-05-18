@@ -69,7 +69,27 @@ RosNode::RosNode(std::string name)
 
   RCLCPP_INFO(get_logger(), "Node started.");
 
+  create_robot_instance();
   spawn_obstacles();
+}
+
+void RosNode::create_robot_instance() {
+  declare_parameter<double>("dt");
+  declare_parameter<double>("arm.controller_kp");
+  declare_parameter<double>("base.L");
+  declare_parameter<double>("base.wheel_radius");
+  declare_parameter<double>("base.velocity");
+  declare_parameter<int>("base.rrt_num_samples");
+  declare_parameter<int>("base.mpc_horizon");
+
+  robot_ = std::make_unique<wheeled_humanoid::Robot>(
+      get_parameter("dt").as_double(),
+      get_parameter("arm.controller_kp").as_double(),
+      get_parameter("base.L").as_double(),
+      get_parameter("base.wheel_radius").as_double(),
+      get_parameter("base.velocity").as_double(),
+      get_parameter("base.rrt_num_samples").as_int(),
+      get_parameter("base.mpc_horizon").as_int());
 }
 
 wheeled_humanoid::Transform
@@ -120,7 +140,7 @@ void RosNode::spawn_obstacles() {
 
   std::vector<wheeled_humanoid::Obstacle> obstacles = {
       {{6, -3}, {6, 3}, {8, 3}, {8, -3}}};
-  robot_.rrt.set_obstacles(obstacles);
+  robot_->rrt->set_obstacles(obstacles);
 
   Marker marker;
   marker.header.frame_id = "map";
@@ -179,7 +199,7 @@ void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
   }
   arm_active_goal_ = goal_handle;
 
-  rclcpp::Rate r(10);
+  rclcpp::Rate r(1 / robot_->dt);
   const auto goal = goal_handle->get_goal();
   auto result = std::make_shared<MoveArmsAction::Result>();
 
@@ -223,7 +243,7 @@ double RosNode::move_arm_step(std::string name,
   // Get arm transforms
   auto tfs = get_arm_transforms(name);
 
-  auto res = robot_.move_arm_step(name, p, tfs);
+  auto res = robot_->move_arm_step(name, p, tfs);
   auto dq_desired = std::get<0>(res);
   auto err = std::get<1>(res);
 
@@ -243,9 +263,9 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
   }
   base_active_goal_ = goal_handle;
 
-  rclcpp::Rate r(10);
+  rclcpp::Rate r(1 / robot_->dt);
   const auto goal = goal_handle->get_goal();
-  robot_.plan_path({goal->x, goal->y});
+  robot_->plan_path({goal->x, goal->y});
   auto result = std::make_shared<MoveBaseAction::Result>();
 
   while (rclcpp::ok()) {
@@ -256,7 +276,7 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
       return;
     }
 
-    auto res = robot_.move_base_step();
+    auto res = robot_->move_base_step();
     auto v_l = std::get<0>(res);
     auto v_r = std::get<1>(res);
     auto err = std::get<2>(res);
@@ -265,11 +285,11 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
     if (err < 1.5) {
       if (err == -1) {
         RCLCPP_INFO(get_logger(), "Base movement aborted early at %f, %f",
-                    robot_.base.pose.x, robot_.base.pose.y);
+                    robot_->base->pose.x, robot_->base->pose.y);
         goal_handle->abort(result);
       } else {
-        RCLCPP_INFO(get_logger(), "Reached goal at %f, %f", robot_.base.pose.x,
-                    robot_.base.pose.y);
+        RCLCPP_INFO(get_logger(), "Reached goal at %f, %f",
+                    robot_->base->pose.x, robot_->base->pose.y);
         goal_handle->succeed(result);
       }
 
@@ -312,15 +332,12 @@ void RosNode::joint_state_callback(sensor_msgs::msg::JointState msg) {
     return;
   }
 
-  auto dt = now().seconds() - callback_time_;
-  // robot_.base.set_wheel_velocities(joint_velocities_[6],
-  // joint_velocities_[8]); robot_.base.step(dt);
-
+  // Move the robot in simulation by publishing transform
   TransformMsg tf;
-  tf.translation.x = robot_.base.pose.x;
-  tf.translation.y = robot_.base.pose.y;
-  tf.rotation.w = cos(robot_.base.pose.theta / 2);
-  tf.rotation.z = sin(robot_.base.pose.theta / 2);
+  tf.translation.x = robot_->base->pose.x;
+  tf.translation.y = robot_->base->pose.y;
+  tf.rotation.w = cos(robot_->base->pose.theta / 2);
+  tf.rotation.z = sin(robot_->base->pose.theta / 2);
 
   publish_transform(tf);
   callback_time_ = now().seconds();

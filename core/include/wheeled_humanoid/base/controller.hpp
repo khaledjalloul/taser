@@ -12,12 +12,13 @@ namespace wheeled_humanoid::base {
 class Controller {
 public:
   /**
+   * Constructor
    * @param dt Time step
    * @param N Number of prediction steps
    * @param v_max Maximum linear velocity
    * @param omega_max Maximum angular velocity
    */
-  Controller(double dt, int N = 10, double v_max = 1.0, double omega_max = 2.0);
+  Controller(double dt, int N, double v_max = 1.0, double omega_max = 2.0);
 
   /**
    * Compute the desired base velocity command

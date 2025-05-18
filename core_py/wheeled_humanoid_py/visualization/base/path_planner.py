@@ -11,13 +11,13 @@ from dubins import plot_dubins_segment
 if __name__ == "__main__":
     RRT_NUM_SAMPLES = 100
     L = 0.5
-    N = 20  # Number of path samples
+    V = 2.0  # Desired velocity
     dubins_radius = get_car_turning_radius(L, np.pi / 4)
 
-    start = Pose2D()
+    start = Pose2D(0, 0, -np.pi / 2)
     goal = Pose2D(3, 3)
 
-    rrt = PathPlanner(RRT_NUM_SAMPLES, 0.1, L)
+    rrt = PathPlanner(RRT_NUM_SAMPLES, 0.1, L, V)
     obstacles = [
         [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2),
          Pose2D(2, 1), Pose2D(1, 0.5)],
@@ -36,6 +36,7 @@ if __name__ == "__main__":
             points, parent_idxs, distances, dim, sample)
 
         plt.clf()
+        plt.title("RRT* & Dubins Path Planner")
         plt.grid()
         plt.xlim(dim.x_min, dim.x_max)
         plt.ylim(dim.y_min, dim.y_max)
@@ -83,7 +84,7 @@ if __name__ == "__main__":
         plot_dubins_segment(segment, ax, 'green', linewidth=3)
 
     # Plot the sampled path with point orientations
-    path = rrt.sample_path(dubins_path, N)
+    path = rrt.sample_path(dubins_path)
     for s in path:
         plt.scatter(s.x, s.y, marker="o", color="orange", zorder=2)
         plt.quiver(s.x, s.y, np.cos(s.theta), np.sin(s.theta),

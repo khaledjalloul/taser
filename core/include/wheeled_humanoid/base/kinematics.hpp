@@ -12,6 +12,7 @@ namespace wheeled_humanoid::base {
 class Kinematics {
 public:
   /**
+   * Constructor
    * @param L Distance between the wheels
    * @param wheel_radius Radius of the wheels
    * @param dt Time step

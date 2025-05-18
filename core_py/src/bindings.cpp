@@ -58,8 +58,8 @@ PYBIND11_MODULE(wheeled_humanoid, m) {
 
   // Base RRT* Path Planner
   py::class_<base::PathPlanner>(base, "PathPlanner")
-      .def(py::init<int, double, double>(), py::arg("num_samples"),
-           py::arg("dt"), py::arg("L"))
+      .def(py::init<int, double, double, double>(), py::arg("num_samples"),
+           py::arg("dt"), py::arg("L"), py::arg("desired_velocity"))
       .def("set_obstacles", &base::PathPlanner::set_obstacles,
            py::arg("obstacles"))
       .def("generate_path", &base::PathPlanner::generate_path, py::arg("start"),
@@ -68,7 +68,7 @@ PYBIND11_MODULE(wheeled_humanoid, m) {
            py::arg("points"), py::arg("parent_idxs"), py::arg("distances"),
            py::arg("dim"), py::arg("sample"))
       .def("sample_path", &base::PathPlanner::sample_path,
-           py::arg("dubins_path"), py::arg("num_samples"))
+           py::arg("dubins_path"))
       .def("get_velocity_profile", &base::PathPlanner::get_velocity_profile,
            py::arg("path"))
       .def("check_collision", &base::PathPlanner::check_collision,
@@ -148,7 +148,10 @@ PYBIND11_MODULE(wheeled_humanoid, m) {
 
   // Robot
   py::class_<Robot>(m, "Robot")
-      .def(py::init())
+      .def(py::init<double, double, double, double, double, int, int>(),
+           py::arg("dt"), py::arg("arm_controller_kp"), py::arg("base_L"),
+           py::arg("base_wheel_radius"), py::arg("base_velocity"),
+           py::arg("base_rrt_num_samples"), py::arg("base_mpc_horizon"))
       .def("move_arm_step", &Robot::move_arm_step, py::arg("arm_name"),
            py::arg("desired_position"), py::arg("tfs"))
       .def("plan_path", &Robot::plan_path, py::arg("goal"))

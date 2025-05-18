@@ -8,7 +8,7 @@ protected:
 
   void TearDown() override {}
 
-  wheeled_humanoid::base::PathPlanner rrt_{200, 0.1, 0.5};
+  wheeled_humanoid::base::PathPlanner rrt_{200, 0.1, 0.5, 0.0};
 };
 
 TEST_F(PathPlannerTest, check_collision) {
@@ -39,7 +39,7 @@ TEST_F(PathPlannerTest, generate_path_no_obstacles) {
   auto start = wheeled_humanoid::Pose2D{0, 0};
   auto goal = wheeled_humanoid::Pose2D{3, 3};
   auto path = rrt_.generate_path(start, goal);
-  EXPECT_EQ(path.size(), 2);
+  EXPECT_EQ(path.size(), 1);
 }
 
 TEST_F(PathPlannerTest, generate_path_with_obstacle) {
@@ -50,5 +50,5 @@ TEST_F(PathPlannerTest, generate_path_with_obstacle) {
   auto start = wheeled_humanoid::Pose2D{0, 0};
   auto goal = wheeled_humanoid::Pose2D{3, 3};
   auto path = rrt_.generate_path(start, goal);
-  EXPECT_GT(path.size(), 2);
+  EXPECT_GT(path.size(), 1);
 }

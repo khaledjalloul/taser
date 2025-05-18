@@ -22,6 +22,20 @@ namespace wheeled_humanoid {
 class Robot {
 public:
   /**
+   * Constructor
+   * @param dt Time step
+   * @param arm_controller_kp Proportional gain for the arm controller
+   * @param base_L Distance between the base wheels
+   * @param base_wheel_radius Radius of the base wheels
+   * @param base_velocity Desired base velocity
+   * @param base_rrt_num_samples Number of samples for the RRT* path planner
+   * @param base_mpc_horizon Number of prediction steps for the MPC controller
+   */
+  Robot(double dt, double arm_controller_kp, double base_L,
+        double base_wheel_radius, double base_velocity,
+        int base_rrt_num_samples, int base_mpc_horizon);
+
+  /**
    * Get the desired arm joint velocities using the arm controller and IK solver
    * @param arm_name Name of the arm (left_arm or right_arm)
    * @param desired_position Desired end effector position
@@ -46,18 +60,14 @@ public:
    */
   std::tuple<double, double, double> move_base_step();
 
-  double T = 5.0;  // Time to reach targets
-  double dt = 0.1; // Time step
+  double dt;
+  
+  std::map<std::string, arm::Kinematics> arms;
+  std::unique_ptr<arm::Controller> arm_controller;
 
-  std::map<std::string, arm::Kinematics> arms = {
-      {"left_arm", arm::Kinematics("left_arm")},
-      {"right_arm", arm::Kinematics("right_arm")}};
-  arm::Controller arm_controller{1.0};
-
-  // L = 2.25, obtained using transform from left wheel to right wheel
-  base::Kinematics base{2.25, 0.5, dt};
-  base::Controller base_controller{dt, 30};
-  base::PathPlanner rrt{200, dt, 2.25};
+  std::unique_ptr<base::Kinematics> base;
+  std::unique_ptr<base::Controller> base_controller;
+  std::unique_ptr<base::PathPlanner> rrt;
 
 private:
   Path path_;
