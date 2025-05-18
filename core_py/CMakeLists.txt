@@ -15,20 +15,22 @@ foreach(PKG ${PACKAGE_DEPENDENCIES})
 endforeach()
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
-# Install Python package with original name "wheeled_humanoid" that will import wheeled_humanoid_py
-ament_python_install_package(wheeled_humanoid)
+_ament_cmake_python_get_python_install_dir()
 
-# Create Python package with bindings
+# Create Python package "wheeled_humanoid" from bindings
 pybind11_add_module(
-  ${PROJECT_NAME}
+  wheeled_humanoid
   src/bindings.cpp
 )
-target_link_libraries(${PROJECT_NAME} PRIVATE wheeled_humanoid::wheeled_humanoid)
+target_link_libraries(wheeled_humanoid PRIVATE wheeled_humanoid::wheeled_humanoid)
 
 # Install Python package
 install(
-  TARGETS ${PROJECT_NAME}
+  TARGETS wheeled_humanoid
   DESTINATION ${PYTHON_INSTALL_DIR}
 )
+
+# Create Python package "wheeled_humanoid_py" with custom implementations and visualizations
+ament_python_install_package(${PROJECT_NAME})
 
 ament_package()

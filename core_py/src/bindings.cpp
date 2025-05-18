@@ -9,7 +9,7 @@
 namespace py = pybind11;
 using namespace wheeled_humanoid;
 
-PYBIND11_MODULE(wheeled_humanoid_py, m) {
+PYBIND11_MODULE(wheeled_humanoid, m) {
 
   // Arm Submodule
   py::module_ arm = m.def_submodule("arm", "Logic for the robot arms");

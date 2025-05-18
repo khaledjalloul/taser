@@ -6,7 +6,7 @@ import numpy as np
 from wheeled_humanoid import Pose2D
 from wheeled_humanoid.base import Kinematics, PathPlanner, get_euclidean_distance
 from wheeled_humanoid.base import Controller
-# from wheeled_humanoid.base.py_controller import Controller
+# from wheeled_humanoid_py.base import Controller
 
 if __name__ == "__main__":
     RRT_NUM_SAMPLES = 100

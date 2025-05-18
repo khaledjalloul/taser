@@ -20,6 +20,15 @@ class Controller:
         self.R = np.diag([0.5, 0.1])
 
     def step(self, x0: Pose2D, x_ref: list[Pose2D], u_ref: list[BaseVelocity]) -> BaseVelocity:
+        if len(x_ref) < self.N:
+            print(
+                "Cannot step base MPC controller, reference path x_ref has less than N elements.")
+            return BaseVelocity()
+        if len(u_ref) < self.N:
+            print(
+                "Cannot step base MPC controller, reference velocity profile u_ref has less than N elements.")
+            return BaseVelocity()
+
         delta_x = cp.Variable((self.nx, self.N + 1))
         delta_u = cp.Variable((self.nu, self.N))
 
