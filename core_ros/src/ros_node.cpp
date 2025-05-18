@@ -245,7 +245,7 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
 
   rclcpp::Rate r(10);
   const auto goal = goal_handle->get_goal();
-  wheeled_humanoid::Pose2D goal_pose{goal->x, goal->y};
+  robot_.plan_path({goal->x, goal->y});
   auto result = std::make_shared<MoveBaseAction::Result>();
 
   while (rclcpp::ok()) {
@@ -256,7 +256,7 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
       return;
     }
 
-    auto res = robot_.move_base_step(goal_pose);
+    auto res = robot_.move_base_step();
     auto v_l = std::get<0>(res);
     auto v_r = std::get<1>(res);
     auto err = std::get<2>(res);

@@ -34,15 +34,20 @@ public:
                 const Transforms &tfs) const;
 
   /**
-   * Get the desired base wheel velocities using the RRT* path planner and base
-   * controller
+   * Plan a path from the current base pose using the RRT* path planner
+   * @param goal Target base pose
+   */
+  void plan_path(const Pose2D &goal);
+
+  /**
+   * Get the desired base wheel velocities using using the base MPC controller
    * @details Updates the base pose internally
-   * @param desired_pose Desired base pose
    * @return Tuple of left and right wheel velocities and error
    */
-  std::tuple<double, double, double> move_base_step(const Pose2D &desired_pose);
+  std::tuple<double, double, double> move_base_step();
 
-  double dt = 0.1;
+  double T = 5.0;  // Time to reach targets
+  double dt = 0.1; // Time step
 
   std::map<std::string, arm::Kinematics> arms = {
       {"left_arm", arm::Kinematics("left_arm")},
@@ -53,6 +58,11 @@ public:
   base::Kinematics base{2.25, 0.5, dt};
   base::Controller base_controller{dt, 30};
   base::PathPlanner rrt{200, dt, 2.25};
+
+private:
+  Path path_;
+  VelocityProfile path_vel_;
+  int path_step_ = 0;
 };
 
 } // namespace wheeled_humanoid

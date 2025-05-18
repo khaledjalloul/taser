@@ -35,7 +35,7 @@ class Controller:
         cost = 0
         constraints = [
             delta_x[:, 0] == np.array(x0.list()) - x_ref[0].list(),
-            delta_x[:, -1] == 0
+            # delta_x[:, -1] == 0
         ]
 
         for k in range(self.N):
@@ -51,6 +51,7 @@ class Controller:
         result = prob.solve(solver=cp.OSQP)
         if np.isinf(result):
             print("Problem is infeasible")
+            return BaseVelocity()
 
         u_opt = u_ref[0].list() + delta_u[:, 0].value
 

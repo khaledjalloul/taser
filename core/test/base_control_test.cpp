@@ -19,8 +19,9 @@ TEST_F(BaseControlTest, follow_path) {
                                      initial_pose.y - goal_pose.y)
                          .norm();
 
+  robot_.plan_path(goal_pose);
   for (int i = 0; i < 10; i++) {
-    robot_.move_base_step(goal_pose);
+    robot_.move_base_step();
   }
 
   auto final_pose = robot_.base.pose;

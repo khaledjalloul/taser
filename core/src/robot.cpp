@@ -29,22 +29,39 @@ Robot::move_arm_step(const std::string &arm_name,
   return {dq_desired, err};
 }
 
-std::tuple<double, double, double>
-Robot::move_base_step(const Pose2D &desored_pose) {
-  auto dubins_path = rrt.generate_path(base.pose, desored_pose);
+void Robot::plan_path(const Pose2D &goal) {
+  auto dubins_path = rrt.generate_path(base.pose, goal);
   if (dubins_path.empty()) {
-    std::cerr << "Cannot move base, RRT* path not found." << std::endl;
+    std::cerr << "RRT* path not found." << std::endl;
+    return;
+  }
+  path_ = rrt.sample_path(dubins_path, T / dt);
+  for (int i = 0; i < 2 * base_controller.N; i++) {
+    path_.push_back(path_.back());
+  }
+  path_vel_ = rrt.get_velocity_profile(path_);
+  path_step_ = 0;
+}
+
+std::tuple<double, double, double> Robot::move_base_step() {
+  if (path_.empty()) {
+    std::cerr << "No path planned. Call `Robot::plan_path` first." << std::endl;
     return {0, 0, -1};
   }
-  auto path = rrt.sample_path(dubins_path, base_controller.N);
-  auto path_vel = rrt.get_velocity_profile(path);
 
-  auto u = base_controller.step(base.pose, path, path_vel);
+  auto local_path = Path(path_.begin() + path_step_,
+                         path_.begin() + path_step_ + base_controller.N);
+  auto local_path_vel =
+      VelocityProfile(path_vel_.begin() + path_step_,
+                      path_vel_.begin() + path_step_ + base_controller.N);
+
+  auto u = base_controller.step(base.pose, local_path, local_path_vel);
 
   base.set_base_velocity(u.v, u.omega);
   base.step();
+  path_step_ += 1;
 
-  auto err = base::get_euclidean_distance(base.pose, path.back());
+  auto err = base::get_euclidean_distance(base.pose, path_.back());
   return {base.v_l, base.v_r, err};
 }
 

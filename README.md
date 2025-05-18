@@ -40,8 +40,8 @@
 - [x] Start with Isaac Lab environment
 - [x] Inflate RRT* obstacles and test in simulation
 - [x] Create mission for the robot to go to a location and pick up object
+- [x] Improve RRT* to use Dubins path
 - [ ] Add path planning to the arms to avoid obstacles or train with RL
-- [ ] Improve RRT* to use Dubins paths
 - [ ] Enable gravity and train robot to stay in balance
 
 ## To Do (Extra)

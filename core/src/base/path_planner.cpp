@@ -190,19 +190,26 @@ Path PathPlanner::sample_path(const DubinsPath &dubins_path,
   for (const auto &segment : dubins_path)
     full_path_length += segment.length;
 
-  Path path;
+  Path path{dubins_path.front().arc.start};
 
   for (const auto &segment : dubins_path) {
     auto num_arc_samples =
         std::ceil(segment.arc.length / full_path_length * num_samples);
+
     auto arc_samples = segment.arc.sample(num_arc_samples);
+    for (const auto &sample : arc_samples) {
+      if (get_euclidean_distance(sample, path.back()) >= 0.1)
+        path.push_back(sample);
+    }
 
     auto num_line_samples =
         std::ceil(segment.line.length / full_path_length * num_samples);
-    auto line_samples = segment.line.sample(num_line_samples);
 
-    path.insert(path.end(), arc_samples.begin(), arc_samples.end());
-    path.insert(path.end(), line_samples.begin(), line_samples.end());
+    auto line_samples = segment.line.sample(num_line_samples);
+    for (const auto &sample : line_samples) {
+      if (get_euclidean_distance(sample, path.back()) >= 0.1)
+        path.push_back(sample);
+    }
   }
 
   return path;

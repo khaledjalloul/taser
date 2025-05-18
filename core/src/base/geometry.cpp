@@ -13,8 +13,8 @@ Path Arc::sample(int N) const {
     delta_theta -= 2 * M_PI;
 
   std::vector<Pose2D> samples;
-  for (int i = 0; i <= N; i++) {
-    double t = static_cast<double>(i) / N;
+  for (int i = 0; i < N; i++) {
+    double t = static_cast<double>(i) / (N - 1);
     double x = center.x + r * cos(start_angle + (t * angle));
     double y = center.y + r * sin(start_angle + (t * angle));
     double theta = start.theta + t * delta_theta;
@@ -25,8 +25,8 @@ Path Arc::sample(int N) const {
 
 Path Line::sample(int N) const {
   std::vector<Pose2D> samples;
-  for (int i = 0; i <= N; i++) {
-    double t = static_cast<double>(i) / N;
+  for (int i = 0; i < N; i++) {
+    double t = static_cast<double>(i) / (N - 1);
     double x = start.x + t * (end.x - start.x);
     double y = start.y + t * (end.y - start.y);
     samples.push_back(Pose2D{x, y, start.theta});

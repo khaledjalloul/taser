@@ -151,7 +151,8 @@ PYBIND11_MODULE(wheeled_humanoid, m) {
       .def(py::init())
       .def("move_arm_step", &Robot::move_arm_step, py::arg("arm_name"),
            py::arg("desired_position"), py::arg("tfs"))
-      .def("move_base_step", &Robot::move_base_step, py::arg("desired_pose"));
+      .def("plan_path", &Robot::plan_path, py::arg("goal"))
+      .def("move_base_step", &Robot::move_base_step);
 
   // Types
   py::class_<Pose2D>(m, "Pose2D")

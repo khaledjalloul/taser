@@ -108,4 +108,4 @@ if __name__ == "__main__":
 
         plot_dubins_segment(segment, ax, quiver=True)
 
-        plt.ginput(1, timeout=2)
+        plt.ginput(1, timeout=1)

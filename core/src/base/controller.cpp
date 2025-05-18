@@ -87,7 +87,7 @@ void Controller::set_up_QP_(const Pose2D &x0, const Path &x_ref,
 
   for (int i = 0; i < N; i++) {
     Matrix A, B;
-    get_linearized_model(x_ref[0], u_ref[0], A, B);
+    get_linearized_model(x_ref[i], u_ref[i], A, B);
 
     int xi = i * nx_;
     int ui = nx_ * (N + 1) + i * nu_;
@@ -156,7 +156,7 @@ void Controller::set_up_QP_(const Pose2D &x0, const Path &x_ref,
       x0.theta - x_ref[0].theta;
 
   // Terminal constraint
-  A_constr.block((N + 1) * nx_, N * nx_, nx_, nx_) = Matrix::Identity(nx_, nx_);
+  // A_constr.block((N + 1) * nx_, N * nx_, nx_, nx_) = Matrix::Identity(nx_, nx_);
 
   solver_.data()->setHessianMatrix((Eigen::SparseMatrix<double>)H.sparseView());
   solver_.data()->setGradient(g);
