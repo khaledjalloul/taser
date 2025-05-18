@@ -8,7 +8,8 @@ protected:
 
   void TearDown() override {}
 
-  wheeled_humanoid::base::PathPlanner rrt_{200, 0.1, 0.5, 0.0};
+  wheeled_humanoid::base::Dimensions dim_{-2, 5, -2, 5};
+  wheeled_humanoid::base::PathPlanner rrt_{200, 0.1, 0.5, 0.0, dim_};
 };
 
 TEST_F(PathPlannerTest, check_collision) {

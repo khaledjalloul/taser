@@ -1,29 +1,39 @@
 wheeled_humanoid:
   ros__parameters:
-    dt: 0.01
+    dt: 0.001
+    initial_pose:
+      x: -7.0
+      y: 0.0
+      theta: 0.0
 
     arm:
-      controller_kp: 1.0
+      controller:
+        kp: 5.0
 
     base:
-      L: 2.25 # Obtained using transform from left wheel to right wheel
-      wheel_radius: 0.5
-      velocity: 5.0
-      rrt_num_samples: 100
-      mpc_horizon: 10
+      kinematics:
+        L: 2.25 # Obtained using transform from left wheel to right wheel
+        wheel_radius: 0.5
+      controller:
+        mpc_horizon: 30
+      path_planner:
+        velocity: 5.0
+        rrt_num_samples: 150
+        dimensions:
+          x_min: -12.0
+          x_max: 12.0
+          y_min: -12.0
+          y_max: 12.0
 
     environment:
-      obstacle_count: 4
+      obstacle_count: 3
       obstacles:
+        obstacle_0:
+          position: [0.0, 0.0, 2.5]
+          size: [2.0, 10.0, 5.0]
         obstacle_1:
-          position: [0.5, 0.5]
-          size: [0.2, 0.2, 0.2]
+          position: [5.0, -6.0, 2.5]
+          size: [12.0, 2.0, 5.0]
         obstacle_2:
-          position: [0.5, -0.5]
-          size: [0.2, 0.2, 0.2]
-        obstacle_3:
-          position: [-0.5, 0.5]
-          size: [0.2, 0.2, 0.2]
-        obstacle_4:
-          position: [-0.5, -0.5]
-          size: [0.2, 0.2, 0.2]
+          position: [-5.0, 6.0, 2.5]
+          size: [12.0, 2.0, 5.0]

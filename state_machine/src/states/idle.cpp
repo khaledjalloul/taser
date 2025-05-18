@@ -21,10 +21,11 @@ Status Idle::update() {
               pos.x, pos.y);
 
   auto move_to_target = std::make_unique<MoveBase>(
-      ros_node_, wheeled_humanoid::Pose2D{pos.x, pos.y, 0.0});
+      ros_node_, wheeled_humanoid::Pose2D{pos.x, pos.y});
   auto grab_target = std::make_unique<Grab>(ros_node_);
   auto lift_target = std::make_unique<Lift>(ros_node_);
-  auto move_to_home = std::make_unique<MoveBase>(ros_node_);
+  auto move_to_home = std::make_unique<MoveBase>(
+      ros_node_, wheeled_humanoid::Pose2D{-7.0, 0.0});
   auto drop_target = std::make_unique<Grab>(ros_node_);
   auto rest_arms = std::make_unique<RestArms>(ros_node_);
 

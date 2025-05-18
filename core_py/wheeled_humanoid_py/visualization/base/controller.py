@@ -4,7 +4,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 from wheeled_humanoid import Pose2D
-from wheeled_humanoid.base import Kinematics, PathPlanner, get_euclidean_distance
+from wheeled_humanoid.base import Dimensions, Kinematics, PathPlanner, get_euclidean_distance
 from wheeled_humanoid.base import Controller
 # from wheeled_humanoid_py.base import Controller
 
@@ -63,10 +63,12 @@ if __name__ == "__main__":
     N = 10  # MPC horizon
     V = 3.0  # Desired velocity
 
+    dim = Dimensions(-2, 5, -2, 5)
+
     base_mpc = Kinematics(L, wheel_radius, dt)
     base_no_mpc = Kinematics(L, wheel_radius, dt)
     controller = Controller(dt, N, 0.0, 0.0)
-    rrt = PathPlanner(RRT_NUM_SAMPLES, dt, L, V)
+    rrt = PathPlanner(RRT_NUM_SAMPLES, dt, L, V, dim)
 
     start = Pose2D(0, 0, -math.pi / 4)
     goal = Pose2D(3, 3, math.pi / 4)

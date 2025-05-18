@@ -16,8 +16,9 @@ if __name__ == "__main__":
 
     start = Pose2D(0, 0, -np.pi / 2)
     goal = Pose2D(3, 3)
+    dim = Dimensions(-2, 5, -2, 5)
 
-    rrt = PathPlanner(RRT_NUM_SAMPLES, 0.1, L, V)
+    rrt = PathPlanner(RRT_NUM_SAMPLES, 0.1, L, V, dim)
     obstacles = [
         [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2),
          Pose2D(2, 1), Pose2D(1, 0.5)],
@@ -29,11 +30,9 @@ if __name__ == "__main__":
     parent_idxs = [-1]
     distances = [0]
 
-    dim = Dimensions(-2, 5, -2, 5)
-
     for sample in range(RRT_NUM_SAMPLES):
         points, parent_idxs, distances = rrt.sample_new_point(
-            points, parent_idxs, distances, dim, sample)
+            points, parent_idxs, distances, sample)
 
         plt.clf()
         plt.title("RRT* & Dubins Path Planner")

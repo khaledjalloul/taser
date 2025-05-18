@@ -7,8 +7,8 @@ protected:
   void SetUp() override {}
 
   void TearDown() override {}
-
-  wheeled_humanoid::Robot robot_{0.1, 1, 1, 0.5, 1, 100, 10};
+  wheeled_humanoid::base::Dimensions dim_{-2, 5, -2, 5};
+  wheeled_humanoid::Robot robot_{0.1, 1, 1, 0.5, 10, 1, 100, dim_};
 };
 
 TEST_F(BaseControlTest, follow_path) {

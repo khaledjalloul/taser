@@ -34,6 +34,15 @@ Path Line::sample(int N) const {
   return samples;
 }
 
+Obstacle get_box_corners(double x, double y, double scale_x, double scale_y) {
+  Pose2D front_left{x + scale_x / 2, y - scale_y / 2};
+  Pose2D front_right{x + scale_x / 2, y + scale_y / 2};
+  Pose2D back_left{x - scale_x / 2, y - scale_y / 2};
+  Pose2D back_right{x - scale_x / 2, y + scale_y / 2};
+  // Apparently this order of vertices is important for the Boost buffer to work
+  return {back_left, back_right, front_right, front_left};
+}
+
 double get_car_turning_radius(double wheel_base, double max_steering_angle) {
   return wheel_base / std::tan(max_steering_angle);
 }

@@ -58,15 +58,16 @@ PYBIND11_MODULE(wheeled_humanoid, m) {
 
   // Base RRT* Path Planner
   py::class_<base::PathPlanner>(base, "PathPlanner")
-      .def(py::init<int, double, double, double>(), py::arg("num_samples"),
-           py::arg("dt"), py::arg("L"), py::arg("desired_velocity"))
+      .def(py::init<int, double, double, double, base::Dimensions>(),
+           py::arg("num_samples"), py::arg("dt"), py::arg("L"),
+           py::arg("desired_velocity"), py::arg("dim"))
       .def("set_obstacles", &base::PathPlanner::set_obstacles,
            py::arg("obstacles"))
       .def("generate_path", &base::PathPlanner::generate_path, py::arg("start"),
            py::arg("goal"))
       .def("sample_new_point", &base::PathPlanner::sample_new_point,
            py::arg("points"), py::arg("parent_idxs"), py::arg("distances"),
-           py::arg("dim"), py::arg("sample"))
+           py::arg("sample"))
       .def("sample_path", &base::PathPlanner::sample_path,
            py::arg("dubins_path"))
       .def("get_velocity_profile", &base::PathPlanner::get_velocity_profile,
@@ -74,7 +75,7 @@ PYBIND11_MODULE(wheeled_humanoid, m) {
       .def("check_collision", &base::PathPlanner::check_collision,
            py::arg("segment"))
       .def("create_halton_sample", &base::PathPlanner::create_halton_sample,
-           py::arg("index"), py::arg("dim"))
+           py::arg("index"))
       .def("get_nearest_neighbors", &base::PathPlanner::get_nearest_neighbors,
            py::arg("new_pt"), py::arg("points"), py::arg("radius"));
 
@@ -148,10 +149,12 @@ PYBIND11_MODULE(wheeled_humanoid, m) {
 
   // Robot
   py::class_<Robot>(m, "Robot")
-      .def(py::init<double, double, double, double, double, int, int>(),
+      .def(py::init<double, double, double, double, int, double, int,
+                    base::Dimensions>(),
            py::arg("dt"), py::arg("arm_controller_kp"), py::arg("base_L"),
-           py::arg("base_wheel_radius"), py::arg("base_velocity"),
-           py::arg("base_rrt_num_samples"), py::arg("base_mpc_horizon"))
+           py::arg("base_wheel_radius"), py::arg("base_mpc_horizon"),
+           py::arg("base_velocity"), py::arg("base_rrt_num_samples"),
+           py::arg("base_rrt_dim"))
       .def("move_arm_step", &Robot::move_arm_step, py::arg("arm_name"),
            py::arg("desired_position"), py::arg("tfs"))
       .def("plan_path", &Robot::plan_path, py::arg("goal"))

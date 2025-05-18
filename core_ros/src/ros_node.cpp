@@ -75,21 +75,39 @@ RosNode::RosNode(std::string name)
 
 void RosNode::create_robot_instance() {
   declare_parameter<double>("dt");
-  declare_parameter<double>("arm.controller_kp");
-  declare_parameter<double>("base.L");
-  declare_parameter<double>("base.wheel_radius");
-  declare_parameter<double>("base.velocity");
-  declare_parameter<int>("base.rrt_num_samples");
-  declare_parameter<int>("base.mpc_horizon");
+  declare_parameter<double>("initial_pose.x");
+  declare_parameter<double>("initial_pose.y");
+  declare_parameter<double>("initial_pose.theta");
+  declare_parameter<double>("arm.controller.kp");
+  declare_parameter<double>("base.kinematics.L");
+  declare_parameter<double>("base.kinematics.wheel_radius");
+  declare_parameter<int>("base.controller.mpc_horizon");
+  declare_parameter<double>("base.path_planner.velocity");
+  declare_parameter<int>("base.path_planner.rrt_num_samples");
+  declare_parameter<double>("base.path_planner.dimensions.x_min");
+  declare_parameter<double>("base.path_planner.dimensions.x_max");
+  declare_parameter<double>("base.path_planner.dimensions.y_min");
+  declare_parameter<double>("base.path_planner.dimensions.y_max");
 
   robot_ = std::make_unique<wheeled_humanoid::Robot>(
       get_parameter("dt").as_double(),
-      get_parameter("arm.controller_kp").as_double(),
-      get_parameter("base.L").as_double(),
-      get_parameter("base.wheel_radius").as_double(),
-      get_parameter("base.velocity").as_double(),
-      get_parameter("base.rrt_num_samples").as_int(),
-      get_parameter("base.mpc_horizon").as_int());
+      get_parameter("arm.controller.kp").as_double(),
+      get_parameter("base.kinematics.L").as_double(),
+      get_parameter("base.kinematics.wheel_radius").as_double(),
+      get_parameter("base.controller.mpc_horizon").as_int(),
+      get_parameter("base.path_planner.velocity").as_double(),
+      get_parameter("base.path_planner.rrt_num_samples").as_int(),
+      wheeled_humanoid::base::Dimensions{
+          get_parameter("base.path_planner.dimensions.x_min").as_double(),
+          get_parameter("base.path_planner.dimensions.x_max").as_double(),
+          get_parameter("base.path_planner.dimensions.y_min").as_double(),
+          get_parameter("base.path_planner.dimensions.y_max").as_double()});
+
+  robot_->base->pose.x = get_parameter("initial_pose.x").as_double();
+  robot_->base->pose.y = get_parameter("initial_pose.y").as_double();
+  robot_->base->pose.theta = get_parameter("initial_pose.theta").as_double();
+
+  set_robot_pose_in_sim(robot_->base->pose);
 }
 
 wheeled_humanoid::Transform
@@ -120,12 +138,16 @@ RosNode::get_arm_transforms(std::string arm_name) const {
   return tfs;
 }
 
-void RosNode::publish_transform(const TransformMsg &tf) const {
+void RosNode::set_robot_pose_in_sim(
+    const wheeled_humanoid::Pose2D &pose) const {
   geometry_msgs::msg::TransformStamped tf_stamped;
   tf_stamped.header.stamp = now();
   tf_stamped.header.frame_id = "odom";
   tf_stamped.child_frame_id = "base_wrapper";
-  tf_stamped.transform = tf;
+  tf_stamped.transform.translation.x = pose.x;
+  tf_stamped.transform.translation.y = pose.y;
+  tf_stamped.transform.rotation.w = cos(pose.theta / 2);
+  tf_stamped.transform.rotation.z = sin(pose.theta / 2);
 
   tf_broadcaster_->sendTransform(tf_stamped);
 }
@@ -138,35 +160,58 @@ void RosNode::spawn_obstacles() {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
-  std::vector<wheeled_humanoid::Obstacle> obstacles = {
-      {{6, -3}, {6, 3}, {8, 3}, {8, -3}}};
+  declare_parameter<int>("environment.obstacle_count");
+  auto obstacle_count = get_parameter("environment.obstacle_count").as_int();
+
+  std::vector<wheeled_humanoid::Obstacle> obstacles;
+
+  for (int i = 0; i < obstacle_count; i++) {
+    auto i_str = std::to_string(i);
+    declare_parameter<std::vector<double>>("environment.obstacles.obstacle_" +
+                                           i_str + ".position");
+    declare_parameter<std::vector<double>>("environment.obstacles.obstacle_" +
+                                           i_str + ".size");
+
+    auto position =
+        get_parameter("environment.obstacles.obstacle_" + i_str + ".position")
+            .as_double_array();
+    auto size =
+        get_parameter("environment.obstacles.obstacle_" + i_str + ".size")
+            .as_double_array();
+
+    Marker marker;
+    marker.header.frame_id = "map";
+    marker.header.stamp = get_clock()->now();
+    marker.ns = "wheeled_humanoid";
+    marker.id = i;
+    marker.type = Marker::CUBE;
+    marker.action = Marker::ADD;
+    marker.pose.position.x = position[0];
+    marker.pose.position.y = position[1];
+    marker.pose.position.z = position[2];
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = size[0];
+    marker.scale.y = size[1];
+    marker.scale.z = size[2];
+    marker.color.r = 0.5f;
+    marker.color.g = 0.5f;
+    marker.color.b = 0.5f;
+    marker.color.a = 0.8f;
+    marker.lifetime = rclcpp::Duration::from_seconds(0.0); // 0 = forever
+
+    obstacles_pub->publish(marker);
+
+    auto obstacle = wheeled_humanoid::base::get_box_corners(
+        position[0], position[1], size[0], size[1]);
+
+    obstacles.push_back(obstacle);
+  }
+
   robot_->rrt->set_obstacles(obstacles);
-
-  Marker marker;
-  marker.header.frame_id = "map";
-  marker.header.stamp = get_clock()->now();
-  marker.ns = "wheeled_humanoid";
-  marker.id = 0;
-  marker.type = Marker::CUBE;
-  marker.action = Marker::ADD;
-  marker.pose.position.x = 7.0;
-  marker.pose.position.y = 0.0;
-  marker.pose.position.z = 2.5;
-  marker.pose.orientation.w = 1.0;
-  marker.scale.x = 2.0;
-  marker.scale.y = 6.0;
-  marker.scale.z = 5.0;
-  marker.color.r = 0.5f;
-  marker.color.g = 0.5f;
-  marker.color.b = 0.5f;
-  marker.color.a = 0.8f;
-  marker.lifetime = rclcpp::Duration::from_seconds(0.0); // 0 = forever
-
-  obstacles_pub->publish(marker);
 }
 
 void RosNode::spawn_random_target() {
-  double x = ((double)std::rand() / RAND_MAX) * 3 + 10;
+  double x = ((double)std::rand() / RAND_MAX) * 3 + 3;
   double y = ((double)std::rand() / RAND_MAX) * 6 - 3;
 
   Marker marker;
@@ -265,8 +310,13 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
 
   rclcpp::Rate r(1 / robot_->dt);
   const auto goal = goal_handle->get_goal();
-  robot_->plan_path({goal->x, goal->y});
   auto result = std::make_shared<MoveBaseAction::Result>();
+
+  auto path_length = robot_->plan_path({goal->x, goal->y});
+  if (path_length == 0) {
+    goal_handle->abort(result);
+    return;
+  }
 
   while (rclcpp::ok()) {
     if (goal_handle->is_canceling()) {
@@ -333,13 +383,8 @@ void RosNode::joint_state_callback(sensor_msgs::msg::JointState msg) {
   }
 
   // Move the robot in simulation by publishing transform
-  TransformMsg tf;
-  tf.translation.x = robot_->base->pose.x;
-  tf.translation.y = robot_->base->pose.y;
-  tf.rotation.w = cos(robot_->base->pose.theta / 2);
-  tf.rotation.z = sin(robot_->base->pose.theta / 2);
+  set_robot_pose_in_sim(robot_->base->pose);
 
-  publish_transform(tf);
   callback_time_ = now().seconds();
 }
 

@@ -27,13 +27,15 @@ public:
    * @param arm_controller_kp Proportional gain for the arm controller
    * @param base_L Distance between the base wheels
    * @param base_wheel_radius Radius of the base wheels
+   * @param base_mpc_horizon Number of prediction steps for the MPC controller
    * @param base_velocity Desired base velocity
    * @param base_rrt_num_samples Number of samples for the RRT* path planner
-   * @param base_mpc_horizon Number of prediction steps for the MPC controller
+   * @param base_rrt_dim Dimensions of the environment for the RRT* path planner
+   * to sample from
    */
   Robot(double dt, double arm_controller_kp, double base_L,
-        double base_wheel_radius, double base_velocity,
-        int base_rrt_num_samples, int base_mpc_horizon);
+        double base_wheel_radius, int base_mpc_horizon, double base_velocity,
+        int base_rrt_num_samples, const base::Dimensions &base_rrt_dim);
 
   /**
    * Get the desired arm joint velocities using the arm controller and IK solver
@@ -50,8 +52,9 @@ public:
   /**
    * Plan a path from the current base pose using the RRT* path planner
    * @param goal Target base pose
+   * @return Number of steps in the path
    */
-  void plan_path(const Pose2D &goal);
+  int plan_path(const Pose2D &goal);
 
   /**
    * Get the desired base wheel velocities using using the base MPC controller
@@ -61,7 +64,7 @@ public:
   std::tuple<double, double, double> move_base_step();
 
   double dt;
-  
+
   std::map<std::string, arm::Kinematics> arms;
   std::unique_ptr<arm::Controller> arm_controller;
 

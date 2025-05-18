@@ -23,8 +23,10 @@ public:
    * @param dt Time step
    * @param L Distance between the robot wheels
    * @param desired_velocity Desired velocity of the robot
+   * @param dim Dimensions of the environment to sample from
    */
-  PathPlanner(int num_samples, double dt, double L, double desired_velocity);
+  PathPlanner(int num_samples, double dt, double L, double desired_velocity,
+              const Dimensions dim);
 
   /**
    * Set the obstacles in the environment and inflate them based on the distance
@@ -47,15 +49,13 @@ public:
    * @param[in,out] points List of sampled points in the environment so far
    * @param[in,out] parent_idxs List of parent indices for each point
    * @param[in,out] distances List of distances from start to each point
-   * @param[in] dim Dimensions of the environment
    * @param[in] sample Index of the sample to generate
    * @return Tuple of new points, parent indices, and distances (Only useful in
    * Python bindings)
    */
   std::tuple<std::vector<Pose2D>, std::vector<int>, std::vector<double>>
   sample_new_point(std::vector<Pose2D> &points, std::vector<int> &parent_idxs,
-                   std::vector<double> &distances, const Dimensions &dim,
-                   int sample) const;
+                   std::vector<double> &distances, int sample) const;
 
   /**
    * Sample a dubins path to get a vector of poses
@@ -81,10 +81,9 @@ public:
   /**
    * Create a Halton sample in the environment
    * @param index Index of the sample
-   * @param dim Dimensions of the environment
    * @return Halton sample
    */
-  Pose2D create_halton_sample(int index, const Dimensions &dim) const;
+  Pose2D create_halton_sample(int index) const;
 
   /**
    * Get the nearest neighbors of a point in the environment. TODO: Change to
@@ -101,6 +100,7 @@ public:
 private:
   int num_samples_;
   double dt_, L_, dubins_radius_, desired_velocity_;
+  Dimensions dim_;
   std::vector<BoostPolygon> obstacles_, inflated_obstacles_;
 };
 

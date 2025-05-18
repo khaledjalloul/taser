@@ -3,9 +3,9 @@
 namespace wheeled_humanoid::base {
 
 PathPlanner::PathPlanner(int num_samples, double dt, double L,
-                         double desired_velocity)
+                         double desired_velocity, const Dimensions dim)
     : num_samples_(num_samples), dt_(dt), L_(L),
-      desired_velocity_(desired_velocity) {
+      desired_velocity_(desired_velocity), dim_(dim) {
   dubins_radius_ = get_car_turning_radius(L, M_PI / 4);
 }
 
@@ -56,14 +56,8 @@ DubinsPath PathPlanner::generate_path(const Pose2D &start,
   std::vector<int> parent_idxs{-1};
   std::vector<double> distances{0};
 
-  Dimensions dim;
-  dim.x_min = std::min({start.x, start.y, goal.x, goal.y}) - 2;
-  dim.x_max = std::max({start.x, start.y, goal.x, goal.y}) + 2;
-  dim.y_min = std::min({start.x, start.y, goal.x, goal.y}) - 2;
-  dim.y_max = std::max({start.x, start.y, goal.x, goal.y}) + 2;
-
   for (int sample = 0; sample < num_samples_; sample++) {
-    sample_new_point(points, parent_idxs, distances, dim, sample);
+    sample_new_point(points, parent_idxs, distances, sample);
   }
 
   std::vector<double> goal_distances;
@@ -109,14 +103,14 @@ std::tuple<std::vector<Pose2D>, std::vector<int>, std::vector<double>>
 PathPlanner::sample_new_point(std::vector<Pose2D> &points,
                               std::vector<int> &parent_idxs,
                               std::vector<double> &distances,
-                              const Dimensions &dim, int sample) const {
+                              int sample) const {
 
-  auto new_pt = create_halton_sample(sample, dim);
+  auto new_pt = create_halton_sample(sample);
 
   // Radius in which to search for nearest points
   // TODO: Decrease dynamically based on number of points
-  auto proximity =
-      get_euclidean_distance({dim.x_min, dim.y_min}, {dim.x_max, dim.y_max});
+  auto proximity = get_euclidean_distance({dim_.x_min, dim_.y_min},
+                                          {dim_.x_max, dim_.y_max});
 
   auto nearest_pt_idxs = get_nearest_neighbors(new_pt, points, proximity);
 
@@ -180,6 +174,7 @@ PathPlanner::sample_new_point(std::vector<Pose2D> &points,
   return {points, parent_idxs, distances};
 }
 
+// TODO: Fix bug where sometimes the robot velocity doubles on certain segments
 Path PathPlanner::sample_path(const DubinsPath &dubins_path) const {
   if (dubins_path.empty()) {
     std::cerr << "Cannot interpolate path, original path is empty."
@@ -190,8 +185,10 @@ Path PathPlanner::sample_path(const DubinsPath &dubins_path) const {
   double full_path_length = 0;
   for (const auto &segment : dubins_path)
     full_path_length += segment.length;
+
   auto full_path_time = full_path_length / desired_velocity_;
   auto num_samples = std::ceil(full_path_time / dt_);
+  auto min_distance_between_samples = desired_velocity_ * dt_;
 
   Path path{dubins_path.front().arc.start};
 
@@ -201,7 +198,8 @@ Path PathPlanner::sample_path(const DubinsPath &dubins_path) const {
 
     auto arc_samples = segment.arc.sample(num_arc_samples);
     for (const auto &sample : arc_samples) {
-      if (get_euclidean_distance(sample, path.back()) >= 0.1)
+      if (get_euclidean_distance(sample, path.back()) >=
+          min_distance_between_samples)
         path.push_back(sample);
     }
 
@@ -210,7 +208,8 @@ Path PathPlanner::sample_path(const DubinsPath &dubins_path) const {
 
     auto line_samples = segment.line.sample(num_line_samples);
     for (const auto &sample : line_samples) {
-      if (get_euclidean_distance(sample, path.back()) >= 0.1)
+      if (get_euclidean_distance(sample, path.back()) >=
+          min_distance_between_samples)
         path.push_back(sample);
     }
   }
@@ -266,8 +265,7 @@ bool PathPlanner::check_collision(const DubinsSegment &segment) const {
   return false;
 }
 
-Pose2D PathPlanner::create_halton_sample(int index,
-                                         const Dimensions &dim) const {
+Pose2D PathPlanner::create_halton_sample(int index) const {
   auto radical_inverse = [](int index, int base) {
     double result = 0.0;
     double f = 1.0 / base;
@@ -283,8 +281,8 @@ Pose2D PathPlanner::create_halton_sample(int index,
   double y = radical_inverse(index, 3);
 
   return Pose2D{
-      x * (dim.x_max - dim.x_min) + dim.x_min,
-      y * (dim.y_max - dim.y_min) + dim.y_min,
+      x * (dim_.x_max - dim_.x_min) + dim_.x_min,
+      y * (dim_.y_max - dim_.y_min) + dim_.y_min,
       0.0,
   };
 }

@@ -69,6 +69,8 @@ struct DubinsSegment {
 
 using DubinsPath = std::vector<DubinsSegment>;
 
+Obstacle get_box_corners(double x, double y, double scale_x, double scale_y);
+
 double get_car_turning_radius(double wheel_base, double max_steering_angle);
 
 DubinsSegment get_dubins_segment(const Pose2D &start, const Pose2D &goal,

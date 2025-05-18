@@ -3,8 +3,9 @@
 namespace wheeled_humanoid {
 
 Robot::Robot(double dt, double arm_controller_kp, double base_L,
-             double base_wheel_radius, double base_velocity,
-             int base_rrt_num_samples, int base_mpc_horizon)
+             double base_wheel_radius, int base_mpc_horizon,
+             double base_velocity, int base_rrt_num_samples,
+             const base::Dimensions &base_rrt_dim)
     : dt(dt) {
   arms = {{"left_arm", arm::Kinematics("left_arm")},
           {"right_arm", arm::Kinematics("right_arm")}};
@@ -13,7 +14,7 @@ Robot::Robot(double dt, double arm_controller_kp, double base_L,
   base = std::make_unique<base::Kinematics>(base_L, base_wheel_radius, dt);
   base_controller = std::make_unique<base::Controller>(dt, base_mpc_horizon);
   rrt = std::make_unique<base::PathPlanner>(base_rrt_num_samples, dt, base_L,
-                                            base_velocity);
+                                            base_velocity, base_rrt_dim);
 }
 
 std::tuple<ArmJointVelocities, double>
@@ -43,11 +44,11 @@ Robot::move_arm_step(const std::string &arm_name,
   return {dq_desired, err};
 }
 
-void Robot::plan_path(const Pose2D &goal) {
+int Robot::plan_path(const Pose2D &goal) {
   auto dubins_path = rrt->generate_path(base->pose, goal);
   if (dubins_path.empty()) {
     std::cerr << "RRT* path not found." << std::endl;
-    return;
+    return 0;
   }
   path_ = rrt->sample_path(dubins_path);
   for (int i = 0; i < 2 * base_controller->N; i++) {
@@ -55,6 +56,8 @@ void Robot::plan_path(const Pose2D &goal) {
   }
   path_vel_ = rrt->get_velocity_profile(path_);
   path_step_ = 0;
+
+  return path_.size();
 }
 
 std::tuple<double, double, double> Robot::move_base_step() {

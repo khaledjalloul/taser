@@ -36,7 +36,7 @@ public:
 
   wheeled_humanoid::Transforms get_arm_transforms(std::string arm_name) const;
 
-  void publish_transform(const TransformMsg &tf) const;
+  void set_robot_pose_in_sim(const wheeled_humanoid::Pose2D &pose) const;
 
   void spawn_obstacles();
 
