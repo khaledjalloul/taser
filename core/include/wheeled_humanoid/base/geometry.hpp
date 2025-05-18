@@ -28,14 +28,16 @@ struct Circle {
 struct Arc {
   Pose2D start, end, center;
   Direction direction;
-  double radius, arc_angle, length;
+  double radius, angle, length;
+  // Arc angle is always +ve if direction is LEFT
+  // and -ve if direction is RIGHT
 
   Arc() = default;
   Arc(const Pose2D &start, const Pose2D &end, const Pose2D &center,
-      Direction direction, double radius, double arc_angle)
+      Direction direction, double radius, double angle)
       : start(start), end(end), center(center), direction(direction),
-        radius(radius), arc_angle(arc_angle) {
-    length = radius * arc_angle;
+        radius(radius), angle(angle) {
+    length = radius * abs(angle);
   }
 
   Path sample(int N) const;

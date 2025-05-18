@@ -2,7 +2,7 @@
 
 #include <boost/geometry.hpp>
 
-#include "wheeled_humanoid/base/utils.hpp"
+#include "wheeled_humanoid/base/geometry.hpp"
 #include "wheeled_humanoid/types.hpp"
 
 namespace wheeled_humanoid::base {

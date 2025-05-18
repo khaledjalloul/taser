@@ -10,14 +10,13 @@ from wheeled_humanoid.base import Direction, DubinsSegment, Circle, get_dubins_s
 def plot_dubins_segment(segment: DubinsSegment,
                         ax: plt.Axes,
                         color: str = "purple",
-                        linewidth: float = 1) -> None:
+                        linewidth: float = 1,
+                        quiver: bool = False) -> None:
     arc = segment.arc
-    arc_start_theta_vec = (arc.start.x - arc.center.x,
-                           arc.start.y - arc.center.y)
-    arc_start_theta = np.atan2(
-        arc_start_theta_vec[1], arc_start_theta_vec[0])
-    arc_rot_angle = 0 if arc.direction == Direction.LEFT else - \
-        arc.arc_angle * 180 / np.pi
+    start_theta = np.atan2(
+        arc.start.y - arc.center.y,
+        arc.start.x - arc.center.x) * 180 / np.pi
+    end_theta = start_theta + arc.angle * 180 / np.pi
 
     ax.add_patch(Arc(
         (arc.center.x, arc.center.y),
@@ -25,9 +24,9 @@ def plot_dubins_segment(segment: DubinsSegment,
         width=2 * arc.radius,
         facecolor="none",
         edgecolor=color,
-        theta1=arc_start_theta * 180 / np.pi,
-        theta2=(arc_start_theta + arc.arc_angle) * 180 / np.pi,
-        angle=arc_rot_angle,
+        # Matplotlib arc is always drawn counter-clockwise
+        theta1=start_theta if arc.direction == Direction.LEFT else end_theta,
+        theta2=end_theta if arc.direction == Direction.LEFT else start_theta,
         zorder=2,
         linewidth=linewidth,
     ))
@@ -39,6 +38,12 @@ def plot_dubins_segment(segment: DubinsSegment,
         color=color,
         linewidth=linewidth,
     )
+
+    if quiver:
+        plt.quiver(arc.start.x, arc.start.y, np.cos(arc.start.theta), np.sin(arc.start.theta),
+                   color='black', scale_units='xy', zorder=2, scale=1.3, width=0.005)
+        plt.quiver(line.end.x, line.end.y, np.cos(line.end.theta), np.sin(line.end.theta),
+                   color='black', scale_units='xy', zorder=2, scale=1.3, width=0.005)
 
 
 if __name__ == "__main__":
@@ -55,14 +60,15 @@ if __name__ == "__main__":
         pose = Pose2D(-1.5, 2.5, np.random.uniform(0, 2 * np.pi))
         circles = get_turning_circles(pose, 1)
 
-        plt.scatter(pose.x, pose.y, marker="o", color="green")
+        plt.quiver(pose.x, pose.y, np.cos(pose.theta), np.sin(pose.theta),
+                   color='black', scale_units='xy', zorder=2, scale=1, width=0.005)
 
         for c in circles:
             ax.add_patch(plt.Circle(
                 (c.center.x, c.center.y),
                 c.radius,
                 fill=False,
-                color='blue',
+                color='blue' if c.direction == Direction.LEFT else 'green',
                 zorder=2
             ))
 
@@ -99,6 +105,7 @@ if __name__ == "__main__":
 
         plt.scatter(start.x, start.y, marker="o", color="purple")
         plt.scatter(goal.x, goal.y, marker="o", color="purple")
-        plot_dubins_segment(segment, ax)
 
-        plt.ginput(2, timeout=1)
+        plot_dubins_segment(segment, ax, quiver=True)
+
+        plt.ginput(1, timeout=2)

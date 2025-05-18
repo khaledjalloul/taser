@@ -20,9 +20,9 @@ add_library(${PROJECT_NAME} SHARED
   src/arm/controller.cpp
   src/arm/kinematics.cpp
   src/base/controller.cpp
+  src/base/geometry.cpp
   src/base/kinematics.cpp
   src/base/path_planner.cpp
-  src/base/utils.cpp
   src/robot.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC

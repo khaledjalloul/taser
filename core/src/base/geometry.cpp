@@ -1,29 +1,23 @@
-#include "wheeled_humanoid/base/utils.hpp"
+#include "wheeled_humanoid/base/geometry.hpp"
 
 namespace wheeled_humanoid::base {
 
 Path Arc::sample(int N) const {
-  double r = hypot(start.x - center.x, start.y - center.y);
-  double theta1 = atan2(start.y - center.y, start.x - center.x);
-  double theta2 = atan2(end.y - center.y, end.x - center.x);
+  double r = get_euclidean_distance(start, center);
+  double start_angle = atan2(start.y - center.y, start.x - center.x);
 
-  // Normalize to [0, 2π)
-  if (theta1 < 0)
-    theta1 += 2 * M_PI;
-  if (theta2 < 0)
-    theta2 += 2 * M_PI;
-
-  double delta = theta2 - theta1;
-  if (direction == Direction::RIGHT && delta > 0)
-    delta -= 2 * M_PI;
-  else if (direction == Direction::LEFT && delta < 0)
-    delta += 2 * M_PI;
+  double delta_theta = end.theta - start.theta;
+  if (direction == Direction::LEFT && delta_theta < 0)
+    delta_theta += 2 * M_PI;
+  else if (direction == Direction::RIGHT && delta_theta > 0)
+    delta_theta -= 2 * M_PI;
 
   std::vector<Pose2D> samples;
   for (int i = 0; i <= N; i++) {
-    double theta = theta1 + (delta * i / N);
-    double x = center.x + r * cos(theta);
-    double y = center.y + r * sin(theta);
+    double t = static_cast<double>(i) / N;
+    double x = center.x + r * cos(start_angle + (t * angle));
+    double y = center.y + r * sin(start_angle + (t * angle));
+    double theta = start.theta + t * delta_theta;
     samples.push_back(Pose2D{x, y, theta});
   }
   return samples;
@@ -58,22 +52,17 @@ DubinsSegment get_dubins_segment(const Pose2D &start, const Pose2D &goal,
     if (tangent.length == 0)
       continue;
 
-    auto chord_length = get_euclidean_distance(start, tangent.start);
-    if (chord_length > 2 * radius)
-      continue;
+    auto start_theta =
+        atan2(start.y - circle.center.y, start.x - circle.center.x);
+    auto end_theta = atan2(tangent.start.y - circle.center.y,
+                           tangent.start.x - circle.center.x);
 
-    auto arc_angle = 2 * std::asin(chord_length / (2 * radius));
+    double arc_angle = end_theta - start_theta;
 
-    auto orientation =
-        (start.x - circle.center.x) * (tangent.start.y - circle.center.y) -
-        (start.y - circle.center.y) * (tangent.start.x - circle.center.x);
-
-    // Flip the arc angle if the orientation of the tangent is opposite to the
-    // circle's
-    if ((orientation > 0 && circle.direction == Direction::RIGHT) ||
-        (orientation < 0 && circle.direction == Direction::LEFT)) {
-      arc_angle = 2 * M_PI - arc_angle;
-    }
+    if (circle.direction == Direction::RIGHT && arc_angle > 0)
+      arc_angle -= 2 * M_PI;
+    else if (circle.direction == Direction::LEFT && arc_angle < 0)
+      arc_angle += 2 * M_PI;
 
     DubinsSegment temp_seg(Arc(start, tangent.start, circle.center,
                                circle.direction, radius, arc_angle),
@@ -88,6 +77,10 @@ DubinsSegment get_dubins_segment(const Pose2D &start, const Pose2D &goal,
 
   return seg;
 }
+
+double mod_2_pi(double theta) {
+  return theta - (2 * M_PI) * std::floor(theta / (2 * M_PI));
+};
 
 double get_euclidean_distance(const Pose2D &a, const Pose2D &b) {
   return std::hypot(a.x - b.x, a.y - b.y);
@@ -123,12 +116,6 @@ Line get_tangent(const Circle &circle, const Pose2D &target) {
 
 std::tuple<Circle, Circle> get_turning_circles(const Pose2D &pose,
                                                double radius) {
-  const double two_pi = 2.0 * M_PI;
-
-  auto mod_2_pi = [&two_pi](double theta) {
-    return theta - two_pi * std::floor(theta / two_pi);
-  };
-
   auto theta = mod_2_pi(pose.theta);
   auto theta_left = mod_2_pi(theta + M_PI / 2);
   auto theta_right = mod_2_pi(theta - M_PI / 2);

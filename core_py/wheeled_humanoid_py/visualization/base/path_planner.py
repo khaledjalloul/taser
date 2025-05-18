@@ -1,6 +1,6 @@
 # type: ignore
-import math
 import matplotlib.pyplot as plt
+import numpy as np
 
 from wheeled_humanoid import Pose2D
 from wheeled_humanoid.base import Dimensions, PathPlanner, get_car_turning_radius, get_dubins_segment
@@ -12,7 +12,7 @@ if __name__ == "__main__":
     RRT_NUM_SAMPLES = 100
     L = 0.5
     N = 20  # Number of path samples
-    dubins_radius = get_car_turning_radius(L, math.pi / 4)
+    dubins_radius = get_car_turning_radius(L, np.pi / 4)
 
     start = Pose2D()
     goal = Pose2D(3, 3)
@@ -69,5 +69,7 @@ if __name__ == "__main__":
     path = rrt.sample_path(dubins_path, N)
     for s in path:
         plt.scatter(s.x, s.y, marker="o", color="orange", zorder=2)
+        plt.quiver(s.x, s.y, np.cos(s.theta), np.sin(s.theta),
+                   color='black', scale_units='xy', zorder=2, scale=3, width=0.005)
 
     plt.show()

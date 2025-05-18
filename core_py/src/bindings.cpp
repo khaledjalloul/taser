@@ -105,13 +105,13 @@ PYBIND11_MODULE(wheeled_humanoid, m) {
       .def(py::init<>())
       .def(py::init<Pose2D, Pose2D, Pose2D, base::Direction, double, double>(),
            py::arg("start"), py::arg("end"), py::arg("center"),
-           py::arg("direction"), py::arg("radius"), py::arg("arc_angle"))
+           py::arg("direction"), py::arg("radius"), py::arg("angle"))
       .def_readwrite("start", &base::Arc::start)
       .def_readwrite("end", &base::Arc::end)
       .def_readwrite("center", &base::Arc::center)
       .def_readwrite("direction", &base::Arc::direction)
       .def_readwrite("radius", &base::Arc::radius)
-      .def_readwrite("arc_angle", &base::Arc::arc_angle)
+      .def_readwrite("angle", &base::Arc::angle)
       .def_readwrite("length", &base::Arc::length);
 
   py::class_<base::Line>(base, "Line")
