@@ -2,19 +2,18 @@
 
 namespace wheeled_humanoid {
 
-Robot::Robot(double dt, double arm_controller_kp, double base_L,
-             double base_wheel_radius, int base_mpc_horizon,
-             double base_velocity, int base_rrt_num_samples,
-             const base::Dimensions &base_rrt_dim)
-    : dt(dt) {
+Robot::Robot(const RobotConfig &config) : dt(config.dt) {
   arms = {{"left", arm::Kinematics("left")},
           {"right", arm::Kinematics("right")}};
-  arm_controller = std::make_unique<arm::Controller>(arm_controller_kp);
+  arm_controller = std::make_unique<arm::Controller>(config.arm_controller_kp);
 
-  base = std::make_unique<base::Kinematics>(base_L, base_wheel_radius, dt);
-  base_controller = std::make_unique<base::Controller>(dt, base_mpc_horizon);
-  rrt = std::make_unique<base::PathPlanner>(base_rrt_num_samples, dt, base_L,
-                                            base_velocity, base_rrt_dim);
+  base = std::make_unique<base::Kinematics>(config.base_L,
+                                            config.base_wheel_radius, dt);
+  base_controller =
+      std::make_unique<base::Controller>(dt, config.base_mpc_horizon);
+  rrt = std::make_unique<base::PathPlanner>(config.base_rrt_num_samples, dt,
+                                            config.base_L, config.base_velocity,
+                                            config.base_rrt_dim);
 }
 
 std::tuple<ArmJointVelocities, double>

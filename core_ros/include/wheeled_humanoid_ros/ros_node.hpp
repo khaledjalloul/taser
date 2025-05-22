@@ -30,7 +30,7 @@ public:
   RosNode(std::string name);
 
   /**
-   * Create an instance of the robot based on ROS parameters
+   * Create an instance of the robot configured from ROS parameters
    */
   void create_robot_instance();
 

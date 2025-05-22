@@ -89,7 +89,7 @@ void RosNode::create_robot_instance() {
   declare_parameter<double>("base.path_planner.dimensions.y_min");
   declare_parameter<double>("base.path_planner.dimensions.y_max");
 
-  robot_ = std::make_unique<wheeled_humanoid::Robot>(
+  wheeled_humanoid::RobotConfig config{
       get_parameter("dt").as_double(),
       get_parameter("arm.controller.kp").as_double(),
       get_parameter("base.kinematics.L").as_double(),
@@ -101,7 +101,9 @@ void RosNode::create_robot_instance() {
           get_parameter("base.path_planner.dimensions.x_min").as_double(),
           get_parameter("base.path_planner.dimensions.x_max").as_double(),
           get_parameter("base.path_planner.dimensions.y_min").as_double(),
-          get_parameter("base.path_planner.dimensions.y_max").as_double()});
+          get_parameter("base.path_planner.dimensions.y_max").as_double()}};
+
+  robot_ = std::make_unique<wheeled_humanoid::Robot>(config);
 
   robot_->base->pose.x = get_parameter("initial_pose.x").as_double();
   robot_->base->pose.y = get_parameter("initial_pose.y").as_double();

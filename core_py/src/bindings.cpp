@@ -148,13 +148,25 @@ PYBIND11_MODULE(wheeled_humanoid, m) {
   // Main module
 
   // Robot
-  py::class_<Robot>(m, "Robot")
+  py::class_<RobotConfig>(m, "RobotConfig")
+      .def(py::init<>())
       .def(py::init<double, double, double, double, int, double, int,
                     base::Dimensions>(),
            py::arg("dt"), py::arg("arm_controller_kp"), py::arg("base_L"),
            py::arg("base_wheel_radius"), py::arg("base_mpc_horizon"),
            py::arg("base_velocity"), py::arg("base_rrt_num_samples"),
            py::arg("base_rrt_dim"))
+      .def_readwrite("dt", &RobotConfig::dt)
+      .def_readwrite("arm_controller_kp", &RobotConfig::arm_controller_kp)
+      .def_readwrite("base_L", &RobotConfig::base_L)
+      .def_readwrite("base_wheel_radius", &RobotConfig::base_wheel_radius)
+      .def_readwrite("base_mpc_horizon", &RobotConfig::base_mpc_horizon)
+      .def_readwrite("base_velocity", &RobotConfig::base_velocity)
+      .def_readwrite("base_rrt_num_samples", &RobotConfig::base_rrt_num_samples)
+      .def_readwrite("base_rrt_dim", &RobotConfig::base_rrt_dim);
+
+  py::class_<Robot>(m, "Robot")
+      .def(py::init<RobotConfig>(), py::arg("config"))
       .def("move_arm_step", &Robot::move_arm_step, py::arg("arm_name"),
            py::arg("desired_position"), py::arg("tfs"))
       .def("plan_path", &Robot::plan_path, py::arg("goal"))
