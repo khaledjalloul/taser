@@ -19,6 +19,44 @@ Twist3D Kinematics::get_end_effector_twist(Transforms tfs,
   return {w[0], w[1], w[2], w[3], w[4], w[5]};
 }
 
+ArmJointVelocities
+Kinematics::solve_ik_for_joint_velocities(Twist3D w_desired,
+                                          Transforms tfs) const {
+  auto J = get_geometric_jacobian_(tfs);
+  auto J_positional = J.topRows(3);
+  auto w_des =
+      Vector3(w_desired.linear.x, w_desired.linear.y, w_desired.linear.z);
+
+  auto J_inv = get_pseudoinverse_(J_positional);
+
+  auto dq = J_inv * w_des;
+  return dq;
+}
+
+Pose3D Kinematics::transform(Pose3D pose, Transform tf) const {
+  // Prepare Eigen transform
+  Eigen::Isometry3d T_AB = Eigen::Isometry3d::Identity();
+  T_AB.rotate(tf.rotation);
+  T_AB.pretranslate(tf.translation);
+
+  // Prepare original orientation as an Eigen quaternion
+  Eigen::AngleAxisd rot_x(pose.orientation.roll, Eigen::Vector3d::UnitX());
+  Eigen::AngleAxisd rot_y(pose.orientation.pitch, Eigen::Vector3d::UnitY());
+  Eigen::AngleAxisd rot_z(pose.orientation.yaw, Eigen::Vector3d::UnitZ());
+  Eigen::Quaterniond q_B = rot_x * rot_y * rot_z;
+
+  // Prepare original position as an Eigen vector
+  Eigen::Vector3d p_B(pose.position.x, pose.position.y, pose.position.z);
+
+  // Apply transformation
+  Eigen::Vector3d p_A = T_AB * p_B;
+  Eigen::Quaterniond q_A = tf.rotation * q_B;
+
+  Eigen::Vector3d euler_A = q_A.toRotationMatrix().eulerAngles(0, 1, 2);
+
+  return {{p_A(0), p_A(1), p_A(2)}, {euler_A(0), euler_A(1), euler_A(2)}};
+}
+
 Jacobian Kinematics::get_geometric_jacobian_(Transforms tfs) const {
   auto B_r0E = tfs.TBE.translation - tfs.TB0.translation;
   auto B_r1E = tfs.TBE.translation - tfs.TB1.translation;
@@ -40,39 +78,7 @@ Jacobian Kinematics::get_geometric_jacobian_(Transforms tfs) const {
 }
 
 Matrix Kinematics::get_pseudoinverse_(Matrix mat) const {
-  // if (mat.rows() == mat.cols()) {
-  //   return mat.inverse();
-  // } else if (mat.rows() > mat.cols()) {
-  //   // Full column rank
-  //   return (mat.transpose() * mat.transpose()).inverse() * mat.transpose();
-  // } else {
-  //   // Full row rank
-  //   return mat.transpose() * (mat * mat.transpose()).inverse();
-  // }
   return mat.completeOrthogonalDecomposition().pseudoInverse();
-}
-
-ArmJointVelocities
-Kinematics::solve_ik_for_joint_velocities(Twist3D w_desired,
-                                          Transforms tfs) const {
-  auto J = get_geometric_jacobian_(tfs);
-  auto J_positional = J.topRows(3);
-  auto w_des =
-      Vector3(w_desired.linear.x, w_desired.linear.y, w_desired.linear.z);
-
-  // Matrix J_selected;
-  // if (!jacobian_indices.has_value()) {
-  //   J_selected = J;
-  // } else {
-  //   for (size_t i = 0; i < jacobian_indices.value().size(); i++) {
-  //     J_selected.row(i) = J.row(jacobian_indices.value()[i]);
-  //   }
-  // }
-
-  auto J_inv = get_pseudoinverse_(J_positional);
-
-  auto dq = J_inv * w_des;
-  return dq;
 }
 
 } // namespace wheeled_humanoid::arm

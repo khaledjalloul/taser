@@ -32,6 +32,7 @@ struct Position3D {
 };
 
 struct Orientation3D {
+  // Using Euler XYZ
   double roll, pitch, yaw;
 };
 

@@ -64,7 +64,7 @@ RosNode::RosNode(std::string name)
       "/spawn_random_target",
       [this](const std_srvs::srv::Trigger::Request::SharedPtr /*req*/,
              const std_srvs::srv::Trigger::Response::SharedPtr /*res*/) {
-        spawn_random_target();
+        spawn_despawn_target();
       });
 
   RCLCPP_INFO(get_logger(), "Node started.");
@@ -131,10 +131,10 @@ RosNode::get_transform(std::string target_frame,
 wheeled_humanoid::Transforms
 RosNode::get_arm_transforms(std::string arm_name) const {
   wheeled_humanoid::Transforms tfs;
-  tfs.TBE = get_transform("base", arm_name + "_eef");
-  tfs.TB0 = get_transform("base", arm_name + "_1");
-  tfs.TB1 = get_transform("base", arm_name + "_2");
-  tfs.TB2 = get_transform("base", arm_name + "_3");
+  tfs.TBE = get_transform("base", arm_name + "_arm_eef");
+  tfs.TB0 = get_transform("base", arm_name + "_arm_1");
+  tfs.TB1 = get_transform("base", arm_name + "_arm_2");
+  tfs.TB2 = get_transform("base", arm_name + "_arm_3");
   return tfs;
 }
 
@@ -210,20 +210,23 @@ void RosNode::spawn_obstacles() {
   robot_->rrt->set_obstacles(obstacles);
 }
 
-void RosNode::spawn_random_target() {
+void RosNode::spawn_despawn_target(std::optional<int> despawn_id) {
   double x = ((double)std::rand() / RAND_MAX) * 3 + 3;
+  x *= num_spawned_targets_ % 2 == 0 ? 1 : -1;
   double y = ((double)std::rand() / RAND_MAX) * 6 - 3;
+  double z = ((double)std::rand() / RAND_MAX) * 1 + 2.2;
 
   Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = get_clock()->now();
   marker.ns = "wheeled_humanoid";
-  marker.id = num_spawned_targets_++;
-  marker.type = Marker::CUBE;
-  marker.action = Marker::ADD;
+  marker.id =
+      despawn_id.has_value() ? despawn_id.value() : num_spawned_targets_++;
+  marker.type = Marker::SPHERE;
+  marker.action = despawn_id.has_value() ? Marker::DELETE : Marker::ADD;
   marker.pose.position.x = x;
   marker.pose.position.y = y;
-  marker.pose.position.z = 0.5;
+  marker.pose.position.z = z;
   marker.pose.orientation.w = 1.0;
   marker.scale.x = 1.0;
   marker.scale.y = 1.0;
@@ -232,7 +235,16 @@ void RosNode::spawn_random_target() {
   marker.color.g = 1.0f;
   marker.color.b = 0.0f;
   marker.color.a = 1.0f;
-  marker.lifetime = rclcpp::Duration::from_seconds(20);
+  marker.lifetime = rclcpp::Duration::from_seconds(0); // 0 = forever
+
+  if (despawn_id.has_value()) {
+    targets_.erase(std::find_if(targets_.begin(), targets_.end(),
+                                [despawn_id](const Marker &item) {
+                                  return item.id == despawn_id.value();
+                                }));
+  } else {
+    targets_.push_back(marker);
+  }
 
   targets_pub_->publish(marker);
 }
@@ -248,6 +260,42 @@ void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
   const auto goal = goal_handle->get_goal();
   auto result = std::make_shared<MoveArmsAction::Result>();
 
+  wheeled_humanoid::Position3D l_p;
+  wheeled_humanoid::Position3D r_p;
+
+  if (goal->target_id != -1) {
+    int id = goal->target_id;
+    auto target =
+        std::find_if(targets_.begin(), targets_.end(),
+                     [id](const Marker &item) { return item.id == id; });
+
+    if (target != targets_.end()) {
+      auto target_pose_map = wheeled_humanoid::Pose3D{
+          {target->pose.position.x, target->pose.position.y,
+           target->pose.position.z},
+          {target->pose.orientation.x, target->pose.orientation.y,
+           target->pose.orientation.z}};
+      auto target_pose_base = robot_->arms.at("left").transform(
+          target_pose_map, get_transform("base", "map"));
+
+      l_p = wheeled_humanoid::Position3D{target_pose_base.position.x,
+                                         target_pose_base.position.y + 0.5,
+                                         target_pose_base.position.z};
+      r_p = wheeled_humanoid::Position3D{target_pose_base.position.x,
+                                         target_pose_base.position.y - 0.5,
+                                         target_pose_base.position.z};
+    } else {
+      RCLCPP_ERROR(get_logger(), "Target %d not found.", id);
+      goal_handle->abort(result);
+      return;
+    }
+  } else {
+    l_p = wheeled_humanoid::Position3D{goal->left_arm.x, goal->left_arm.y,
+                                       goal->left_arm.z};
+    r_p = wheeled_humanoid::Position3D{goal->right_arm.x, goal->right_arm.y,
+                                       goal->right_arm.z};
+  }
+
   while (rclcpp::ok()) {
     if (goal_handle->is_canceling()) {
       goal_handle->canceled(result);
@@ -256,13 +304,8 @@ void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
       return;
     }
 
-    auto l_p = wheeled_humanoid::Position3D{goal->left_arm.x, goal->left_arm.y,
-                                            goal->left_arm.z};
-    auto l_err = move_arm_step("left_arm", l_p);
-
-    auto r_p = wheeled_humanoid::Position3D{
-        goal->right_arm.x, goal->right_arm.y, goal->right_arm.z};
-    auto r_err = move_arm_step("right_arm", r_p);
+    auto l_err = move_arm_step("left", l_p);
+    auto r_err = move_arm_step("right", r_p);
 
     if (l_err < 0.05 && r_err < 0.05) {
       // Stop arm movement by publishing zero velocities
@@ -277,13 +320,17 @@ void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
     r.sleep();
   }
 
+  // Despawn target if successfully grabbed
+  if (goal->target_id != -1)
+    spawn_despawn_target(goal->target_id);
+
   goal_handle->succeed(result);
 }
 
 double RosNode::move_arm_step(std::string name,
                               wheeled_humanoid::Position3D p) const {
-  const auto &pub = name == "left_arm" ? left_arm_joint_velocity_pub_
-                                       : right_arm_joint_velocity_pub_;
+  const auto &pub = name == "left" ? left_arm_joint_velocity_pub_
+                                   : right_arm_joint_velocity_pub_;
 
   // Get arm transforms
   auto tfs = get_arm_transforms(name);
@@ -312,7 +359,25 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
   const auto goal = goal_handle->get_goal();
   auto result = std::make_shared<MoveBaseAction::Result>();
 
-  auto path_length = robot_->plan_path({goal->x, goal->y});
+  int path_length = 0;
+
+  if (goal->target_id != -1) {
+    int id = goal->target_id;
+    auto target =
+        std::find_if(targets_.begin(), targets_.end(),
+                     [id](const Marker &item) { return item.id == id; });
+    if (target != targets_.end()) {
+      path_length =
+          robot_->plan_path({target->pose.position.x, target->pose.position.y});
+    } else {
+      RCLCPP_ERROR(get_logger(), "Target %d not found", id);
+      goal_handle->abort(result);
+      return;
+    }
+  } else {
+    path_length = robot_->plan_path({goal->x, goal->y});
+  }
+
   if (path_length == 0) {
     goal_handle->abort(result);
     return;
@@ -331,8 +396,8 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
     auto v_r = std::get<1>(res);
     auto err = std::get<2>(res);
 
-    // 1.5 units away from the target to pick it up
-    if (err < 1.5) {
+    // Stay a bit away from the target to pick it up
+    if (err < 1.7) {
       if (err == -1) {
         RCLCPP_INFO(get_logger(), "Base movement aborted early at %f, %f",
                     robot_->base->pose.x, robot_->base->pose.y);

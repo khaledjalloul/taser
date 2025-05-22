@@ -7,8 +7,8 @@ Robot::Robot(double dt, double arm_controller_kp, double base_L,
              double base_velocity, int base_rrt_num_samples,
              const base::Dimensions &base_rrt_dim)
     : dt(dt) {
-  arms = {{"left_arm", arm::Kinematics("left_arm")},
-          {"right_arm", arm::Kinematics("right_arm")}};
+  arms = {{"left", arm::Kinematics("left")},
+          {"right", arm::Kinematics("right")}};
   arm_controller = std::make_unique<arm::Controller>(arm_controller_kp);
 
   base = std::make_unique<base::Kinematics>(base_L, base_wheel_radius, dt);

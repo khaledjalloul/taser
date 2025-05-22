@@ -39,7 +39,7 @@ public:
 
   /**
    * Get the desired arm joint velocities using the arm controller and IK solver
-   * @param arm_name Name of the arm (left_arm or right_arm)
+   * @param arm_name Name of the arm (left or right)
    * @param desired_position Desired end effector position
    * @param tfs Transforms from the base frame to each of the end effector link
    * frames

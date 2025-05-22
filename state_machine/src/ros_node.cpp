@@ -9,8 +9,11 @@ RosNode::RosNode(std::string name) : rclcpp::Node(name) {
   base_action_client_ = rclcpp_action::create_client<MoveBaseAction>(
       this, "/base_controller/move_to");
 
-  target_sub_ = create_subscription<Marker>(
-      "/targets", 10, [this](const Marker &msg) { targets.push_back(msg); });
+  target_sub_ =
+      create_subscription<Marker>("/targets", 10, [this](const Marker &marker) {
+        if (marker.action == Marker::ADD)
+          targets.push_back(marker);
+      });
 
   executor_thread_ =
       std::thread([this]() { rclcpp::spin(this->get_node_base_interface()); });

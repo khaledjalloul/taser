@@ -7,7 +7,9 @@ namespace state_machine {
 class MoveArms : public State {
 public:
   MoveArms(std::shared_ptr<RosNode> ros_node, const std::string &name)
-      : State(ros_node, name) {}
+      : State(ros_node, name) {
+    goal_.target_id = -1;
+  }
 
   void enter() override;
 
@@ -25,7 +27,10 @@ public:
 
 class Grab : public MoveArms {
 public:
-  Grab(std::shared_ptr<RosNode> ros_node);
+  Grab(std::shared_ptr<RosNode> ros_node, int target_id = -1);
+
+private:
+  int target_id_;
 };
 
 class Lift : public MoveArms {

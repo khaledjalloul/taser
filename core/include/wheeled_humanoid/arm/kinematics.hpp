@@ -12,7 +12,7 @@ namespace wheeled_humanoid::arm {
 class Kinematics {
 public:
   /**
-   * @param name Name of the arm (left_arm or right_arm)
+   * @param name Name of the arm (left or right)
    */
   Kinematics(std::string name);
 
@@ -53,6 +53,14 @@ public:
    */
   ArmJointVelocities solve_ik_for_joint_velocities(Twist3D w_desired,
                                                    Transforms tfs) const;
+
+  /**
+   * Transform a pose from frame B to frame A
+   * @param pose Pose in frame B
+   * @param tf Transform from frame A to frame B
+   * @return Pose in frame A
+   */
+  Pose3D transform(Pose3D pose, Transform tf) const;
 
 private:
   /**

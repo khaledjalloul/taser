@@ -1,4 +1,5 @@
-# Goal: Desired pose
+# Goal: Target ID or desired pose
+int32 target_id
 float64 x
 float64 y
 float64 theta

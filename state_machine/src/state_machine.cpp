@@ -17,7 +17,7 @@ StateMachine::StateMachine(std::shared_ptr<RosNode> ros_node)
         set_state_mutex_.unlock();
       });
 
-  state_ = std::make_unique<Idle>(ros_node_);
+  state_ = std::make_unique<RestArms>(ros_node_);
   state_->enter();
 }
 

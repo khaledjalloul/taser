@@ -21,39 +21,10 @@
 
     <xacro:base />
 
-    <xacro:arm name="left_arm" y_offset="1.125" />
-    <xacro:arm name="right_arm" y_offset="-1.125" />
+    <xacro:arm name="left" y_offset="1.125" />
+    <xacro:arm name="right" y_offset="-1.125" />
 
     <xacro:wheel index="1" parent_link="base" y_offset="1.125" z_offset="-1.75" />
     <xacro:wheel index="2" parent_link="base" y_offset="-1.125" z_offset="-1.75" />
-
-    <!-- <link name="wheel_3_base">
-        <visual>
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
-            <geometry>
-                <box size="1.8 0.2 0.125" />
-            </geometry>
-            <material name="white" />
-        </visual>
-    </link>
-
-    <joint name="base_wheel_3_base_joint" type="fixed">
-        <parent link="base" />
-        <child link="wheel_3_base" />
-        <origin xyz="0.5 0.0 -1.75" rpy="0.0 0.0 0.0" />
-        <axis xyz="1 0 0" />
-    </joint>
-
-    <link name="wheel_3_steering">
-    </link>
-
-    <joint name="wheel_3_base_wheel_3_steering_joint" type="continuous">
-        <parent link="wheel_3_base" />
-        <child link="wheel_3_steering" />
-        <origin xyz="0.9 0 0" rpy="0.0 0.0 0.0" />
-        <axis xyz="0 0 1" />
-    </joint>
-
-    <xacro:wheel index="3" parent_link="wheel_3_steering" y_offset="0" z_offset="0" /> -->
 
 </robot>

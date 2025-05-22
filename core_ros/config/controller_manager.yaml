@@ -33,5 +33,3 @@ wheels_velocity_controller:
     joints:
       - base_wheel_1_joint
       - base_wheel_2_joint
-      # - wheel_3_base_wheel_3_steering_joint
-      # - wheel_3_steering_wheel_3_joint

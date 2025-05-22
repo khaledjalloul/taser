@@ -17,13 +17,13 @@ wheeled_humanoid:
       controller:
         mpc_horizon: 30
       path_planner:
-        velocity: 5.0
-        rrt_num_samples: 150
+        velocity: 7.0
+        rrt_num_samples: 200
         dimensions:
-          x_min: -12.0
-          x_max: 12.0
-          y_min: -12.0
-          y_max: 12.0
+          x_min: -15.0
+          x_max: 15.0
+          y_min: -15.0
+          y_max: 15.0
 
     environment:
       obstacle_count: 3

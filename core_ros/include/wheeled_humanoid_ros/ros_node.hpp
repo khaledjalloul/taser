@@ -40,7 +40,7 @@ public:
 
   void spawn_obstacles();
 
-  void spawn_random_target();
+  void spawn_despawn_target(std::optional<int> despawn_id = std::nullopt);
 
   void move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle);
   double move_arm_step(std::string name, wheeled_humanoid::Position3D p) const;
@@ -54,6 +54,7 @@ public:
 private:
   std::unique_ptr<wheeled_humanoid::Robot> robot_;
   double callback_time_ = -1;
+  std::vector<Marker> targets_;
   int num_spawned_targets_ = 0;
 
   // Transform listener and broadcaster

@@ -204,7 +204,7 @@ Path PathPlanner::sample_path(const DubinsPath &dubins_path) const {
     }
 
     auto num_line_samples =
-        std::ceil(segment.line.length / full_path_length * num_samples);
+        std::floor(segment.line.length / full_path_length * num_samples);
 
     auto line_samples = segment.line.sample(num_line_samples);
     for (const auto &sample : line_samples) {

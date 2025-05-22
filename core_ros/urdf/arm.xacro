@@ -9,7 +9,7 @@
     </material>
 
     <xacro:macro name="arm" params="name y_offset">
-        <link name="${name}_1">
+        <link name="${name}_arm_1">
             <visual>
                 <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0" />
                 <geometry>
@@ -19,14 +19,14 @@
             </visual>
         </link>
 
-        <joint name="base_${name}_1_joint" type="continuous">
+        <joint name="base_${name}_arm_1_joint" type="continuous">
             <parent link="base" />
-            <child link="${name}_1" />
+            <child link="${name}_arm_1" />
             <origin xyz="0.0 ${y_offset} 1.5" rpy="0.0 0.0 0.0" />
             <axis xyz="0 1 0" />
         </joint>
 
-        <link name="${name}_2">
+        <link name="${name}_arm_2">
             <visual>
                 <origin xyz="0.0 0.0 -0.25" rpy="0.0 0.0 0.0" />
                 <geometry>
@@ -36,14 +36,14 @@
             </visual>
         </link>
 
-        <joint name="${name}_1_${name}_2_joint" type="continuous">
-            <parent link="${name}_1" />
-            <child link="${name}_2" />
+        <joint name="${name}_arm_1_${name}_arm_2_joint" type="continuous">
+            <parent link="${name}_arm_1" />
+            <child link="${name}_arm_2" />
             <origin xyz="0.0 0 -1" rpy="0.0 0.0 0.0" />
             <axis xyz="0 0 1" />
         </joint>
 
-        <link name="${name}_3">
+        <link name="${name}_arm_3">
             <visual>
                 <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0" />
                 <geometry>
@@ -53,19 +53,19 @@
             </visual>
         </link>
 
-        <joint name="${name}_2_${name}_3_joint" type="continuous">
-            <parent link="${name}_2" />
-            <child link="${name}_3" />
+        <joint name="${name}_arm_2_${name}_arm_3_joint" type="continuous">
+            <parent link="${name}_arm_2" />
+            <child link="${name}_arm_3" />
             <origin xyz="0.0 0 -0.5" rpy="0.0 0.0 0.0" />
             <axis xyz="0 1 0" />
         </joint>
 
-        <link name="${name}_eef">
+        <link name="${name}_arm_eef">
         </link>
 
-        <joint name="${name}_3_${name}_eef_joint" type="fixed">
-            <parent link="${name}_3" />
-            <child link="${name}_eef" />
+        <joint name="${name}_arm_3_${name}_arm_eef_joint" type="fixed">
+            <parent link="${name}_arm_3" />
+            <child link="${name}_arm_eef" />
             <origin xyz="0.0 0 -1" rpy="0.0 0.0 0.0" />
         </joint>
 

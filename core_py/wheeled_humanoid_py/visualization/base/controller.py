@@ -61,7 +61,7 @@ if __name__ == "__main__":
     wheel_radius = 0.3
     dt = 0.1  # Time step
     N = 10  # MPC horizon
-    V = 3.0  # Desired velocity
+    V = 2.0  # Desired velocity
 
     dim = Dimensions(-2, 5, -2, 5)
 
