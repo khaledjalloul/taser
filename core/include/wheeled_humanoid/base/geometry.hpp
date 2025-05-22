@@ -40,6 +40,11 @@ struct Arc {
     length = radius * abs(angle);
   }
 
+  /**
+   * Sample N points along the arc
+   * @param N Number of points to sample
+   * @return Path of sampled points
+   */
   Path sample(int N) const;
 };
 
@@ -53,6 +58,11 @@ struct Line {
     length = get_euclidean_distance(start, end);
   }
 
+  /**
+   * Sample N points along the line
+   * @param N Number of points to sample
+   * @return Path of sampled points
+   */
   Path sample(int N) const;
 };
 
@@ -69,15 +79,48 @@ struct DubinsSegment {
 
 using DubinsPath = std::vector<DubinsSegment>;
 
+/**
+ * Get the corners of a rectangular obstacle given its center and scale
+ * @param x Center x coordinate
+ * @param y Center y coordinate
+ * @param scale_x Scale of the box in the x direction
+ * @param scale_y Scale of the box in the y direction
+ * @return Vector of the obstacle corners
+ */
 Obstacle get_box_corners(double x, double y, double scale_x, double scale_y);
 
-double get_car_turning_radius(double wheel_base, double max_steering_angle);
-
+/**
+ * Get the Dubins segment composed of an arc and a line between two poses
+ * @param start Start pose
+ * @param goal Goal pose
+ * @param radius Minimum turning radius
+ * @return Dubins segment
+ */
 DubinsSegment get_dubins_segment(const Pose2D &start, const Pose2D &goal,
                                  double radius);
 
+/**
+ * Get the minimum turning radius for Dubins path calculation
+ * @param wheel_base Distance between the wheels
+ * @param max_steering_angle Maximum steering angle of the robot base
+ * @return Minimum turning radius
+ */
+double get_minimum_turning_radius(double wheel_base, double max_steering_angle);
+
+/**
+ * Get the tangent line from an oriented circle to a point
+ * @param circle Circle
+ * @param target Target point
+ * @return Tangent line
+ */
 Line get_tangent(const Circle &circle, const Pose2D &target);
 
+/**
+ * Get the two possible turning circles (left and right) at a given pose
+ * @param pose Pose of the robot
+ * @param radius Minimum turning radius
+ * @return Tuple of the two turning circles
+ */
 std::tuple<Circle, Circle> get_turning_circles(const Pose2D &pose,
                                                double radius);
 

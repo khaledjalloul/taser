@@ -424,12 +424,6 @@ void RosNode::move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle) {
   }
 }
 
-double RosNode::move_base_step(
-    const std::shared_ptr<const MoveBaseAction::Goal> goal) const {
-  auto err = 0;
-  return err;
-}
-
 // TODO: optimize to store msg as is, then get later as eigen, maybe a template
 // function
 void RosNode::joint_state_callback(sensor_msgs::msg::JointState msg) {

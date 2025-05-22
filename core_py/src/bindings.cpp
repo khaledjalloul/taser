@@ -130,14 +130,14 @@ PYBIND11_MODULE(wheeled_humanoid, m) {
       .def_readwrite("length", &base::DubinsSegment::length);
 
   // Base Utils
-  base.def("get_car_turning_radius", &base::get_car_turning_radius,
-           py::arg("wheel_base"), py::arg("max_steering_angle"));
-
   base.def("get_dubins_segment", &base::get_dubins_segment, py::arg("start"),
            py::arg("goal"), py::arg("radius"));
 
   base.def("get_euclidean_distance", &base::get_euclidean_distance,
            py::arg("a"), py::arg("b"));
+
+  base.def("get_minimum_turning_radius", &base::get_minimum_turning_radius,
+           py::arg("wheel_base"), py::arg("max_steering_angle"));
 
   base.def("get_tangent", &base::get_tangent, py::arg("circle"),
            py::arg("target"));

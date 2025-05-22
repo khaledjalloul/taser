@@ -32,15 +32,17 @@ public:
    * Set the obstacles in the environment and inflate them based on the distance
    * between the robot wheels
    * @param obstacles List of obstacles
-   * @return Inflated obstacles (using custom Obstacle type instead of Boost)
+   * @return Inflated obstacles (using custom Obstacle type instead of Boost
+   * polygon)
    */
   std::vector<Obstacle> set_obstacles(const std::vector<Obstacle> obstacles);
 
   /**
-   * Generate a path (vector of poses) from start to goal pose
+   * Generate a Dubins path (vector of Dubins segments) from a start pose to a
+   * goal pose
    * @param start Start pose
    * @param goal Goal pose
-   * @return Path from start to goal
+   * @return Dubins path
    */
   DubinsPath generate_path(const Pose2D &start, const Pose2D &goal) const;
 
@@ -58,7 +60,7 @@ public:
                    std::vector<double> &distances, int sample) const;
 
   /**
-   * Sample a dubins path to get a vector of poses
+   * Sample a Dubins path to get a vector of poses
    * @param dubins_path Dubins path
    * @return Sampled path
    */
@@ -67,12 +69,12 @@ public:
   /**
    * Get the velocity profile (vector of base velocities) for the path
    * @param path Path to get the velocity profile for
-   * @return Velocity profile for the path
+   * @return Velocity profile
    */
   VelocityProfile get_velocity_profile(const Path &path) const;
 
   /**
-   * Check if a dubins segment collides with any obstacles in the environment
+   * Check if a Dubins segment collides with any obstacles in the environment
    * @param segment Dubins segment
    * @return True if there is a collision, false otherwise
    */

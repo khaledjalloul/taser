@@ -6,7 +6,7 @@ PathPlanner::PathPlanner(int num_samples, double dt, double L,
                          double desired_velocity, const Dimensions dim)
     : num_samples_(num_samples), dt_(dt), L_(L),
       desired_velocity_(desired_velocity), dim_(dim) {
-  dubins_radius_ = get_car_turning_radius(L, M_PI / 4);
+  dubins_radius_ = get_minimum_turning_radius(L, M_PI / 4);
 }
 
 std::vector<Obstacle>

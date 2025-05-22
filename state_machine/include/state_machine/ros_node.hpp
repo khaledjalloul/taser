@@ -24,19 +24,34 @@ public:
   RosNode(std::string name);
   ~RosNode();
 
+  /**
+   * Create a service to set the states of the state machine
+   * @param callback The callback function to call when the service is called
+   */
   void create_set_states_service(
       std::function<void(SetStatesMsg::Request::SharedPtr,
                          SetStatesMsg::Response::SharedPtr)>
           callback);
 
+  /**
+   * Send an action goal to the move arms action server
+   * @param[in] goal The goal to send
+   * @param[out] status The status to set to the state that called this function
+   */
   void send_move_arms_action(MoveArmsAction::Goal goal, Status &status) const;
 
+  /**
+   * Send an action goal to the move base action server
+   * @param[in] goal The goal to send
+   * @param[out] status The status to set to the state that called this function
+   */
   void send_move_base_action(MoveBaseAction::Goal goal, Status &status) const;
 
+  // List of targets to follow in order
   std::vector<Marker> targets;
 
 private:
-  // Service to set the state of the state machine
+  // Service to set the states of the state machine
   rclcpp::Service<SetStatesMsg>::SharedPtr set_states_srv_;
 
   // Subscription to target markers

@@ -3,26 +3,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from wheeled_humanoid import Pose2D
-from wheeled_humanoid.base import Dimensions, PathPlanner, get_car_turning_radius, get_dubins_segment
+from wheeled_humanoid.base import Dimensions, PathPlanner, get_minimum_turning_radius, get_dubins_segment
 
 from dubins import plot_dubins_segment
 
 
 if __name__ == "__main__":
-    RRT_NUM_SAMPLES = 100
+    RRT_NUM_SAMPLES = 120
     L = 0.5
     V = 2.0  # Desired velocity
-    dubins_radius = get_car_turning_radius(L, np.pi / 4)
+    dubins_radius = get_minimum_turning_radius(L, np.pi / 4)
 
-    start = Pose2D(0, 0, -np.pi / 2)
-    goal = Pose2D(3, 3)
-    dim = Dimensions(-2, 5, -2, 5)
+    start = Pose2D(1, 1, 0)
+    goal = Pose2D(6, 6)
+    dim = Dimensions(0, 7, 0, 7)
 
     rrt = PathPlanner(RRT_NUM_SAMPLES, 0.1, L, V, dim)
     obstacles = [
-        [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2),
-         Pose2D(2, 1), Pose2D(1, 0.5)],
-        [Pose2D(3, 1), Pose2D(3, 2), Pose2D(4, 2), Pose2D(4, 1)]
+        [Pose2D(1, 3), Pose2D(1, 5), Pose2D(4, 5),
+         Pose2D(4, 3), Pose2D(3, 2.5)],
+        [Pose2D(5, 2), Pose2D(5, 4), Pose2D(6, 4), Pose2D(6, 2)]
     ]
     inflated_obstacles = rrt.set_obstacles(obstacles)
 

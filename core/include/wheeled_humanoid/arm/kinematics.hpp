@@ -8,6 +8,7 @@ namespace wheeled_humanoid::arm {
 
 /**
  * Arm kinematics class to solve inverse kinematics for the 3-DOF arm
+ * Arm DOF: Revolute y, z, y
  */
 class Kinematics {
 public:
@@ -57,7 +58,7 @@ public:
   /**
    * Transform a pose from frame B to frame A
    * @param pose Pose in frame B
-   * @param tf Transform from frame A to frame B
+   * @param tf Transform from frame B to frame A (T_AB)
    * @return Pose in frame A
    */
   Pose3D transform(Pose3D pose, Transform tf) const;

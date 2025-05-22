@@ -51,7 +51,7 @@ int Robot::plan_path(const Pose2D &goal) {
     return 0;
   }
   path_ = rrt->sample_path(dubins_path);
-  for (int i = 0; i < 2 * base_controller->N; i++) {
+  for (int i = 0; i < base_controller->N - 1; i++) {
     path_.push_back(path_.back());
   }
   path_vel_ = rrt->get_velocity_profile(path_);
@@ -63,6 +63,12 @@ int Robot::plan_path(const Pose2D &goal) {
 std::tuple<double, double, double> Robot::move_base_step() {
   if (path_.empty()) {
     std::cerr << "No path planned. Call `Robot::plan_path` first." << std::endl;
+    return {0, 0, -1};
+  }
+
+  if (path_step_ + base_controller->N > path_.size()) {
+    std::cerr << "Reached the end of the path. Call `Robot::plan_path` again."
+              << std::endl;
     return {0, 0, -1};
   }
 

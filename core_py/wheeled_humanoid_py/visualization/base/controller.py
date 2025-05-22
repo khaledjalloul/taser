@@ -11,10 +11,10 @@ from wheeled_humanoid.base import Controller
 
 def plot_controller_step(ax: plt.Axes, base: Kinematics, start: Pose2D, goal: Pose2D,
                          obstacles: list[list], inflated_obstacles: list[list],
-                         path: list[Pose2D]) -> None:
+                         path: list[Pose2D], dim: Dimensions) -> None:
     ax.grid()
-    ax.set_xlim(-2, 5)
-    ax.set_ylim(-2, 5)
+    ax.set_xlim(dim.x_min, dim.x_max)
+    ax.set_ylim(dim.y_min, dim.y_max)
     ax.set_aspect('equal', adjustable='box')
 
     # Plot obstacles
@@ -56,29 +56,29 @@ def plot_controller_step(ax: plt.Axes, base: Kinematics, start: Pose2D, goal: Po
 
 
 if __name__ == "__main__":
-    RRT_NUM_SAMPLES = 100
+    RRT_NUM_SAMPLES = 120
     L = 0.5
     wheel_radius = 0.3
     dt = 0.1  # Time step
     N = 10  # MPC horizon
     V = 2.0  # Desired velocity
 
-    dim = Dimensions(-2, 5, -2, 5)
+    dim = Dimensions(0, 7, 0, 7)
 
     base_mpc = Kinematics(L, wheel_radius, dt)
     base_no_mpc = Kinematics(L, wheel_radius, dt)
     controller = Controller(dt, N, 0.0, 0.0)
     rrt = PathPlanner(RRT_NUM_SAMPLES, dt, L, V, dim)
 
-    start = Pose2D(0, 0, -math.pi / 4)
-    goal = Pose2D(3, 3, math.pi / 4)
+    start = Pose2D(1, 1, 0)
+    goal = Pose2D(6, 6)
     base_mpc.pose = start
     base_no_mpc.pose = start
 
     obstacles = [
-        [Pose2D(-1, 1), Pose2D(-1, 2), Pose2D(2, 2),
-         Pose2D(2, 1), Pose2D(1, 0.5)],
-        [Pose2D(3, 1), Pose2D(3, 2), Pose2D(4, 2), Pose2D(4, 1)]
+        [Pose2D(1, 3), Pose2D(1, 5), Pose2D(4, 5),
+         Pose2D(4, 3), Pose2D(3, 2.5)],
+        [Pose2D(5, 2), Pose2D(5, 4), Pose2D(6, 4), Pose2D(6, 2)]
     ]
     inflated_obstacles = rrt.set_obstacles(obstacles)
 
@@ -99,9 +99,9 @@ if __name__ == "__main__":
         ax_no_mpc.set_title("Without Tracking MPC")
 
         plot_controller_step(ax_mpc, base_mpc, start, goal,
-                             obstacles, inflated_obstacles, path)
+                             obstacles, inflated_obstacles, path, dim)
         plot_controller_step(ax_no_mpc, base_no_mpc, start, goal,
-                             obstacles, inflated_obstacles, path)
+                             obstacles, inflated_obstacles, path, dim)
 
         if get_euclidean_distance(base_mpc.pose, goal) < 0.1 and get_euclidean_distance(base_no_mpc.pose, goal) < 0.2:
             break

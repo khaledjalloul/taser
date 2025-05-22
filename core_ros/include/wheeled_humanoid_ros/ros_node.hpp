@@ -29,26 +29,66 @@ class RosNode : public rclcpp::Node {
 public:
   RosNode(std::string name);
 
+  /**
+   * Create an instance of the robot based on ROS parameters
+   */
   void create_robot_instance();
 
+  /**
+   * Get the ROS published transform between two frames
+   * @param target_frame The frame to transform to (ex. T_AB -> A)
+   * @param source_frame The frame to transform from (ex. T_AB -> B)
+   */
   wheeled_humanoid::Transform get_transform(std::string target_frame,
                                             std::string source_frame) const;
 
+  /**
+   * Get the transforms of a given arm
+   * @param arm_name The name of the arm to get the transforms for
+   */
   wheeled_humanoid::Transforms get_arm_transforms(std::string arm_name) const;
 
+  /**
+   * Set the pose of the robot in the simulation
+   * @param pose The pose to set the robot to
+   */
   void set_robot_pose_in_sim(const wheeled_humanoid::Pose2D &pose) const;
 
+  /**
+   * Load obstacles from ROS parameters and spawn them in the simulation
+   */
   void spawn_obstacles();
 
+  /**
+   * Spawn a target in the simulation, or despawn a target if a despawn id is
+   * provided
+   * @param despawn_id (Optional) The id of the target to despawn
+   */
   void spawn_despawn_target(std::optional<int> despawn_id = std::nullopt);
 
+  /**
+   * Move the arms of the robot to the position received from the action client
+   * @param goal_handle The goal handle for the move arms action
+   */
   void move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle);
+
+  /**
+   * Move the the arms one time step, used internally in `move_arms`
+   * @param name The name of the arm to move
+   * @param p The position to move the arm to
+   */
   double move_arm_step(std::string name, wheeled_humanoid::Position3D p) const;
 
+  /**
+   * Move the base of the robot to the pose received from the action client
+   * @param goal_handle The goal handle for the move base action
+   */
   void move_base(const std::shared_ptr<MoveBaseGoalHandle> goal_handle);
-  double
-  move_base_step(const std::shared_ptr<const MoveBaseAction::Goal> goal) const;
 
+  /**
+   * Callback for the joint states topic
+   * @param msg The joint states message
+   */
   void joint_state_callback(sensor_msgs::msg::JointState msg);
 
 private:
@@ -84,7 +124,7 @@ private:
   rclcpp_action::Server<MoveBaseAction>::SharedPtr base_action_server_;
   std::shared_ptr<MoveBaseGoalHandle> base_active_goal_;
 
-  // Publish targets to visualize and follow
+  // Publish targets to visualize and trigger missions
   rclcpp::Publisher<Marker>::SharedPtr targets_pub_;
 
   // Service to spawn a random target

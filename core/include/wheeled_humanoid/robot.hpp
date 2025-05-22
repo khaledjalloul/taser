@@ -38,7 +38,8 @@ public:
         int base_rrt_num_samples, const base::Dimensions &base_rrt_dim);
 
   /**
-   * Get the desired arm joint velocities using the arm controller and IK solver
+   * Get the desired arm joint velocities at a given time step using the arm
+   * controller and IK solver
    * @param arm_name Name of the arm (left or right)
    * @param desired_position Desired end effector position
    * @param tfs Transforms from the base frame to each of the end effector link
@@ -50,14 +51,16 @@ public:
                 const Transforms &tfs) const;
 
   /**
-   * Plan a path from the current base pose using the RRT* path planner
+   * Plan a path from the current base pose to a given goal pose using the RRT*
+   * path planner
    * @param goal Target base pose
    * @return Number of steps in the path
    */
   int plan_path(const Pose2D &goal);
 
   /**
-   * Get the desired base wheel velocities using using the base MPC controller
+   * Get the desired base wheel velocities at a given time step using the base
+   * MPC controller
    * @details Updates the base pose internally
    * @return Tuple of left and right wheel velocities and error
    */

@@ -7,8 +7,10 @@ protected:
   void SetUp() override {}
 
   void TearDown() override {}
+
+  int N = 10;
   wheeled_humanoid::base::Dimensions dim_{-2, 5, -2, 5};
-  wheeled_humanoid::Robot robot_{0.1, 1, 1, 0.5, 10, 1, 100, dim_};
+  wheeled_humanoid::Robot robot_{0.1, 1, 1, 0.5, N, 1, 50, dim_};
 };
 
 TEST_F(BaseControlTest, follow_path) {
@@ -19,9 +21,11 @@ TEST_F(BaseControlTest, follow_path) {
                                      initial_pose.y - goal_pose.y)
                          .norm();
 
-  robot_.plan_path(goal_pose);
-  for (int i = 0; i < 10; i++) {
-    robot_.move_base_step();
+  auto num_points = robot_.plan_path(goal_pose);
+  for (int i = 0; i < num_points - N; i++) {
+    auto res = robot_.move_base_step();
+    auto err = std::get<2>(res);
+    EXPECT_LE(err, initial_err);
   }
 
   auto final_pose = robot_.base->pose;
@@ -29,5 +33,5 @@ TEST_F(BaseControlTest, follow_path) {
       Eigen::Vector2d(final_pose.x - goal_pose.x, final_pose.y - goal_pose.y)
           .norm();
 
-  EXPECT_LE(final_err, initial_err);
+  EXPECT_LE(final_err, 0.1);
 }

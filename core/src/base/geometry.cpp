@@ -2,6 +2,14 @@
 
 namespace wheeled_humanoid::base {
 
+double mod_2_pi(double theta) {
+  return theta - (2 * M_PI) * std::floor(theta / (2 * M_PI));
+};
+
+double get_euclidean_distance(const Pose2D &a, const Pose2D &b) {
+  return std::hypot(a.x - b.x, a.y - b.y);
+}
+
 Path Arc::sample(int N) const {
   double r = get_euclidean_distance(start, center);
   double start_angle = atan2(start.y - center.y, start.x - center.x);
@@ -41,10 +49,6 @@ Obstacle get_box_corners(double x, double y, double scale_x, double scale_y) {
   Pose2D back_right{x - scale_x / 2, y + scale_y / 2};
   // Apparently this order of vertices is important for the Boost buffer to work
   return {back_left, back_right, front_right, front_left};
-}
-
-double get_car_turning_radius(double wheel_base, double max_steering_angle) {
-  return wheel_base / std::tan(max_steering_angle);
 }
 
 DubinsSegment get_dubins_segment(const Pose2D &start, const Pose2D &goal,
@@ -87,12 +91,9 @@ DubinsSegment get_dubins_segment(const Pose2D &start, const Pose2D &goal,
   return seg;
 }
 
-double mod_2_pi(double theta) {
-  return theta - (2 * M_PI) * std::floor(theta / (2 * M_PI));
-};
-
-double get_euclidean_distance(const Pose2D &a, const Pose2D &b) {
-  return std::hypot(a.x - b.x, a.y - b.y);
+double get_minimum_turning_radius(double wheel_base,
+                                  double max_steering_angle) {
+  return wheel_base / std::tan(max_steering_angle);
 }
 
 Line get_tangent(const Circle &circle, const Pose2D &target) {
