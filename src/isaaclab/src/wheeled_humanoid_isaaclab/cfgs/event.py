@@ -1,5 +1,3 @@
-import math
-
 import isaaclab.envs.mdp as mdp
 from isaaclab.utils import configclass
 from isaaclab.managers import SceneEntityCfg, EventTermCfg

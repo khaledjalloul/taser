@@ -2,7 +2,7 @@ import isaaclab.sim as sim_utils
 from isaaclab.assets import AssetBaseCfg
 from isaaclab.scene import InteractiveSceneCfg
 
-from cfgs.articulation import WHEELED_HUMANOID_CONFIG
+from wheeled_humanoid_isaaclab.cfgs.articulation import WHEELED_HUMANOID_CONFIG
 
 
 class WheeledHumanoidSceneCfg(InteractiveSceneCfg):
