@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <memory>
 
 #include "state_machine/ros_node.hpp"

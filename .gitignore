@@ -1,4 +1,14 @@
+# Reference projects
 .references/
-__pycache__/
 
+# Python
+__pycache__/
 *.egg-info
+
+# ROS
+build/
+install/
+log/
+
+# VSCode
+.vscode/

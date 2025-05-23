@@ -1,5 +1,7 @@
 #include "wheeled_humanoid/base/controller.hpp"
 
+#include <iostream>
+
 namespace wheeled_humanoid::base {
 
 Controller::Controller(double dt, int N, double v_max, double omega_max)

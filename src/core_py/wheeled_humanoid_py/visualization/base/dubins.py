@@ -13,7 +13,7 @@ def plot_dubins_segment(segment: DubinsSegment,
                         linewidth: float = 1,
                         quiver: bool = False) -> None:
     arc = segment.arc
-    start_theta = np.atan2(
+    start_theta = np.arctan2(
         arc.start.y - arc.center.y,
         arc.start.x - arc.center.x) * 180 / np.pi
     end_theta = start_theta + arc.angle * 180 / np.pi

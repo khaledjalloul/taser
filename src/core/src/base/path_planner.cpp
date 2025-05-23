@@ -1,5 +1,7 @@
 #include "wheeled_humanoid/base/path_planner.hpp"
 
+#include <iostream>
+
 namespace wheeled_humanoid::base {
 
 PathPlanner::PathPlanner(int num_samples, double dt, double L,

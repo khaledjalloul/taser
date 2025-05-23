@@ -1,5 +1,7 @@
 #include "wheeled_humanoid/robot.hpp"
 
+#include <iostream>
+
 namespace wheeled_humanoid {
 
 Robot::Robot(const RobotConfig &config) : dt(config.dt) {

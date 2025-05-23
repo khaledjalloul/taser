@@ -5,7 +5,7 @@
         // "target": "isaaclab"
         "target": "isaaclab-ros-humble"
     },
-    "postCreateCommand": "bash src/.devcontainer/post_create.bash",
+    "postCreateCommand": "bash .devcontainer/post_create.bash",
     "customizations": {
         "vscode": {
             "extensions": [
@@ -42,18 +42,18 @@
             }
         }
     },
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/colcon_ws/src,type=bind",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/colcon_ws,type=bind",
     "workspaceFolder": "/workspace/colcon_ws",
     "mounts": [
         // Enable GUI
         "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
         // Enable Docker-in-Docker
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-        // Enable volume persistence
+        // Enable vscode settings persistence
         "source=wheed_humanoid-devcontainer-vscode-settings,target=/workspace/colcon_ws/.vscode,type=volume",
         // Enable colcon_ws persistence
-        "source=wheed_humanoid-devcontainer-colcon_ws,target=/workspace/colcon_ws/build,type=volume",
-        "source=wheed_humanoid-devcontainer-colcon_ws,target=/workspace/colcon_ws/install,type=volume"
+        "source=wheed_humanoid-devcontainer-colcon_ws-build,target=/workspace/colcon_ws/build,type=volume",
+        "source=wheed_humanoid-devcontainer-colcon_ws-install,target=/workspace/colcon_ws/install,type=volume"
     ],
     "runArgs": [
         "--device=/dev/dri"
