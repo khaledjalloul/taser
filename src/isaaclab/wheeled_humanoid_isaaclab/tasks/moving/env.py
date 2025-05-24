@@ -3,17 +3,15 @@ from isaaclab.utils import configclass
 
 from wheeled_humanoid_isaaclab.common import ActionsCfg, ObservationsCfg
 from wheeled_humanoid_isaaclab.tasks.moving.mdp import EventsCfg, RewardsCfg, TerminationsCfg
-from wheeled_humanoid_isaaclab.tasks.moving.scene import WheeledHumanoidSceneCfg
+from wheeled_humanoid_isaaclab.tasks.moving.scene import SceneCfg
 
 
 @configclass
 class WheeledHumanoidEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the wheeled humanoid environment."""
 
-    scene = WheeledHumanoidSceneCfg(
-        num_envs=1,
-        env_spacing=10
-    )
+    scene = SceneCfg(num_envs=1, env_spacing=10)
+
     observations = ObservationsCfg()
     actions = ActionsCfg()
     events = EventsCfg()

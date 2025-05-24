@@ -1,9 +1,13 @@
 # type: ignore
 
-import numpy as np
 import cvxpy as cp
+import numpy as np
+import logging
 
 from wheeled_humanoid import Pose2D, BaseVelocity
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 class Controller:
@@ -21,11 +25,11 @@ class Controller:
 
     def step(self, x0: Pose2D, x_ref: list[Pose2D], u_ref: list[BaseVelocity]) -> BaseVelocity:
         if len(x_ref) < self.N:
-            print(
+            logging.warning(
                 "Cannot step base MPC controller, reference path x_ref has less than N elements.")
             return BaseVelocity()
         if len(u_ref) < self.N:
-            print(
+            logging.warning(
                 "Cannot step base MPC controller, reference velocity profile u_ref has less than N elements.")
             return BaseVelocity()
 
@@ -50,7 +54,7 @@ class Controller:
         prob = cp.Problem(cp.Minimize(cost), constraints)
         result = prob.solve(solver=cp.OSQP)
         if np.isinf(result):
-            print("Problem is infeasible")
+            logging.warning("Problem is infeasible")
             return BaseVelocity()
 
         u_opt = u_ref[0].list() + delta_u[:, 0].value

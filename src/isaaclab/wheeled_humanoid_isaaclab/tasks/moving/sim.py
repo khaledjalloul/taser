@@ -15,9 +15,9 @@ parser.add_argument(
 from isaaclab.app import AppLauncher
 
 AppLauncher.add_app_launcher_args(parser)
-args_cli = parser.parse_args()
+args = parser.parse_args()
 
-app_launcher = AppLauncher(args_cli)
+app_launcher = AppLauncher(args)
 simulation_app = app_launcher.app
 
 ############################################################
@@ -30,8 +30,8 @@ from wheeled_humanoid_isaaclab.tasks.moving import WheeledHumanoidEnvCfg
 
 def main():
     env_cfg = WheeledHumanoidEnvCfg()
-    env_cfg.scene.num_envs = args_cli.num_envs
-    env_cfg.sim.device = args_cli.device
+    env_cfg.scene.num_envs = args.num_envs
+    env_cfg.sim.device = args.device
     env = gym.make("Isaac-Wheeled-Humanoid-Moving-v0", cfg=env_cfg)
 
     env.reset()
@@ -48,7 +48,6 @@ def main():
             # step the environment
             obs, rewards, terminated, truncated, info = env.step(joint_efforts)
 
-            print("[Env 0]: Joint states: ", obs["policy"][0])
             # update counter
             count += 1
 

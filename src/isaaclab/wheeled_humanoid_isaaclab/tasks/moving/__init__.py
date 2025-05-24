@@ -1,7 +1,6 @@
-from .scene import WheeledHumanoidSceneCfg
 from .env import WheeledHumanoidEnvCfg
 
-__all__ = ["WheeledHumanoidSceneCfg", "WheeledHumanoidEnvCfg"]
+__all__ = ["WheeledHumanoidEnvCfg"]
 
 import gymnasium as gym
 

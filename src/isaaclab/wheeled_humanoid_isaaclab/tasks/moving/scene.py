@@ -5,7 +5,7 @@ from isaaclab.scene import InteractiveSceneCfg
 from wheeled_humanoid_isaaclab.common import WHEELED_HUMANOID_CONFIG
 
 
-class WheeledHumanoidSceneCfg(InteractiveSceneCfg):
+class SceneCfg(InteractiveSceneCfg):
     """Designs the scene."""
 
     # Ground plane
