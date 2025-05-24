@@ -25,14 +25,15 @@ simulation_app = app_launcher.app
 
 import gymnasium as gym
 import torch
+from dataclasses import asdict
 from pathlib import Path
 from tqdm import tqdm
 
-from wheeled_humanoid_isaaclab.rl.ppo import PPOTrainer, PPOTrainerCfg
+from wheeled_humanoid_isaaclab.rl import PPOTrainer, PPOTrainerCfg, WandbLogger
 from wheeled_humanoid_isaaclab.tasks.moving import WheeledHumanoidEnvCfg
 
 
-TOTAL_TIMESTEPS = int(1e8)
+TOTAL_TIMESTEPS = int(1e7)
 """Total number of timesteps for all envs to train for"""
 EVAL_FREQ = 5
 """Frequency of evaluation"""
@@ -60,6 +61,13 @@ def train(env: gym.Env):
         device=env.unwrapped.device
     )
 
+    # Initialize wandb logger
+    logger = WandbLogger(config={
+        "num_envs": args.num_envs,
+        "total_timesteps": TOTAL_TIMESTEPS,
+        **asdict(trainer_cfg)
+    })
+
     # Initialize trainer
     trainer = PPOTrainer(env=env, cfg=trainer_cfg)
 
@@ -80,40 +88,48 @@ def train(env: gym.Env):
         # Training update
         train_info = trainer.train_step()
 
+        # Log training metrics
+        logger.log_training_step(train_info, update)
+
         # Evaluation
         if (update + 1) % EVAL_FREQ == 0:
             eval_rewards = torch.zeros(args.num_envs, device=args.device)
             obs_dict, _ = env.reset()
-            obs = obs_dict["policy"].clone().detach()
+            obs = obs_dict["policy"]
 
             with torch.no_grad():
                 for _ in range(NUM_EVAL_TIMESTEPS):
                     dist, _ = trainer.policy(obs)
                     action = dist.mean  # Use mean action for evaluation
                     next_obs_dict, reward, _, _, _ = env.step(action)
+                    obs = next_obs_dict["policy"]
                     eval_rewards += reward
-                    obs = next_obs_dict["policy"].clone().detach()
 
             eval_reward = eval_rewards.mean()
 
-            print(f"\nUpdate {update + 1}/{num_updates}")
-            print(f"Eval reward: {eval_reward.mean():.2f}")
-            print(f"Training loss: {train_info['loss']:.4f}")
-            print(f"Policy loss: {train_info['policy_loss']:.4f}")
-            print(f"Value loss: {train_info['value_loss']:.4f}")
-            print(f"Entropy: {train_info['entropy']:.4f}\n")
+            # Log evaluation metrics
+            logger.log_evaluation(eval_reward.item(), best_reward, update)
 
             # Save best model
             if eval_reward.mean() > best_reward:
                 best_reward = eval_reward.mean()
-                trainer.save_model(checkpoint_path / "best_model.pth")
+                best_model_path = checkpoint_path / "best_model.pth"
+                trainer.save_model(best_model_path)
+                logger.save_model(best_model_path)
 
         # Regular checkpointing
         if (update + 1) % SAVE_FREQ == 0:
-            trainer.save_model(progress_path / f"model_{update + 1}.pth")
+            model_path = progress_path / f"model_{update + 1}.pth"
+            trainer.save_model(model_path)
+            logger.save_model(model_path)
 
     # Save final model
-    trainer.save_model(checkpoint_path / f"model_final.pth")
+    final_model_path = checkpoint_path / "model_final.pth"
+    trainer.save_model(final_model_path)
+    logger.save_model(final_model_path)
+
+    # Close wandb run
+    logger.finish()
 
     return trainer, best_reward
 
@@ -126,8 +142,7 @@ def main():
     env = gym.make("Isaac-Wheeled-Humanoid-Moving-v0", cfg=env_cfg)
 
     # Train the model
-    trainer, best_reward = train(env)
-    print(f"\nTraining completed! Best reward achieved: {best_reward:.2f}")
+    train(env)
 
     env.close()
 

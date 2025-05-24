@@ -19,14 +19,56 @@ class PPOTrainer:
             self.policy.parameters(), lr=cfg.learning_rate)
 
     def train_step(self):
+        # Rollout
+        obs, act, log_prob_old, adv, ret = self.rollout()
+
+        # Stats
+        total_loss = 0
+        total_policy_loss = 0
+        total_value_loss = 0
+        total_entropy = 0
+
+        # PPO update
+        for _ in range(self.cfg.batch_epochs):
+            action_dist, value = self.policy(obs)
+            log_prob = action_dist.log_prob(act).sum(-1)
+            entropy = action_dist.entropy().mean()
+
+            policy_ratio = torch.exp(log_prob - log_prob_old)
+            full_loss = policy_ratio * adv
+            clipped_loss = torch.clamp(policy_ratio, 1.0 - self.cfg.clip_eps,
+                                       1.0 + self.cfg.clip_eps) * adv
+            policy_loss = -torch.min(full_loss, clipped_loss).mean()
+            value_loss = F.mse_loss(value, ret)
+
+            loss: torch.Tensor = policy_loss + self.cfg.vf_coef * \
+                value_loss - self.cfg.ent_coef * entropy
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+            total_loss += loss.item()
+            total_policy_loss += policy_loss.item()
+            total_value_loss += value_loss.item()
+            total_entropy += entropy.item()
+
+        return {
+            'loss': total_loss / self.cfg.batch_epochs,
+            'policy_loss': total_policy_loss / self.cfg.batch_epochs,
+            'value_loss': total_value_loss / self.cfg.batch_epochs,
+            'entropy': total_entropy / self.cfg.batch_epochs
+        }
+
+    def rollout(self):
         # Reset environment
         obs_dict, _ = self.env.reset()
-        obs = obs_dict["policy"].clone().detach()
+        obs = obs_dict["policy"]
 
         # Initialize buffers
         obs_buf = []
         act_buf = []
-        logp_buf = []
+        log_prob_buf = []
         rew_buf = []
         val_buf = []
         done_buf = []
@@ -34,39 +76,38 @@ class PPOTrainer:
         # Collect experience
         for _ in range(self.cfg.num_steps):
             with torch.no_grad():
-                dist, value = self.policy(obs)
-                action = dist.sample()
-                logp = dist.log_prob(action).sum(-1)
+                action_dist, value = self.policy(obs)
+                action = action_dist.sample()
+                log_prob = action_dist.log_prob(action).sum(-1)
 
             # Step environment
             next_obs_dict, reward, terminated, truncated, _ = \
                 self.env.step(action)
-            next_obs = next_obs_dict["policy"].clone().detach()
+            next_obs = next_obs_dict["policy"]
             done = torch.logical_or(terminated, truncated)
 
             # Store transitions
             obs_buf.append(obs)
             act_buf.append(action)
-            logp_buf.append(logp)
+            log_prob_buf.append(log_prob)
             rew_buf.append(reward)
             val_buf.append(value)
             done_buf.append(done)
 
             obs = next_obs
 
-        # Convert buffers to tensors
-        obs_buf = torch.stack(obs_buf)  # (T, N, obs_dim)
-        act_buf = torch.stack(act_buf)  # (T, N, act_dim)
-        logp_buf = torch.stack(logp_buf)  # (T, N)
-        rew_buf = torch.stack(rew_buf)  # (T, N)
-        val_buf = torch.stack(val_buf)  # (T, N)
-        done_buf = torch.stack(done_buf)  # (T, N)
-
         # Compute final value for bootstrapping
         with torch.no_grad():
             _, final_val = self.policy(obs)
-            val_buf = torch.cat(
-                [val_buf, final_val.unsqueeze(0)], dim=0)  # (T+1, N)
+            val_buf.append(final_val)
+
+        # Convert buffers to tensors
+        obs_buf = torch.stack(obs_buf)  # (T, N, obs_dim)
+        act_buf = torch.stack(act_buf)  # (T, N, act_dim)
+        log_prob_buf = torch.stack(log_prob_buf)  # (T, N)
+        rew_buf = torch.stack(rew_buf)  # (T, N)
+        val_buf = torch.stack(val_buf)  # (T+1, N)
+        done_buf = torch.stack(done_buf)  # (T, N)
 
         # Compute advantages and returns
         adv_buf, ret_buf = self.compute_gae(
@@ -78,55 +119,14 @@ class PPOTrainer:
         # Flatten buffers
         obs_flat = obs_buf.reshape(-1, obs_buf.shape[-1])
         act_flat = act_buf.reshape(-1, act_buf.shape[-1])
-        logp_old_flat = logp_buf.reshape(-1)
+        log_prob_old_flat = log_prob_buf.reshape(-1)
         adv_flat = (adv_buf.reshape(-1) - adv_buf.mean()) / \
             (adv_buf.std() + 1e-8)
         ret_flat = ret_buf.reshape(-1)
 
-        # PPO update
-        total_loss = 0
-        for _ in range(self.cfg.batch_epochs):
-            dist, value = self.policy(obs_flat)
-            logp = dist.log_prob(act_flat).sum(-1)
-            entropy = dist.entropy().mean()
+        return obs_flat, act_flat, log_prob_old_flat, adv_flat, ret_flat
 
-            ratio = torch.exp(logp - logp_old_flat)
-            surr1 = ratio * adv_flat
-            surr2 = torch.clamp(ratio, 1.0 - self.cfg.clip_eps,
-                                1.0 + self.cfg.clip_eps) * adv_flat
-            policy_loss = -torch.min(surr1, surr2).mean()
-            value_loss = F.mse_loss(value, ret_flat)
-
-            loss = policy_loss + self.cfg.vf_coef * value_loss - \
-                self.cfg.ent_coef * entropy
-
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-        update_info = {
-            'policy_loss': policy_loss.item(),
-            'value_loss': value_loss.item(),
-            'entropy': entropy.item()
-        }
-        total_loss += sum(update_info.values())
-        update_info['loss'] = total_loss / self.cfg.batch_epochs
-
-        return update_info
-
-    def save_model(self, path: str):
-        torch.save(self.policy.state_dict(), path)
-
-    def load_model(self, path: str):
-        self.policy.load_state_dict(
-            torch.load(
-                path,
-                map_location=self.cfg.device,
-                weights_only=True
-            )
-        )
-
-    def compute_gae(self, rewards, values, dones):
+    def compute_gae(self, rewards: torch.Tensor, values: torch.Tensor, dones: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute Generalized Advantage Estimation (GAE).
 
         Args:
@@ -156,3 +156,15 @@ class PPOTrainer:
 
         returns = advantages + values[:-1]
         return advantages, returns
+
+    def save_model(self, path: str):
+        torch.save(self.policy.state_dict(), path)
+
+    def load_model(self, path: str):
+        self.policy.load_state_dict(
+            torch.load(
+                path,
+                map_location=self.cfg.device,
+                weights_only=True
+            )
+        )
