@@ -12,16 +12,14 @@ XACRO_PATH = Path(get_package_share_directory(
     "wheeled_humanoid_ros")) / "urdf" / "robot.urdf.xacro"
 URDF_PATH = Path("/tmp") / "wheeled_humanoid" / "robot.urdf"
 
-
-if not URDF_PATH.exists():
-    URDF_PATH.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(['xacro', XACRO_PATH, '-o', URDF_PATH], check=True)
+URDF_PATH.parent.mkdir(parents=True, exist_ok=True)
+subprocess.run(['xacro', XACRO_PATH, '-o', URDF_PATH], check=True)
 
 
 WHEELED_HUMANOID_CONFIG = ArticulationCfg(
     spawn=sim_utils.UrdfFileCfg(
-        asset_path=URDF_PATH,
-        fix_base=True,  # TODO: Change to False after fixing ground collision
+        asset_path=str(URDF_PATH.resolve()),
+        fix_base=False,  # TODO: Change to False after fixing ground collision
         joint_drive=UrdfConverterCfg.JointDriveCfg(
             gains=UrdfConverterCfg.JointDriveCfg.PDGainsCfg(
                 stiffness=0.1

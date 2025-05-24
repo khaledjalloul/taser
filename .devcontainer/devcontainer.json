@@ -32,7 +32,7 @@
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/home/vscode/venv/bin/python3.12",
-                "python.analysis.typeCheckingMode": "strict",
+                "python.analysis.typeCheckingMode": "off",
                 "C_Cpp.default.includePath": [
                     "${workspaceFolder}/**",
                     "/opt/ros/jazzy/include/**"
@@ -54,6 +54,12 @@
         // Enable colcon_ws persistence
         "source=wheed_humanoid-devcontainer-colcon_ws-build,target=/workspace/colcon_ws/build,type=volume",
         "source=wheed_humanoid-devcontainer-colcon_ws-install,target=/workspace/colcon_ws/install,type=volume"
+        // Enable Isaac Sim cache persistence
+        // "source=wheeled_humanoid-devcontainer-isaac-cache-kit,target=/isaac-sim/kit/cache,type=volume",
+        // "source=wheeled_humanoid-devcontainer-isaac-cache-ov,target=/root/.cache/ov,type=volume",
+        // "source=wheeled_humanoid-devcontainer-isaac-cache-pip,target=/root/.cache/pip,type=volume",
+        // "source=wheeled_humanoid-devcontainer-isaac-cache-gl,target=/root/.cache/nvidia/GLCache,type=volume",
+        // "source=wheeled_humanoid-devcontainer-isaac-cache-compute,target=/root/.nv/ComputeCache,type=volume"
     ],
     "runArgs": [
         "--device=/dev/dri"

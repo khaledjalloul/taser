@@ -24,32 +24,30 @@ simulation_app = app_launcher.app
 
 import gymnasium as gym
 import torch
-from isaaclab.envs import ManagerBasedEnv, ManagerBasedRLEnv
 
-from wheeled_humanoid_isaaclab.cfgs.env import WheeledHumanoidEnvCfg
+from wheeled_humanoid_isaaclab.tasks.moving import WheeledHumanoidEnvCfg
 
 
 def main():
     env_cfg = WheeledHumanoidEnvCfg()
     env_cfg.scene.num_envs = args_cli.num_envs
     env_cfg.sim.device = args_cli.device
-    env = gym.make("Isaac-Wheeled-Humanoid-v0", cfg=env_cfg)
+    env = gym.make("Isaac-Wheeled-Humanoid-Moving-v0", cfg=env_cfg)
+
+    env.reset()
 
     # simulate physics
     count = 0
+
     while simulation_app.is_running():
         with torch.inference_mode():
-            # reset
-            if count % 300 == 0:
-                count = 0
-                env.reset()
-                print("-" * 80)
-                print("[INFO]: Resetting environment...")
             # sample random actions
-            joint_efforts = torch.rand(env.action_space.shape, device=env.unwrapped.device)
+            joint_efforts = torch.rand(
+                env.action_space.shape, device=env.unwrapped.device)
+
             # step the environment
-            obs, rew, terminated, truncated, info = env.step(joint_efforts)
-            # print current orientation of pole
+            obs, rewards, terminated, truncated, info = env.step(joint_efforts)
+
             print("[Env 0]: Joint states: ", obs["policy"][0])
             # update counter
             count += 1

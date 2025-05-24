@@ -31,8 +31,11 @@ struct Position3D {
   double x, y, z;
 };
 
+/**
+ * Orientation in 3D space
+ * @note Uses intrinsic Euler ZYX notation
+ */
 struct Orientation3D {
-  // Using Euler XYZ
   double roll, pitch, yaw;
 };
 

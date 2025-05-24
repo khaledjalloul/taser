@@ -154,7 +154,7 @@ USER vscode
 RUN /home/vscode/venv/bin/pip install --no-input \
     catkin_pkg \
     cvxpy \
-    empy \
+    empy==3.3.4 \
     lark \
     matplotlib \
     numpy

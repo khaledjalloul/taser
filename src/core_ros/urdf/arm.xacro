@@ -17,6 +17,12 @@
                 </geometry>
                 <material name="light-blue" />
             </visual>
+            <collision>
+                <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0" />
+                <geometry>
+                    <box size="0.5 0.25 1" />
+                </geometry>
+            </collision>
         </link>
 
         <joint name="base_${name}_arm_1_joint" type="continuous">
@@ -34,6 +40,12 @@
                 </geometry>
                 <material name="white" />
             </visual>
+            <collision>
+                <origin xyz="0.0 0.0 -0.25" rpy="0.0 0.0 0.0" />
+                <geometry>
+                    <box size="0.25 0.25 0.5" />
+                </geometry>
+            </collision>
         </link>
 
         <joint name="${name}_arm_1_${name}_arm_2_joint" type="continuous">
@@ -51,6 +63,12 @@
                 </geometry>
                 <material name="light-blue" />
             </visual>
+            <collision>
+                <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0" />
+                <geometry>
+                    <box size="0.25 0.25 1" />
+                </geometry>
+            </collision>
         </link>
 
         <joint name="${name}_arm_2_${name}_arm_3_joint" type="continuous">

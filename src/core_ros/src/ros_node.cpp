@@ -278,7 +278,7 @@ void RosNode::move_arms(const std::shared_ptr<MoveArmsGoalHandle> goal_handle) {
           {target->pose.orientation.x, target->pose.orientation.y,
            target->pose.orientation.z}};
       auto target_pose_base = robot_->arms.at("left").transform(
-          target_pose_map, get_transform("base", "map"));
+          target_pose_map, get_transform("base", "odom"));
 
       l_p = wheeled_humanoid::Position3D{target_pose_base.position.x,
                                          target_pose_base.position.y + 0.5,

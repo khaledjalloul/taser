@@ -14,6 +14,12 @@
                 </geometry>
                 <material name="pink"/>
             </visual>
+            <collision>
+                <origin xyz="0.0 0.0 0.0" rpy="1.575 0.0 0.0"/>
+                <geometry>
+                    <cylinder length="0.25" radius="0.5"/>
+                </geometry>
+            </collision>
         </link>
 
         <joint name="${parent_link}_wheel_${index}_joint" type="continuous">
@@ -23,15 +29,5 @@
             <axis xyz="0 1 0"/>
         </joint>
     </xacro:macro>
-
-    <!-- <xacro:macro name="wheel_inertial" params="m x y z oy oz" >
-        <inertial>
-            <origin xyz="0 ${oy} ${oz}" rpy="0.0 0.0 0.0"/>
-            <mass value="${m}"/>
-            <inertia    ixx="${(1/12) * m * (z*z + y*y)}" ixy="0.0" ixz="0.0"
-                        iyy="${(1/12) * m * (x*x + z*z)}" iyz="0.0"
-                        izz="${(1/12) * m * (y*y + x*x)}"/>
-        </inertial>
-    </xacro:macro> -->
 
 </robot>

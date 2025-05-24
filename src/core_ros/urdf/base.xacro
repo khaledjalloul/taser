@@ -6,6 +6,10 @@
     </material>
 
     <xacro:macro name="base">
+
+        <!-- Base wrapper link to get a frame with z=0 -->
+        <link name="base_wrapper" />
+
         <link name="base">
             <visual>
                 <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
@@ -14,9 +18,14 @@
                 </geometry>
                 <material name="blue" />
             </visual>
+            <collision>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+                <geometry>
+                    <box size="0.8 2 3.5" />
+                </geometry>
+            </collision>
         </link>
 
-        <link name="base_wrapper" />
 
         <joint name="base_wrapper_base_joint" type="fixed">
             <origin xyz="0.0 0.0 2.25" rpy="0.0 0.0 0" />

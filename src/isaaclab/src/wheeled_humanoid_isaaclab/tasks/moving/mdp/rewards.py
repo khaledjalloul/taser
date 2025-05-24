@@ -1,0 +1,22 @@
+import isaaclab.envs.mdp as mdp
+from isaaclab.managers import RewardTermCfg as RewTerm
+from isaaclab.managers import SceneEntityCfg
+from isaaclab.utils import configclass
+
+
+@configclass
+class RewardsCfg:
+    """Reward terms for the MDP."""
+
+    # (1) Constant running reward
+    alive = RewTerm(func=mdp.is_alive, weight=1.0)
+
+    # (2) Failure penalty
+    terminating = RewTerm(func=mdp.is_terminated, weight=-5.0)
+
+    # (3) Tilt penalty
+    tilt = RewTerm(
+        func=mdp.flat_orientation_l2,
+        weight=-2.0,
+        params={"asset_cfg": SceneEntityCfg("robot")},
+    )
