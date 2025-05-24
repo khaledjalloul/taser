@@ -16,3 +16,4 @@ log/
 # Isaac Lab
 logs/
 outputs/
+checkpoints/

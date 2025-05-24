@@ -21,8 +21,7 @@ class PPOTrainer:
     def train_step(self):
         # Reset environment
         obs_dict, _ = self.env.reset()
-        obs = torch.tensor(
-            obs_dict["policy"], dtype=torch.float32, device=self.cfg.device)
+        obs = obs_dict["policy"].clone().detach()
 
         # Initialize buffers
         obs_buf = []
@@ -40,21 +39,18 @@ class PPOTrainer:
                 logp = dist.log_prob(action).sum(-1)
 
             # Step environment
-            next_obs_dict, reward, terminated, truncated, _ = self.env.step(
-                action)
-            next_obs = torch.tensor(
-                next_obs_dict["policy"], dtype=torch.float32, device=self.cfg.device)
+            next_obs_dict, reward, terminated, truncated, _ = \
+                self.env.step(action)
+            next_obs = next_obs_dict["policy"].clone().detach()
             done = torch.logical_or(terminated, truncated)
 
             # Store transitions
             obs_buf.append(obs)
             act_buf.append(action)
             logp_buf.append(logp)
-            rew_buf.append(torch.tensor(
-                reward, dtype=torch.float32, device=self.cfg.device))
+            rew_buf.append(reward)
             val_buf.append(value)
-            done_buf.append(torch.tensor(
-                done, dtype=torch.float32, device=self.cfg.device))
+            done_buf.append(done)
 
             obs = next_obs
 
@@ -108,22 +104,27 @@ class PPOTrainer:
             loss.backward()
             self.optimizer.step()
 
-            update_info = {
-                'policy_loss': policy_loss.item(),
-                'value_loss': value_loss.item(),
-                'entropy': entropy.item()
-            }
-            total_loss += sum(update_info.values())
-
+        update_info = {
+            'policy_loss': policy_loss.item(),
+            'value_loss': value_loss.item(),
+            'entropy': entropy.item()
+        }
+        total_loss += sum(update_info.values())
         update_info['loss'] = total_loss / self.cfg.batch_epochs
+
         return update_info
 
     def save_model(self, path: str):
         torch.save(self.policy.state_dict(), path)
 
     def load_model(self, path: str):
-        self.policy.load_state_dict(torch.load(
-            path, map_location=self.cfg.device))
+        self.policy.load_state_dict(
+            torch.load(
+                path,
+                map_location=self.cfg.device,
+                weights_only=True
+            )
+        )
 
     def compute_gae(self, rewards, values, dones):
         """Compute Generalized Advantage Estimation (GAE).
@@ -145,7 +146,7 @@ class PPOTrainer:
 
         for t in reversed(range(T)):
             next_value = values[t + 1]
-            next_non_terminal = 1.0 - dones[t]
+            next_non_terminal = torch.logical_not(dones[t])
 
             delta = rewards[t] + self.cfg.gamma * next_value * \
                 next_non_terminal - values[t]

@@ -11,9 +11,6 @@ class PPOTrainerCfg:
     num_steps: int
     """Number of steps per PPO update"""
 
-    num_envs: int
-    """Number of environments to run in parallel"""
-
     batch_epochs: int
     """Number of PPO epochs per update"""
 
@@ -31,9 +28,6 @@ class PPOTrainerCfg:
 
     vf_coef: float
     """Value function coefficient"""
-
-    max_grad_norm: float
-    """Max gradient norm"""
 
     device: str
     """Device to run the PPO trainer on"""

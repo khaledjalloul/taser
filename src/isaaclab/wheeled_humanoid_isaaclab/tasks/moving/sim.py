@@ -1,14 +1,10 @@
 import argparse
 
 parser = argparse.ArgumentParser(
-    description="Tutorial on creating a cartpole base environment."
+    description="Simulate the wheeled humanoid moving task."
 )
-parser.add_argument(
-    "--num_envs",
-    type=int,
-    default=1,
-    help="Number of environments to spawn."
-)
+parser.add_argument("--num_envs", type=int, default=1,
+                    help="Number of environments to spawn.")
 
 ############################################################
 
