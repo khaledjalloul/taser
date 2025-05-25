@@ -1,6 +1,6 @@
 launch:
   - include:
-      file: $(find-pkg-share wheeled_humanoid_ros)/launch/robot.launch.yaml
+      file: $(find-pkg-share taser_ros)/launch/robot.launch.yaml
 
   - node:
       pkg: state_machine

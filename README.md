@@ -1,4 +1,4 @@
-# Wheeled Humanoid
+# TASER — Two-Armed Self-Equilibrating Robot
 
 ## Overview
 
@@ -69,11 +69,11 @@ IDLE -> MOVE_BASE -> GRAB -> REST_ARMS -> IDLE
 
 ## ROS Packages
 
-| Package | Folder | Description |
-| --- | --- | --- |
-| wheeled_humanoid | core | Robot logic (ROS-independent) |
-| wheeled_humanoid_py | core_py | Python bindings of the core package |
-| wheeled_humanoid_ros | core_ros | ROS interface and node, URDF files, Rviz, launch files |
-| wheeled_humanoid_isaaclab | isaaclab | Isaac Lab environment for RL training |
-| wheeled_humanoid_msgs | msgs | Custom ROS messages |
-| state_machine | state_machine | State machine, states, and missions |
+| Package | Description |
+| --- | --- |
+| taser | Robot logic (ROS-independent) |
+| taser_py | Python bindings of the core package |
+| taser_ros | ROS interface and node, URDF files, Rviz, launch files |
+| taser_isaaclab | Isaac Lab environment for RL training |
+| taser_msgs | Custom ROS messages |
+| state_machine | State machine, states, and missions |

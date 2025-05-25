@@ -17,7 +17,7 @@ test() {
 states() {
 	local states="$1"
 
-	ros2 service call /state_machine/set_states wheeled_humanoid_msgs/srv/SetStates "{states: ${states}}"
+	ros2 service call /state_machine/set_states taser_msgs/srv/SetStates "{states: ${states}}"
 }
 
 # Launch the simulation and state machine
@@ -27,4 +27,4 @@ alias launch='ros2 launch state_machine state_machine.launch.yaml'
 alias spawn='ros2 service call /spawn_random_target std_srvs/srv/Trigger'
 
 # Run the Isaac Lab training script
-alias train='python /home/$(whoami)/colcon_ws/src/isaaclab/wheeled_humanoid_isaaclab/rl/train.py'
+alias train='python /home/$(whoami)/colcon_ws/src/taser_isaaclab/taser_isaaclab/rl/train.py'

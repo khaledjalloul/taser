@@ -1,6 +1,6 @@
 #pragma once
 
-#include <wheeled_humanoid/types.hpp>
+#include <taser/types.hpp>
 
 #include "state_machine/state.hpp"
 
@@ -18,8 +18,7 @@ public:
    * @param target_id The id of the target to move the base to (overrides pose)
    */
   MoveBase(std::shared_ptr<RosNode> ros_node,
-           wheeled_humanoid::Pose2D pose = wheeled_humanoid::Pose2D(),
-           int target_id = -1);
+           taser::Pose2D pose = taser::Pose2D(), int target_id = -1);
 
   /**
    * Enter the move base state

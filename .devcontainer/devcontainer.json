@@ -1,7 +1,8 @@
 {
-    // Build the image using `docker compose build wheeled-humanoid-<target>`
-    // "image": "khaledjalloul/wheeled-humanoid:ros-jazzy",
-    "image": "khaledjalloul/wheeled-humanoid:isaaclab-ros-humble",
+    "name": "TASER",
+    // Build the image using `docker compose build taser-<target>`
+    // "image": "khaledjalloul/taser:ros-jazzy",
+    "image": "khaledjalloul/taser:isaaclab-ros-humble",
     "postCreateCommand": "bash .devcontainer/post_create.bash",
     "customizations": {
         "vscode": {
@@ -28,7 +29,7 @@
                 "morningfrog.urdf-visualizer"
             ],
             "settings": {
-                "python.defaultInterpreterPath": "/home/wheeled-humanoid/venv/bin/python",
+                "python.defaultInterpreterPath": "/home/taser/venv/bin/python",
                 "python.analysis.typeCheckingMode": "off",
                 "C_Cpp.default.includePath": [
                     "${workspaceFolder}/**",
@@ -40,23 +41,23 @@
             }
         }
     },
-    "workspaceMount": "source=${localWorkspaceFolder},target=/home/wheeled-humanoid/colcon_ws,type=bind",
-    "workspaceFolder": "/home/wheeled-humanoid/colcon_ws",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/taser/colcon_ws,type=bind",
+    "workspaceFolder": "/home/taser/colcon_ws",
     "mounts": [
         // Enable GUI
         "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
         // Enable Docker-in-Docker
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
         // Enable Isaac Sim cache persistence
-        // "source=wheeled_humanoid-devcontainer-isaac-cache-kit,target=/isaac-sim/kit/cache,type=volume",
-        // "source=wheeled_humanoid-devcontainer-isaac-cache-ov,target=/root/.cache/ov,type=volume",
-        // "source=wheeled_humanoid-devcontainer-isaac-cache-pip,target=/root/.cache/pip,type=volume",
-        // "source=wheeled_humanoid-devcontainer-isaac-cache-gl,target=/root/.cache/nvidia/GLCache,type=volume",
-        // "source=wheeled_humanoid-devcontainer-isaac-cache-compute,target=/root/.nv/ComputeCache,type=volume"
+        // "source=taser-devcontainer-isaac-cache-kit,target=/isaac-sim/kit/cache,type=volume",
+        // "source=taser-devcontainer-isaac-cache-ov,target=/root/.cache/ov,type=volume",
+        // "source=taser-devcontainer-isaac-cache-pip,target=/root/.cache/pip,type=volume",
+        // "source=taser-devcontainer-isaac-cache-gl,target=/root/.cache/nvidia/GLCache,type=volume",
+        // "source=taser-devcontainer-isaac-cache-compute,target=/root/.nv/ComputeCache,type=volume"
     ],
     "runArgs": [
         "--device=/dev/dri",
-        "--hostname=dev",
+        "--hostname=taser",
         "--env-file=.env.local"
     ],
     "containerEnv": {

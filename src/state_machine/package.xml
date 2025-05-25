@@ -3,7 +3,7 @@
 <package format="3">
   <name>state_machine</name>
   <version>0.0.0</version>
-  <description>State machine for the wheeled humanoid</description>
+  <description>State machine for the TASER robot</description>
 
   <maintainer email="khaled.jalloul@hotmail.com">Khaled Jalloul</maintainer>
 
@@ -14,11 +14,11 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
   <depend>std_srvs</depend>
+  <depend>taser</depend>
+  <depend>taser_msgs</depend>
   <depend>visualization_msgs</depend>
-  <depend>wheeled_humanoid</depend>
-  <depend>wheeled_humanoid_msgs</depend>
 
-  <exec_depend>wheeled_humanoid_ros</exec_depend>
+  <exec_depend>taser_ros</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

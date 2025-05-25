@@ -7,9 +7,9 @@ set(PACKAGE_DEPENDENCIES
   rclcpp
   rclcpp_action
   std_srvs
+  taser
+  taser_msgs
   visualization_msgs
-  wheeled_humanoid
-  wheeled_humanoid_msgs
 )
 
 # Find dependencies

@@ -20,8 +20,8 @@ Status Idle::update() {
   RCLCPP_INFO(ros_node_->get_logger(), "Detected target at (x: %f, y: %f).",
               pos.x, pos.y);
 
-  auto move_to_target = std::make_unique<MoveBase>(
-      ros_node_, wheeled_humanoid::Pose2D(), target.id);
+  auto move_to_target =
+      std::make_unique<MoveBase>(ros_node_, taser::Pose2D(), target.id);
   auto grab_target = std::make_unique<Grab>(ros_node_, target.id);
   auto rest_arms = std::make_unique<RestArms>(ros_node_);
 

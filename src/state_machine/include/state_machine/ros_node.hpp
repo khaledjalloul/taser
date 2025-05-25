@@ -3,21 +3,21 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 
+#include <taser_msgs/action/move_arms.hpp>
+#include <taser_msgs/action/move_base.hpp>
+#include <taser_msgs/srv/set_states.hpp>
 #include <visualization_msgs/msg/marker.hpp>
-#include <wheeled_humanoid_msgs/action/move_arms.hpp>
-#include <wheeled_humanoid_msgs/action/move_base.hpp>
-#include <wheeled_humanoid_msgs/srv/set_states.hpp>
 
 #include "state_machine/types.hpp"
 
 namespace state_machine {
 
 using Marker = visualization_msgs::msg::Marker;
-using MoveArmsAction = wheeled_humanoid_msgs::action::MoveArms;
+using MoveArmsAction = taser_msgs::action::MoveArms;
 using MoveArmsGoalHandle = rclcpp_action::ClientGoalHandle<MoveArmsAction>;
-using MoveBaseAction = wheeled_humanoid_msgs::action::MoveBase;
+using MoveBaseAction = taser_msgs::action::MoveBase;
 using MoveBaseGoalHandle = rclcpp_action::ClientGoalHandle<MoveBaseAction>;
-using SetStatesMsg = wheeled_humanoid_msgs::srv::SetStates;
+using SetStatesMsg = taser_msgs::srv::SetStates;
 
 class RosNode : public rclcpp::Node {
 public:

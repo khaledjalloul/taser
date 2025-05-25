@@ -2,8 +2,8 @@
 
 namespace state_machine {
 
-MoveBase::MoveBase(std::shared_ptr<RosNode> ros_node,
-                   wheeled_humanoid::Pose2D pose, int target_id)
+MoveBase::MoveBase(std::shared_ptr<RosNode> ros_node, taser::Pose2D pose,
+                   int target_id)
     : State(ros_node, "MOVE_BASE"), target_id_(target_id) {
   if (target_id_ != -1) {
     goal_.target_id = target_id_;

@@ -1,6 +1,6 @@
 FROM nvidia/cuda:11.8.0-devel-ubuntu22.04 AS isaaclab-base
 
-ARG USERNAME=wheeled-humanoid
+ARG USERNAME=taser
 
 # Environment variables for Isaac Sim and Isaac Lab
 ENV DEBIAN_FRONTEND=noninteractive
@@ -86,7 +86,7 @@ WORKDIR /home/${USERNAME}/colcon_ws
 RUN sudo chown -R ${USERNAME} .
 
 # Build the project
-RUN /home/${USERNAME}/venv/bin/pip install -e src/isaaclab
+RUN /home/${USERNAME}/venv/bin/pip install -e src/taser_isaaclab
 
 ########################################
 
@@ -146,8 +146,8 @@ RUN sudo chown -R ${USERNAME} .
 # Build the project
 RUN rosdep update
 RUN rosdep install -iry --from-paths src
-RUN . /opt/ros/humble/setup.sh && colcon build --packages-ignore wheeled_humanoid_isaaclab
-RUN /home/${USERNAME}/venv/bin/pip install -e src/isaaclab
+RUN . /opt/ros/humble/setup.sh && colcon build --packages-ignore taser_isaaclab
+RUN /home/${USERNAME}/venv/bin/pip install -e src/taser_isaaclab
 
 # Automatically source the install/setup.bash file
 RUN echo "source /opt/ros/humble/setup.bash" >> /home/${USERNAME}/.bashrc

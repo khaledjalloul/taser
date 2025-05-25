@@ -1,0 +1,39 @@
+taser:
+  ros__parameters:
+    dt: 0.001
+    initial_pose:
+      x: -7.0
+      y: 0.0
+      theta: 0.0
+
+    arm:
+      controller:
+        kp: 5.0
+
+    base:
+      kinematics:
+        L: 2.25 # Obtained using transform from left wheel to right wheel
+        wheel_radius: 0.5
+      controller:
+        mpc_horizon: 30
+      path_planner:
+        velocity: 7.0
+        rrt_num_samples: 200
+        dimensions:
+          x_min: -15.0
+          x_max: 15.0
+          y_min: -15.0
+          y_max: 15.0
+
+    environment:
+      obstacle_count: 3
+      obstacles:
+        obstacle_0:
+          position: [0.0, 0.0, 2.5]
+          size: [2.0, 10.0, 5.0]
+        obstacle_1:
+          position: [5.0, -6.0, 2.5]
+          size: [12.0, 2.0, 5.0]
+        obstacle_2:
+          position: [-5.0, 6.0, 2.5]
+          size: [12.0, 2.0, 5.0]

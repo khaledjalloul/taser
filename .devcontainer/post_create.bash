@@ -9,7 +9,7 @@ sudo chown -R $(whoami) .
 # rosdep install -iry --from-paths src
 
 # Build the project again in case of changes
-colcon build --packages-ignore wheeled_humanoid_isaaclab
+colcon build --packages-ignore taser_isaaclab
 
 # Add utils.bash to .bashrc
 echo 'source /home/$(whoami)/colcon_ws/.devcontainer/utils.bash' >> ~/.bashrc
