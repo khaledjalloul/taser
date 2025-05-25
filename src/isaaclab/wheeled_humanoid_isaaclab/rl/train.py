@@ -50,7 +50,7 @@ def train(env: gym.Env):
     progress_path.mkdir(parents=True, exist_ok=True)
 
     trainer_cfg = PPOTrainerCfg(
-        learning_rate=3e-4,
+        learning_rate=1e-4,
         num_steps=2048,
         batch_epochs=10,
         gamma=0.99,
@@ -58,6 +58,7 @@ def train(env: gym.Env):
         clip_eps=0.2,
         ent_coef=0.01,
         vf_coef=0.5,
+        target_kl=0.015,
         device=env.unwrapped.device
     )
 

@@ -49,6 +49,8 @@ class WandbLogger:
             "train/value_loss": train_info['value_loss'],
             "train/entropy": train_info['entropy'],
             "train/total_loss": train_info['loss'],
+            "train/kl_divergence": train_info['kl'],
+            "train/num_epochs": train_info['num_epochs']
         }, step=update)
 
     def log_evaluation(

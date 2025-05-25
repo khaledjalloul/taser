@@ -29,5 +29,8 @@ class PPOTrainerCfg:
     vf_coef: float
     """Value function coefficient"""
 
+    target_kl: float
+    """Target KL divergence threshold for early stopping"""
+
     device: str
     """Device to run the PPO trainer on"""
