@@ -1,0 +1,154 @@
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04 AS isaaclab-base
+
+ARG USERNAME=wheeled-humanoid
+
+# Environment variables for Isaac Sim and Isaac Lab
+ENV DEBIAN_FRONTEND=noninteractive
+ENV NVIDIA_DRIVER_CAPABILITIES=all
+ENV OMNI_KIT_ACCEPT_EULA=YES
+ENV OMNI_KIT_ALLOW_ROOT=1
+ENV TERM=xterm
+
+# Install essentials
+RUN apt update
+RUN apt install -y \
+    curl \
+    sudo \
+    # Python
+    python3.10 \
+    python3-virtualenv \
+    # Cmake
+    build-essential \
+    cmake \
+    # Git
+    git \
+    git-lfs \
+    # GUI support
+    libxrandr2
+
+# Set up user
+RUN useradd -m -s /bin/bash ${USERNAME}
+RUN echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER ${USERNAME}
+
+# Create Python virtual environment
+RUN virtualenv /home/${USERNAME}/venv
+RUN echo 'export PYTHONPATH=$PYTHONPATH:/home/${USERNAME}/venv/lib/python3.10/site-packages' >> /home/${USERNAME}/venv/bin/activate
+
+# Install Isaac Sim
+RUN /home/${USERNAME}/venv/bin/pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu118
+RUN /home/${USERNAME}/venv/bin/pip install 'isaacsim[all,extscache]==4.5.0' --extra-index-url https://pypi.nvidia.com
+
+# Install Isaac Lab
+RUN cd /home/${USERNAME} && git clone https://github.com/isaac-sim/IsaacLab.git
+RUN . /home/${USERNAME}/venv/bin/activate && \
+    /home/${USERNAME}/IsaacLab/isaaclab.sh --install
+
+USER root
+
+# Install apt packages
+RUN echo "deb [trusted=yes] https://khaledjalloul.github.io/debian-repository unstable main" | tee /etc/apt/sources.list.d/khaledjalloul.list
+RUN apt update
+RUN apt install -y \
+    khaled-cli \
+    # C++
+    clang-format \
+    gdb \
+    # GUI support
+    libxrandr2 \
+    # Libraries for Isaac Sim
+    libgl1 \
+    libglu1-mesa \
+    libsm6 \
+    libssl-dev \
+    libxext6 \
+    libxt6
+
+USER ${USERNAME}
+
+# Install Python packages
+RUN /home/${USERNAME}/venv/bin/pip install --no-input \
+    catkin_pkg \
+    cvxpy \
+    empy==3.3.4 \
+    lark \
+    matplotlib \
+    numpy
+
+########################################
+
+FROM isaaclab-base AS isaaclab
+
+# Copy the source code
+COPY ./src/ /home/${USERNAME}/colcon_ws/src
+WORKDIR /home/${USERNAME}/colcon_ws
+RUN sudo chown -R ${USERNAME} .
+
+# Build the project
+RUN /home/${USERNAME}/venv/bin/pip install -e src/isaaclab
+
+########################################
+
+FROM isaaclab-base AS isaaclab-ros-humble
+
+USER root
+
+# Add ROS 2 Humble repository
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+# Install ROS 2 Humble
+RUN apt update
+RUN apt install -y software-properties-common
+RUN add-apt-repository -y universe
+
+RUN apt install -y \
+    ros-humble-desktop \
+    ros-dev-tools \
+    python3-colcon-clean
+
+# Set up rosdep
+RUN rosdep init
+
+# Install Osqp and OsqpEigen
+WORKDIR /tmp
+RUN git clone --recursive --branch v0.6.3 https://github.com/osqp/osqp
+RUN mkdir -p osqp/build
+RUN cd osqp/build && cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+RUN cd osqp/build && make && make install
+
+RUN git clone --branch v0.8.1 https://github.com/robotology/osqp-eigen.git
+RUN mkdir -p osqp-eigen/build
+RUN cd osqp-eigen/build && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+RUN cd osqp-eigen/build && make && make install
+ENV OsqpEigen_DIR=/usr
+
+# Install rosdep dependencies to cache them in the image
+RUN apt install -y \
+    ros-humble-controller-manager \
+    ros-humble-ros2-control \
+    ros-humble-ros2-controllers \
+    ros-humble-velocity-controllers \
+    ros-humble-joint-state-broadcaster \
+    ros-humble-joint-state-publisher-gui \
+    ros-humble-robot-state-publisher \
+    ros-humble-rviz2 \
+    ros-humble-xacro
+
+USER ${USERNAME}
+
+# Copy the source code
+COPY ./src/ /home/${USERNAME}/colcon_ws/src
+WORKDIR /home/${USERNAME}/colcon_ws
+RUN sudo chown -R ${USERNAME} .
+
+# Build the project
+RUN rosdep update
+RUN rosdep install -iry --from-paths src
+RUN . /opt/ros/humble/setup.sh && colcon build --packages-ignore wheeled_humanoid_isaaclab
+RUN /home/${USERNAME}/venv/bin/pip install -e src/isaaclab
+
+# Automatically source the install/setup.bash file
+RUN echo "source /opt/ros/humble/setup.bash" >> /home/${USERNAME}/.bashrc
+RUN echo "source /home/${USERNAME}/colcon_ws/install/local_setup.bash" >> /home/${USERNAME}/.bashrc

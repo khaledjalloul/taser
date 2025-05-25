@@ -1,10 +1,7 @@
 {
-    "dockerFile": "Dockerfile",
-    "build": {
-        // "target": "ros-jazzy"
-        // "target": "isaaclab"
-        "target": "isaaclab-ros-humble"
-    },
+    // Build the image using `docker compose build wheeled-humanoid-<target>`
+    // "image": "khaledjalloul/wheeled-humanoid:ros-jazzy",
+    "image": "khaledjalloul/wheeled-humanoid:isaaclab-ros-humble",
     "postCreateCommand": "bash .devcontainer/post_create.bash",
     "customizations": {
         "vscode": {
@@ -31,29 +28,25 @@
                 "morningfrog.urdf-visualizer"
             ],
             "settings": {
-                "python.defaultInterpreterPath": "/home/vscode/venv/bin/python3.12",
+                "python.defaultInterpreterPath": "/home/wheeled-humanoid/venv/bin/python",
                 "python.analysis.typeCheckingMode": "off",
                 "C_Cpp.default.includePath": [
                     "${workspaceFolder}/**",
-                    "/opt/ros/jazzy/include/**"
+                    "/opt/ros/jazzy/include/**",
+                    "/opt/ros/humble/include/**"
                 ],
                 "gitlens.codeLens.authors.enabled": false,
                 "gitlens.codeLens.recentChange.enabled": false
             }
         }
     },
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/colcon_ws,type=bind",
-    "workspaceFolder": "/workspace/colcon_ws",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/wheeled-humanoid/colcon_ws,type=bind",
+    "workspaceFolder": "/home/wheeled-humanoid/colcon_ws",
     "mounts": [
         // Enable GUI
         "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
         // Enable Docker-in-Docker
-        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-        // Enable vscode settings persistence
-        "source=wheed_humanoid-devcontainer-vscode-settings,target=/workspace/colcon_ws/.vscode,type=volume",
-        // Enable colcon_ws persistence
-        "source=wheed_humanoid-devcontainer-colcon_ws-build,target=/workspace/colcon_ws/build,type=volume",
-        "source=wheed_humanoid-devcontainer-colcon_ws-install,target=/workspace/colcon_ws/install,type=volume"
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
         // Enable Isaac Sim cache persistence
         // "source=wheeled_humanoid-devcontainer-isaac-cache-kit,target=/isaac-sim/kit/cache,type=volume",
         // "source=wheeled_humanoid-devcontainer-isaac-cache-ov,target=/root/.cache/ov,type=volume",
@@ -62,7 +55,9 @@
         // "source=wheeled_humanoid-devcontainer-isaac-cache-compute,target=/root/.nv/ComputeCache,type=volume"
     ],
     "runArgs": [
-        "--device=/dev/dri"
+        "--device=/dev/dri",
+        "--hostname=dev",
+        "--env-file=.env.local"
     ],
     "containerEnv": {
         // Enable GUI

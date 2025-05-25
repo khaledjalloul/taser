@@ -1,0 +1,51 @@
+services:
+  wheeled-humanoid-ros-jazzy:
+    image: khaledjalloul/wheeled-humanoid:ros-jazzy
+    container_name: wheeled-humanoid-ros-jazzy
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.ros-jazzy
+    devices: &devices
+      - /dev/dri:/dev/dri
+    environment: &environment
+      - DISPLAY=${DISPLAY}
+    env_file: &env_file
+      - ../.env.local
+    volumes: &volumes
+      - /tmp/.X11-unix:/tmp/.X11-unix # Enable GUI
+      - ../src:/home/wheeled-humanoid/colcon_ws/src
+    entrypoint:
+      - "/bin/bash"
+      - "-c"
+      - "source /home/wheeled-humanoid/colcon_ws/install/setup.bash && \
+        ros2 launch state_machine state_machine.launch.yaml"
+
+  wheeled-humanoid-isaaclab:
+    image: khaledjalloul/wheeled-humanoid:isaaclab
+    container_name: wheeled-humanoid-isaaclab
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.isaaclab
+      target: isaaclab
+    devices: *devices
+    environment: *environment
+    env_file: *env_file
+    volumes: *volumes
+
+  wheeled-humanoid-isaaclab-ros-humble:
+    image: khaledjalloul/wheeled-humanoid:isaaclab-ros-humble
+    container_name: wheeled-humanoid-isaaclab-ros-humble
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.isaaclab
+      target: isaaclab-ros-humble
+    devices: *devices
+    environment: *environment
+    env_file: *env_file
+    volumes: *volumes
+    entrypoint:
+      - "/bin/bash"
+      - "-c"
+      - "source /home/wheeled-humanoid/colcon_ws/install/setup.bash && \
+        source /home/wheeled-humanoid/venv/bin/activate && \
+        python src/isaaclab/wheeled_humanoid_isaaclab/rl/train.py --num_envs 64 --headless"
