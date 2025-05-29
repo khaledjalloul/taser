@@ -3,9 +3,11 @@ import argparse
 parser = argparse.ArgumentParser(
     description="Train one of the TASER tasks."
 )
+parser.add_argument("--task", type=str, default="Balance",
+                    help="Task to train on.")
 parser.add_argument("--num_envs", type=int, default=128,
                     help="Number of environments to spawn.")
-parser.add_argument("--num_iters", type=int, default=200,
+parser.add_argument("--num_iters", type=int, default=100,
                     help="Number of iterations (rollout + training).")
 parser.add_argument("--output_path", type=str,
                     help="Directory to save checkpoints.")
@@ -28,16 +30,16 @@ import gymnasium as gym
 import torch
 from dataclasses import asdict
 from datetime import datetime
+from isaaclab_tasks.utils import parse_env_cfg
 from pathlib import Path
 from tqdm import tqdm
 
 from taser_isaaclab.rl import PPOTrainer, PPOTrainerCfg, WandbLogger
-from taser_isaaclab.tasks.moving import TaserEnvCfg
 
 
 def train(env: gym.Env):
     # Set up output path
-    run_name = f"ppo_training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    run_name = f"PPO_{args.task}_{datetime.now().strftime('%m%d%H%M%S')}"
 
     if args.output_path is None:
         output_path = Path.home() / "colcon_ws" / "outputs" / run_name
@@ -48,8 +50,8 @@ def train(env: gym.Env):
     progress_path.mkdir(parents=True, exist_ok=True)
 
     trainer_cfg = PPOTrainerCfg(
-        num_rollout_steps=1024,
-        total_num_steps=int(args.num_envs * 1024 * args.num_iters),
+        num_rollout_steps=2048,
+        total_num_steps=int(args.num_envs * 2048 * args.num_iters),
         num_epochs=10,
         learning_rate=3e-4,
         gamma=0.99,
@@ -58,9 +60,9 @@ def train(env: gym.Env):
         ent_coef=0.01,
         vf_coef=0.5,
         target_kl=0.015,
-        eval_freq=10,
+        eval_freq=5,
         num_eval_steps=256,
-        save_freq=10,
+        save_freq=5,
         device=env.unwrapped.device,
     )
 
@@ -100,7 +102,8 @@ def train(env: gym.Env):
 
         # Evaluation
         if update % trainer_cfg.eval_freq == 0:
-            eval_rewards = torch.zeros(args.num_envs, device=args.device)
+            eval_rewards = torch.zeros(
+                args.num_envs, device=env.unwrapped.device)
             obs = env.reset()
 
             with torch.no_grad():
@@ -137,18 +140,15 @@ def train(env: gym.Env):
     logger.finish()
 
 
-def main():
-    # Create environment
-    env_cfg = TaserEnvCfg()
-    env_cfg.scene.num_envs = args.num_envs
-    env_cfg.sim.device = args.device
-    env = gym.make("Isaac-TASER-Moving-v0", cfg=env_cfg)
+if __name__ == "__main__":
+    full_task_name = f"Isaac-TASER-{args.task}-v0"
+    env_cfg = parse_env_cfg(
+        full_task_name,
+        num_envs=args.num_envs,
+    )
+    env = gym.make(full_task_name, cfg=env_cfg)
 
     train(env)
 
     env.close()
-
-
-if __name__ == "__main__":
-    main()
     simulation_app.close()

@@ -2,11 +2,12 @@ import argparse
 from pathlib import Path
 
 parser = argparse.ArgumentParser(
-    description="Simulate the TASER robot moving task."
+    description="Simulate the TASER robot balance task."
 )
-parser.add_argument("--num_envs", type=int, default=1,
+parser.add_argument("--num_envs", type=int, default=4,
                     help="Number of environments to spawn.")
-parser.add_argument("--model_path", type=str, required=True,
+parser.add_argument("--model_path", type=str,
+                    default=Path(__file__).parent / 'data' / 'model.pth',
                     help="Path to the trained model.")
 
 ############################################################
@@ -25,21 +26,20 @@ import torch
 import gymnasium as gym
 
 from taser_isaaclab.rl import ActorCritic
-from taser_isaaclab.tasks.moving import TaserEnvCfg
+from taser_isaaclab.tasks.balance import TaserEnvCfg, TASK_NAME
 
 
 def main():
     env_cfg = TaserEnvCfg()
     env_cfg.scene.num_envs = args.num_envs
-    env_cfg.sim.device = args.device
-    env = gym.make("Isaac-TASER-Moving-v0", cfg=env_cfg)
+    env = gym.make(TASK_NAME, cfg=env_cfg)
 
     obs = env.reset()
 
     model = ActorCritic(
         obs_dim=env.unwrapped.obs_dim,
         act_dim=env.unwrapped.act_dim,
-    ).to(args.device)
+    ).to(env.unwrapped.device)
 
     model.load(args.model_path)
     model.eval()

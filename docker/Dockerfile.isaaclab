@@ -74,7 +74,8 @@ RUN /home/${USERNAME}/venv/bin/pip install --no-input \
     empy==3.3.4 \
     lark \
     matplotlib \
-    numpy
+    numpy \
+    numba
 
 ########################################
 

@@ -2,9 +2,8 @@ import torch
 from isaaclab.envs import ManagerBasedRLEnv, ManagerBasedRLEnvCfg
 from isaaclab.utils import configclass
 
-from taser_isaaclab.common import ActionsCfg, ObservationsCfg
-from taser_isaaclab.tasks.moving.mdp import EventsCfg, RewardsCfg, TerminationsCfg
-from taser_isaaclab.tasks.moving.scene import SceneCfg
+from taser_isaaclab.common import ActionsCfg
+from taser_isaaclab.tasks.balance import EventsCfg, ObservationsCfg, RewardsCfg, TerminationsCfg, SceneCfg
 
 
 @configclass
