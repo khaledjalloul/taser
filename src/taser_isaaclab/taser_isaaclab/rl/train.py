@@ -1,20 +1,15 @@
 import argparse
-from datetime import datetime
-from pathlib import Path
-
-RUN_NAME = f"ppo_training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-DEFAULT_OUT_PATH = Path.home() / "colcon_ws" / "outputs" / \
-    RUN_NAME / "checkpoints"
 
 parser = argparse.ArgumentParser(
     description="Train one of the TASER tasks."
 )
-parser.add_argument("--num_envs", type=int, default=1,
+parser.add_argument("--num_envs", type=int, default=128,
                     help="Number of environments to spawn.")
-parser.add_argument("--checkpoint_path", type=str,
-                    default=DEFAULT_OUT_PATH,
+parser.add_argument("--num_iters", type=int, default=200,
+                    help="Number of iterations (rollout + training).")
+parser.add_argument("--output_path", type=str,
                     help="Directory to save checkpoints.")
-parser.add_argument("--resume", type=str, default=None,
+parser.add_argument("--resume", type=str,
                     help="Path to checkpoint to resume from.")
 
 ############################################################
@@ -32,48 +27,49 @@ simulation_app = app_launcher.app
 import gymnasium as gym
 import torch
 from dataclasses import asdict
+from datetime import datetime
+from pathlib import Path
 from tqdm import tqdm
 
 from taser_isaaclab.rl import PPOTrainer, PPOTrainerCfg, WandbLogger
 from taser_isaaclab.tasks.moving import TaserEnvCfg
 
 
-TOTAL_TIMESTEPS = int(1e8)
-"""Total number of timesteps for all envs to train for"""
-EVAL_FREQ = 5
-"""Frequency of evaluation"""
-NUM_EVAL_TIMESTEPS = 512
-"""Number of timesteps to evaluate on"""
-SAVE_FREQ = 5
-"""Frequency of saving model"""
-
-
 def train(env: gym.Env):
-    # Setup checkpoint directory
-    checkpoint_path = Path(args.checkpoint_path)
-    progress_path = checkpoint_path / "progress"
+    # Set up output path
+    run_name = f"ppo_training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+    if args.output_path is None:
+        output_path = Path.home() / "colcon_ws" / "outputs" / run_name
+    else:
+        output_path = Path(args.output_path)
+
+    progress_path = output_path / "progress"
     progress_path.mkdir(parents=True, exist_ok=True)
 
     trainer_cfg = PPOTrainerCfg(
+        num_rollout_steps=1024,
+        total_num_steps=int(args.num_envs * 1024 * args.num_iters),
+        num_epochs=10,
         learning_rate=3e-4,
-        num_steps=2048,
-        batch_epochs=10,
         gamma=0.99,
         gae_lambda=0.95,
         clip_eps=0.2,
         ent_coef=0.01,
         vf_coef=0.5,
         target_kl=0.015,
+        eval_freq=10,
+        num_eval_steps=256,
+        save_freq=10,
         device=env.unwrapped.device,
     )
 
     # Initialize wandb logger
     logger = WandbLogger(
-        exp_name=RUN_NAME,
-        base_path=args.checkpoint_path,
+        exp_name=run_name,
+        base_path=output_path,
         config={
             "num_envs": args.num_envs,
-            "total_timesteps": TOTAL_TIMESTEPS,
             **asdict(trainer_cfg)
         }
     )
@@ -84,14 +80,15 @@ def train(env: gym.Env):
     # Load checkpoint if resuming
     start_update = 0
     if args.resume is not None:
-        trainer.load_model(args.resume)
+        trainer.policy.load(args.resume)
         try:
             start_update = int(Path(args.resume).stem.split('_')[-1])
         except:
             pass
 
     # Training loop
-    num_updates = TOTAL_TIMESTEPS // (args.num_envs * trainer_cfg.num_steps)
+    num_updates = trainer_cfg.total_num_steps // (args.num_envs *
+                                                  trainer_cfg.num_rollout_steps)
     best_reward = float('-inf')
 
     for update in tqdm(range(start_update, num_updates)):
@@ -102,12 +99,12 @@ def train(env: gym.Env):
         logger.log_training_step(train_info, update)
 
         # Evaluation
-        if (update + 1) % EVAL_FREQ == 0:
+        if update % trainer_cfg.eval_freq == 0:
             eval_rewards = torch.zeros(args.num_envs, device=args.device)
             obs = env.reset()
 
             with torch.no_grad():
-                for _ in range(NUM_EVAL_TIMESTEPS):
+                for _ in range(trainer_cfg.num_eval_steps):
                     dist, _ = trainer.policy(obs)
                     action = dist.mean  # Use mean action for evaluation
                     obs, reward, _, _, _ = env.step(action)
@@ -115,31 +112,29 @@ def train(env: gym.Env):
 
             eval_reward = eval_rewards.mean()
 
-            # Log evaluation metrics
-            logger.log_evaluation(eval_reward.item(), best_reward, update)
-
             # Save best model
             if eval_reward.mean() > best_reward:
                 best_reward = eval_reward.mean()
-                best_model_path = checkpoint_path / "best_model.pth"
-                trainer.save_model(best_model_path)
+                best_model_path = output_path / "best_model.pth"
+                trainer.policy.save(best_model_path)
                 logger.save_model(best_model_path)
 
+            # Log evaluation metrics
+            logger.log_evaluation(eval_reward.item(), best_reward, update)
+
         # Regular checkpointing
-        if (update + 1) % SAVE_FREQ == 0:
+        if update % trainer_cfg.save_freq == 0 and update != 0:
             model_path = progress_path / f"model_{update + 1}.pth"
-            trainer.save_model(model_path)
+            trainer.policy.save(model_path)
             logger.save_model(model_path)
 
     # Save final model
-    final_model_path = checkpoint_path / "model_final.pth"
-    trainer.save_model(final_model_path)
+    final_model_path = output_path / "model_final.pth"
+    trainer.policy.save(final_model_path)
     logger.save_model(final_model_path)
 
     # Close wandb run
     logger.finish()
-
-    return trainer, best_reward
 
 
 def main():
@@ -149,7 +144,6 @@ def main():
     env_cfg.sim.device = args.device
     env = gym.make("Isaac-TASER-Moving-v0", cfg=env_cfg)
 
-    # Train the model
     train(env)
 
     env.close()

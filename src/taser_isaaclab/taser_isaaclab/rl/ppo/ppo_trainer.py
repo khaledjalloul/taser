@@ -15,13 +15,14 @@ class PPOTrainer:
         # Initialize policy network
         self.policy = ActorCritic(
             env.unwrapped.obs_dim,
-            env.unwrapped.act_dim,
-            device=cfg.device
+            env.unwrapped.act_dim
         ).to(cfg.device)
         self.policy.train()
 
         self.optimizer = torch.optim.Adam(
-            self.policy.parameters(), lr=cfg.learning_rate)
+            self.policy.parameters(),
+            lr=cfg.learning_rate
+        )
 
     def train_step(self):
         # Rollout
@@ -40,12 +41,11 @@ class PPOTrainer:
         total_kl = 0
 
         # PPO update
-        for _ in range(self.cfg.batch_epochs):
-            action_dist, value = self.policy(obs, update_norm=False)
+        for _ in range(self.cfg.num_epochs):
+            action_dist, value = self.policy(obs)
             log_prob = action_dist.log_prob(act).sum(-1)
             entropy = action_dist.entropy().mean()
 
-            # Calculate KL divergence using stored old distribution
             kl = kl_divergence(old_action_dist, action_dist).mean()
 
             policy_ratio = torch.exp(log_prob - log_prob_old)
@@ -64,7 +64,6 @@ class PPOTrainer:
             total_entropy += entropy.item()
             total_kl += kl.item()
 
-            # Optional early stopping based on KL
             if kl > 1.5 * self.cfg.target_kl:
                 break
 
@@ -82,28 +81,23 @@ class PPOTrainer:
         }
 
     def rollout(self):
-        # Reset environment
         obs = self.env.reset()
 
-        # Initialize buffers
-        obs_buf = []
-        act_buf = []
-        rew_buf = []
-        val_buf = []
-        done_buf = []
-        mu_buf = []
-        std_buf = []
+        obs_buf: list[torch.Tensor] = []
+        act_buf: list[torch.Tensor] = []
+        rew_buf: list[torch.Tensor] = []
+        val_buf: list[torch.Tensor] = []
+        done_buf: list[torch.Tensor] = []
+        mu_buf: list[torch.Tensor] = []
+        std_buf: list[torch.Tensor] = []
 
-        # Collect experience
-        for _ in range(self.cfg.num_steps):
-            action_dist, value = self.policy(obs)
+        for _ in range(self.cfg.num_rollout_steps):
+            action_dist, value = self.policy(obs, update_norm=True)
             action = action_dist.sample()
 
-            # Step environment
             next_obs, reward, terminated, truncated, _ = self.env.step(action)
             done = torch.logical_or(terminated, truncated)
 
-            # Store transitions
             obs_buf.append(obs)
             act_buf.append(action)
             rew_buf.append(reward)
@@ -115,10 +109,9 @@ class PPOTrainer:
             obs = next_obs
 
         # Compute final value for bootstrapping
-        _, final_val = self.policy(obs)
+        _, final_val = self.policy(obs, update_norm=True)
         val_buf.append(final_val)
 
-        # Convert buffers to tensors
         obs_buf = torch.stack(obs_buf)  # (T, N, obs_dim)
         act_buf = torch.stack(act_buf)  # (T, N, act_dim)
         rew_buf = torch.stack(rew_buf)  # (T, N)
@@ -175,15 +168,3 @@ class PPOTrainer:
 
         returns = advantages + values[:-1]
         return advantages, returns
-
-    def save_model(self, path: str):
-        torch.save(self.policy.state_dict(), path)
-
-    def load_model(self, path: str):
-        self.policy.load_state_dict(
-            torch.load(
-                path,
-                map_location=self.cfg.device,
-                weights_only=True
-            )
-        )

@@ -24,8 +24,8 @@ class EventsCfg:
                     "base_wheel_2_joint"
                 ]
             ),
-            "position_range": (0.0, 0.0),
-            "velocity_range": (0.0, 0.0),
+            "position_range": (-0.1, 0.1),
+            "velocity_range": (-0.1, 0.1),
         },
     )
 
@@ -39,7 +39,7 @@ class EventsCfg:
                 "y": (0.0, 0.0),
                 "z": (0.0, 0.0),
                 "roll": (0.0, 0.0),
-                "pitch": (0.0, 0.0),
+                "pitch": (-0.385, 0.385),
                 "yaw": (0.0, 0.0),
             },
             "velocity_range": {

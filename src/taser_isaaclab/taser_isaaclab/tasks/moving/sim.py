@@ -6,8 +6,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("--num_envs", type=int, default=1,
                     help="Number of environments to spawn.")
-parser.add_argument("--model_path", type=str,
-                    default=Path.home() / "colcon_ws" / "checkpoints" / "best_model.pth",
+parser.add_argument("--model_path", type=str, required=True,
                     help="Path to the trained model.")
 
 ############################################################
@@ -25,8 +24,8 @@ simulation_app = app_launcher.app
 import torch
 import gymnasium as gym
 
+from taser_isaaclab.rl import ActorCritic
 from taser_isaaclab.tasks.moving import TaserEnvCfg
-from taser_isaaclab.rl.ppo.actor_critic import ActorCritic
 
 
 def main():
@@ -37,30 +36,21 @@ def main():
 
     obs = env.reset()
 
-    # Create the model instance with same dimensions
-    model = ActorCritic(obs_dim=env.unwrapped.obs_dim,
-                        act_dim=env.unwrapped.act_dim,
-                        device=args.device).to(args.device)
+    model = ActorCritic(
+        obs_dim=env.unwrapped.obs_dim,
+        act_dim=env.unwrapped.act_dim,
+    ).to(args.device)
 
-    # Load weights
-    model.load_state_dict(torch.load(
-        args.model_path, map_location=args.device, weights_only=True))
+    model.load(args.model_path)
     model.eval()
 
-    # simulate physics
     count = 0
-
     while simulation_app.is_running():
         with torch.inference_mode():
-            action_dist: torch.distributions.Normal
-            action_dist, _ = model(obs, update_norm=True)
+            action_dist, _ = model(obs)
             action = action_dist.sample()
 
-            # step the environment
             obs, rewards, terminated, truncated, info = env.step(action)
-            print("obs", obs)
-            print("rewards", rewards)
-            # update counter
             count += 1
 
     env.close()
