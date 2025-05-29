@@ -28,6 +28,6 @@ class TerminationsCfg:
         func=mdp.bad_orientation,
         params={
             "asset_cfg": SceneEntityCfg("robot"),
-            "limit_angle": float(np.deg2rad(45.0)),
+            "limit_angle": float(np.deg2rad(70.0)),
         },
     )

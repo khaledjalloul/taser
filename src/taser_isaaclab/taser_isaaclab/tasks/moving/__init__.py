@@ -1,12 +1,12 @@
-from .env import TaserEnvCfg
+from .env import TaserEnv, TaserEnvCfg
 
-__all__ = ["TaserEnvCfg"]
+__all__ = ["TaserEnv", "TaserEnvCfg"]
 
 import gymnasium as gym
 
 gym.register(
     id="Isaac-TASER-Moving-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    entry_point=f"{__name__}.env:TaserEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": f"{__name__}.env:TaserEnvCfg",

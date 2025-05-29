@@ -15,6 +15,7 @@ services:
     volumes: &volumes
       - /tmp/.X11-unix:/tmp/.X11-unix # Enable GUI
       - ../src:/home/taser/colcon_ws/src
+      - ../outputs:/home/taser/colcon_ws/outputs
     entrypoint:
       - "/bin/bash"
       - "-c"
@@ -51,4 +52,4 @@ services:
       - "-c"
       - "source ~/colcon_ws/install/setup.bash && \
         source ~/venv/bin/activate && \
-        python src/taser_isaaclab/taser_isaaclab/rl/train.py --num_envs 64 --headless"
+        python src/taser_isaaclab/taser_isaaclab/rl/train.py --num_envs 128 --headless"

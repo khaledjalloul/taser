@@ -9,14 +9,14 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     # (1) Constant running reward
-    alive = RewTerm(func=mdp.is_alive, weight=1.0)
+    alive = RewTerm(func=mdp.is_alive, weight=10.0)
 
     # (2) Failure penalty
-    terminating = RewTerm(func=mdp.is_terminated, weight=-5.0)
+    terminating = RewTerm(func=mdp.is_terminated, weight=-50.0)
 
     # (3) Tilt penalty
     tilt = RewTerm(
         func=mdp.flat_orientation_l2,
-        weight=-2.0,
+        weight=-30.0,
         params={"asset_cfg": SceneEntityCfg("robot")},
     )

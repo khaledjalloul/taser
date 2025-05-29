@@ -13,19 +13,24 @@ class PPOTrainer:
         self.cfg = cfg
 
         # Initialize policy network
-        obs_dim = env.observation_space["policy"].shape[1]
-        act_dim = env.action_space.shape[1]
-        self.policy = ActorCritic(obs_dim, act_dim).to(cfg.device)
+        self.policy = ActorCritic(
+            env.unwrapped.obs_dim,
+            env.unwrapped.act_dim,
+            device=cfg.device
+        ).to(cfg.device)
+        self.policy.train()
+
         self.optimizer = torch.optim.Adam(
             self.policy.parameters(), lr=cfg.learning_rate)
 
     def train_step(self):
         # Rollout
-        obs, act, adv, ret, mu_old, std_old = self.rollout()
+        with torch.no_grad():
+            obs, act, adv, ret, mu_old, std_old = self.rollout()
 
-        # Create old distribution
-        old_action_dist = torch.distributions.Normal(mu_old, std_old)
-        log_prob_old = old_action_dist.log_prob(act).sum(-1)
+            # Create old distribution
+            old_action_dist = torch.distributions.Normal(mu_old, std_old)
+            log_prob_old = old_action_dist.log_prob(act).sum(-1)
 
         # Stats
         total_loss = 0
@@ -36,7 +41,7 @@ class PPOTrainer:
 
         # PPO update
         for _ in range(self.cfg.batch_epochs):
-            action_dist, value = self.policy(obs)
+            action_dist, value = self.policy(obs, update_norm=False)
             log_prob = action_dist.log_prob(act).sum(-1)
             entropy = action_dist.entropy().mean()
 
@@ -53,6 +58,12 @@ class PPOTrainer:
             loss: torch.Tensor = policy_loss + self.cfg.vf_coef * \
                 value_loss - self.cfg.ent_coef * entropy
 
+            total_loss += loss.item()
+            total_policy_loss += policy_loss.item()
+            total_value_loss += value_loss.item()
+            total_entropy += entropy.item()
+            total_kl += kl.item()
+
             # Optional early stopping based on KL
             if kl > 1.5 * self.cfg.target_kl:
                 break
@@ -61,12 +72,6 @@ class PPOTrainer:
             loss.backward()
             self.optimizer.step()
 
-            total_loss += loss.item()
-            total_policy_loss += policy_loss.item()
-            total_value_loss += value_loss.item()
-            total_entropy += entropy.item()
-            total_kl += kl.item()
-
         num_epochs = _ + 1  # Actual number of epochs completed
         return {
             'loss': total_loss / num_epochs,
@@ -74,13 +79,11 @@ class PPOTrainer:
             'value_loss': total_value_loss / num_epochs,
             'entropy': total_entropy / num_epochs,
             'kl': total_kl / num_epochs,
-            'num_epochs': num_epochs
         }
 
     def rollout(self):
         # Reset environment
-        obs_dict, _ = self.env.reset()
-        obs = obs_dict["policy"]
+        obs = self.env.reset()
 
         # Initialize buffers
         obs_buf = []
@@ -93,14 +96,11 @@ class PPOTrainer:
 
         # Collect experience
         for _ in range(self.cfg.num_steps):
-            with torch.no_grad():
-                action_dist, value = self.policy(obs)
-                action = action_dist.sample()
+            action_dist, value = self.policy(obs)
+            action = action_dist.sample()
 
             # Step environment
-            next_obs_dict, reward, terminated, truncated, _ = \
-                self.env.step(action)
-            next_obs = next_obs_dict["policy"]
+            next_obs, reward, terminated, truncated, _ = self.env.step(action)
             done = torch.logical_or(terminated, truncated)
 
             # Store transitions
@@ -115,9 +115,8 @@ class PPOTrainer:
             obs = next_obs
 
         # Compute final value for bootstrapping
-        with torch.no_grad():
-            _, final_val = self.policy(obs)
-            val_buf.append(final_val)
+        _, final_val = self.policy(obs)
+        val_buf.append(final_val)
 
         # Convert buffers to tensors
         obs_buf = torch.stack(obs_buf)  # (T, N, obs_dim)

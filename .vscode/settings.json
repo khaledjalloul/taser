@@ -89,9 +89,9 @@
         "ios": "cpp"
     },
     "python.analysis.extraPaths": [
-        "/home/${USERNAME}/colcon_ws/install/taser_py/lib/python3.12/site-packages",
-        "/home/${USERNAME}/colcon_ws/install/taser_py/local/lib/python3.10/dist-packages",
-        "/home/${USERNAME}/IsaacLab/source/isaaclab"
+        "/home/taser/colcon_ws/install/taser_py/lib/python3.12/site-packages",
+        "/home/taser/colcon_ws/install/taser_py/local/lib/python3.10/dist-packages",
+        "/home/taser/IsaacLab/source/isaaclab"
     ],
     "autopep8.args": [
         "--ignore",

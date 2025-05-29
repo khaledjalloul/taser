@@ -1,13 +1,10 @@
-from taser_isaaclab.tasks.moving import TaserEnvCfg
-from taser_isaaclab.rl import PPOTrainer, PPOTrainerCfg, WandbLogger
-from tqdm import tqdm
-from pathlib import Path
-from dataclasses import asdict
-import torch
-import gymnasium as gym
-from isaaclab.app import AppLauncher
-import isaaclab
 import argparse
+from datetime import datetime
+from pathlib import Path
+
+RUN_NAME = f"ppo_training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+DEFAULT_OUT_PATH = Path.home() / "colcon_ws" / "outputs" / \
+    RUN_NAME / "checkpoints"
 
 parser = argparse.ArgumentParser(
     description="Train one of the TASER tasks."
@@ -15,12 +12,14 @@ parser = argparse.ArgumentParser(
 parser.add_argument("--num_envs", type=int, default=1,
                     help="Number of environments to spawn.")
 parser.add_argument("--checkpoint_path", type=str,
-                    default="checkpoints", help="Directory to save checkpoints.")
+                    default=DEFAULT_OUT_PATH,
+                    help="Directory to save checkpoints.")
 parser.add_argument("--resume", type=str, default=None,
                     help="Path to checkpoint to resume from.")
 
 ############################################################
 
+from isaaclab.app import AppLauncher
 
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
@@ -30,8 +29,16 @@ simulation_app = app_launcher.app
 
 ############################################################
 
+import gymnasium as gym
+import torch
+from dataclasses import asdict
+from tqdm import tqdm
 
-TOTAL_TIMESTEPS = int(1e7)
+from taser_isaaclab.rl import PPOTrainer, PPOTrainerCfg, WandbLogger
+from taser_isaaclab.tasks.moving import TaserEnvCfg
+
+
+TOTAL_TIMESTEPS = int(1e8)
 """Total number of timesteps for all envs to train for"""
 EVAL_FREQ = 5
 """Frequency of evaluation"""
@@ -48,7 +55,7 @@ def train(env: gym.Env):
     progress_path.mkdir(parents=True, exist_ok=True)
 
     trainer_cfg = PPOTrainerCfg(
-        learning_rate=1e-4,
+        learning_rate=3e-4,
         num_steps=2048,
         batch_epochs=10,
         gamma=0.99,
@@ -57,15 +64,19 @@ def train(env: gym.Env):
         ent_coef=0.01,
         vf_coef=0.5,
         target_kl=0.015,
-        device=env.unwrapped.device
+        device=env.unwrapped.device,
     )
 
     # Initialize wandb logger
-    logger = WandbLogger(config={
-        "num_envs": args.num_envs,
-        "total_timesteps": TOTAL_TIMESTEPS,
-        **asdict(trainer_cfg)
-    })
+    logger = WandbLogger(
+        exp_name=RUN_NAME,
+        base_path=args.checkpoint_path,
+        config={
+            "num_envs": args.num_envs,
+            "total_timesteps": TOTAL_TIMESTEPS,
+            **asdict(trainer_cfg)
+        }
+    )
 
     # Initialize trainer
     trainer = PPOTrainer(env=env, cfg=trainer_cfg)
@@ -93,15 +104,13 @@ def train(env: gym.Env):
         # Evaluation
         if (update + 1) % EVAL_FREQ == 0:
             eval_rewards = torch.zeros(args.num_envs, device=args.device)
-            obs_dict, _ = env.reset()
-            obs = obs_dict["policy"]
+            obs = env.reset()
 
             with torch.no_grad():
                 for _ in range(NUM_EVAL_TIMESTEPS):
                     dist, _ = trainer.policy(obs)
                     action = dist.mean  # Use mean action for evaluation
-                    next_obs_dict, reward, _, _, _ = env.step(action)
-                    obs = next_obs_dict["policy"]
+                    obs, reward, _, _, _ = env.step(action)
                     eval_rewards += reward
 
             eval_reward = eval_rewards.mean()

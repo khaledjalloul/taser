@@ -10,15 +10,14 @@ class WandbLogger:
     # Default wandb configuration
     WANDB_PROJECT = "TASER"
     WANDB_ENTITY = "khaledjalloul-eth-zurich"
-    DEFAULT_EXP_NAME = f"ppo_training_{
-        datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     def __init__(
         self,
         config: Dict[str, Any],
         exp_name: Optional[str] = None,
         project: Optional[str] = None,
-        entity: Optional[str] = None
+        entity: Optional[str] = None,
+        base_path: Optional[str] = None
     ):
         """Initialize the wandb logger.
 
@@ -31,13 +30,14 @@ class WandbLogger:
         self.run = wandb.init(
             project=project or self.WANDB_PROJECT,
             entity=entity or self.WANDB_ENTITY,
-            name=exp_name or self.DEFAULT_EXP_NAME,
-            config=config
+            name=exp_name,
+            config=config,
         )
 
         # Initialize episode tracking
         self.episode_rewards = []
         self.episode_lengths = []
+        self.base_path = base_path
 
     def log_training_step(
         self,
@@ -51,7 +51,6 @@ class WandbLogger:
             "train/entropy": train_info['entropy'],
             "train/total_loss": train_info['loss'],
             "train/kl_divergence": train_info['kl'],
-            "train/num_epochs": train_info['num_epochs']
         }, step=update)
 
     def log_evaluation(
@@ -68,7 +67,7 @@ class WandbLogger:
 
     def save_model(self, model_path: Path):
         """Save model checkpoint to wandb."""
-        wandb.save(str(model_path))
+        wandb.save(str(model_path), base_path=self.base_path)
 
     def finish(self):
         """Close the wandb run."""
