@@ -47,13 +47,9 @@
         // Enable GUI
         "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
         // Enable Docker-in-Docker
-        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
-        // Enable Isaac Sim cache persistence
-        // "source=taser-devcontainer-isaac-cache-kit,target=/isaac-sim/kit/cache,type=volume",
-        // "source=taser-devcontainer-isaac-cache-ov,target=/root/.cache/ov,type=volume",
-        // "source=taser-devcontainer-isaac-cache-pip,target=/root/.cache/pip,type=volume",
-        // "source=taser-devcontainer-isaac-cache-gl,target=/root/.cache/nvidia/GLCache,type=volume",
-        // "source=taser-devcontainer-isaac-cache-compute,target=/root/.nv/ComputeCache,type=volume"
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+        // Persist Omniverse cache
+        "source=taser-omni-cache,target=/home/taser/venv/lib/python3.10/site-packages/omni/cache,type=volume"
     ],
     "runArgs": [
         "--device=/dev/dri",

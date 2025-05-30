@@ -13,9 +13,16 @@ services:
     env_file: &env_file
       - ../.env.local
     volumes: &volumes
-      - /tmp/.X11-unix:/tmp/.X11-unix # Enable GUI
-      - ../src:/home/taser/colcon_ws/src
-      - ../outputs:/home/taser/colcon_ws/outputs
+      # Enable GUI
+      - type: bind
+        source: /tmp/.X11-unix
+        target: /tmp/.X11-unix
+      - type: bind
+        source: ../src
+        target: /home/taser/colcon_ws/src
+      - type: bind
+        source: ../outputs
+        target: /home/taser/colcon_ws/outputs
     entrypoint:
       - "/bin/bash"
       - "-c"
@@ -33,7 +40,11 @@ services:
     devices: *devices
     environment: *environment
     env_file: *env_file
-    volumes: *volumes
+    volumes:
+      - <<: *volumes
+      - type: volume
+        source: taser-omni-cache
+        target: /home/taser/venv/lib/python3.10/site-packages/omni/cache
 
   taser-isaaclab-ros-humble:
     image: khaledjalloul/taser:isaaclab-ros-humble
@@ -46,10 +57,19 @@ services:
     devices: *devices
     environment: *environment
     env_file: *env_file
-    volumes: *volumes
+    volumes:
+      - <<: *volumes
+      - type: volume
+        source: taser-omni-cache
+        target: /home/taser/venv/lib/python3.10/site-packages/omni/cache
     entrypoint:
       - "/bin/bash"
       - "-c"
       - "source ~/colcon_ws/install/setup.bash && \
         source ~/venv/bin/activate && \
-        python src/taser_isaaclab/taser_isaaclab/rl/train.py --num_envs 128 --headless"
+        python src/taser_isaaclab/taser_isaaclab/tasks/balance/sim.py"
+
+volumes:
+  taser-omni-cache:
+    name: taser-omni-cache
+    external: true
