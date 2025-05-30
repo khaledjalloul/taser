@@ -1,1 +1,3 @@
-from .tasks.balance import *
+# Trigger gym registrations
+import taser_isaaclab.tasks.balance
+import taser_isaaclab.tasks.track_velocity
