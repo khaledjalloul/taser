@@ -2,7 +2,6 @@ from .mdp.events import EventsCfg
 from .mdp.observations import ObservationsCfg
 from .mdp.rewards import RewardsCfg
 from .mdp.terminations import TerminationsCfg
-from .scene import SceneCfg
 from .env import TaserEnv, TaserEnvCfg
 
 import gymnasium as gym
@@ -20,4 +19,4 @@ gym.register(
 )
 
 __all__ = ["EventsCfg", "ObservationsCfg", "RewardsCfg",
-           "TerminationsCfg", "SceneCfg", "TaserEnv", "TaserEnvCfg", "TASK_NAME"]
+           "TerminationsCfg", "TaserEnv", "TaserEnvCfg", "TASK_NAME"]

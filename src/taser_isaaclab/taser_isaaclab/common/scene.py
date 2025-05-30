@@ -2,7 +2,7 @@ import isaaclab.sim as sim_utils
 from isaaclab.assets import AssetBaseCfg
 from isaaclab.scene import InteractiveSceneCfg
 
-from taser_isaaclab.common import TASER_CONFIG
+from . import TASER_CONFIG
 
 
 class SceneCfg(InteractiveSceneCfg):

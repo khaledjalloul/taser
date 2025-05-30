@@ -3,7 +3,7 @@ from isaaclab.managers import ObservationGroupCfg
 from isaaclab.managers import ObservationTermCfg
 from isaaclab.utils import configclass
 
-from taser_isaaclab.common import root_com_pos_b, root_com_quat_w, root_com_vel_w
+from taser_isaaclab.common.obs_utils import base_pos_b, base_quat_w, root_vel_b
 
 
 @configclass
@@ -15,11 +15,11 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
-        joint_pos_rel = ObservationTermCfg(func=mdp.joint_pos_rel)
-        joint_vel_rel = ObservationTermCfg(func=mdp.joint_vel_rel)
-        root_com_pos_b = ObservationTermCfg(func=root_com_pos_b)
-        root_com_quat_w = ObservationTermCfg(func=root_com_quat_w)
-        root_com_vel_w = ObservationTermCfg(func=root_com_vel_w)
+        joint_pos = ObservationTermCfg(func=mdp.joint_pos)
+        joint_vel = ObservationTermCfg(func=mdp.joint_vel)
+        base_pos_b = ObservationTermCfg(func=base_pos_b)
+        base_quat_w = ObservationTermCfg(func=base_quat_w)
+        root_vel_b = ObservationTermCfg(func=root_vel_b)
 
         def __post_init__(self) -> None:
             self.enable_corruption = False

@@ -4,17 +4,17 @@ from isaaclab.envs import ManagerBasedEnv
 from isaaclab.managers import RewardTermCfg, SceneEntityCfg
 from isaaclab.utils import configclass
 
-from taser_isaaclab.common import root_com_pos_b, root_com_vel_w
+from taser_isaaclab.common.obs_utils import base_pos_b, root_vel_b
 
 
 def distance_to_origin(env: ManagerBasedEnv):
-    """Get the distances from the robot's root center of mass to the origin."""
-    return torch.clamp(torch.linalg.vector_norm(root_com_pos_b(env)[:, :2], dim=-1), max=1.0)
+    """Get the distances from the robot's position to the environment's origin."""
+    return torch.clamp(torch.linalg.vector_norm(base_pos_b(env)[:, :2], dim=-1), max=1.0)
 
 
 def spinning_velocity(env: ManagerBasedEnv):
     """Get the spinning velocity (z-axis) of the robot."""
-    return torch.clamp(torch.abs(root_com_vel_w(env)[:, 5]), max=0.5)
+    return torch.clamp(torch.abs(root_vel_b(env)[:, 5]), max=0.5)
 
 
 @configclass
