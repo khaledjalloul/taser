@@ -1,6 +1,7 @@
-import isaaclab.envs.mdp as mdp
-from isaaclab.utils import configclass
+import math
+from isaaclab.envs import mdp
 from isaaclab.managers import SceneEntityCfg, EventTermCfg
+from isaaclab.utils import configclass
 
 
 @configclass
@@ -40,7 +41,7 @@ class EventsCfg:
                 "z": (0.0, 0.0),
                 "roll": (0.0, 0.0),
                 "pitch": (0.0, 0.0),
-                "yaw": (0.0, 0.0),
+                "yaw": (-math.pi, math.pi),
             },
             "velocity_range": {
                 "x": (0.0, 0.0),

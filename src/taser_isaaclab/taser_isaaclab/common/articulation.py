@@ -22,6 +22,7 @@ TASER_CONFIG = ArticulationCfg(
         fix_base=False,
         merge_fixed_joints=False,
         self_collision=True,
+        root_link_name="base_wrapper",
         joint_drive=UrdfConverterCfg.JointDriveCfg(
             gains=UrdfConverterCfg.JointDriveCfg.PDGainsCfg(
                 stiffness=0.1

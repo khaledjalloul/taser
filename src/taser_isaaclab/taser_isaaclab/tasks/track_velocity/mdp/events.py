@@ -1,6 +1,11 @@
-import isaaclab.envs.mdp as mdp
+import torch
+from isaaclab.envs import ManagerBasedEnv, mdp
 from isaaclab.utils import configclass
 from isaaclab.managers import SceneEntityCfg, EventTermCfg
+
+
+def reset_target_velocity_t(env: ManagerBasedEnv, env_ids: torch.Tensor):
+    env._t[env_ids] = 0.0
 
 
 @configclass
@@ -40,7 +45,7 @@ class EventsCfg:
                 "z": (0.0, 0.0),
                 "roll": (0.0, 0.0),
                 "pitch": (0.0, 0.0),
-                "yaw": (0.0, 0.0),
+                "yaw": (-torch.pi, torch.pi),
             },
             "velocity_range": {
                 "x": (0.0, 0.0),
@@ -51,4 +56,9 @@ class EventsCfg:
                 "yaw": (0.0, 0.0),
             },
         },
+    )
+
+    reset_target_velocity_t = EventTermCfg(
+        func=reset_target_velocity_t,
+        mode="reset",
     )

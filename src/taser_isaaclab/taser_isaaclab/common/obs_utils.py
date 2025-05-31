@@ -22,17 +22,17 @@ def base_quat_w(env: ManagerBasedEnv) -> torch.Tensor:
 
 def base_lin_vel_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body linear velocity in the world frame."""
-    return env.scene['robot'].data.body_lin_vel_w[:, _get_body_index(env, 'base_wrapper')]
+    return env.scene['robot'].data.body_lin_vel_w[:, _get_body_index(env, 'base')]
 
 
 def base_ang_vel_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body angular velocity in the world frame."""
-    return env.scene['robot'].data.body_ang_vel_w[:, _get_body_index(env, 'base_wrapper')]
+    return env.scene['robot'].data.body_ang_vel_w[:, _get_body_index(env, 'base')]
 
 
 def base_vel_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body velocity in the world frame."""
-    return env.scene['robot'].data.body_vel_w[:, _get_body_index(env, 'base_wrapper')]
+    return env.scene['robot'].data.body_vel_w[:, _get_body_index(env, 'base')]
 
 
 def base_state_w(env: ManagerBasedEnv) -> torch.Tensor:
@@ -85,15 +85,22 @@ def base_vel_b(env: ManagerBasedEnv) -> torch.Tensor:
 
 def root_lin_vel_b(env: ManagerBasedEnv) -> torch.Tensor:
     """
-    Get the root body linear velocity in the robot root frame."""
+    Get the root body linear velocity in the robot base frame."""
     return env.scene["robot"].data.root_lin_vel_b
 
 
 def root_ang_vel_b(env: ManagerBasedEnv) -> torch.Tensor:
-    """Get the root body angular velocity in the robot root frame."""
+    """Get the root body angular velocity in the robot base frame."""
     return env.scene["robot"].data.root_ang_vel_b
 
 
 def root_vel_b(env: ManagerBasedEnv) -> torch.Tensor:
-    """Get the root body velocity in the robot root frame."""
+    """Get the root body velocity in the robot base frame."""
     return torch.cat([root_lin_vel_b(env), root_ang_vel_b(env)], dim=-1)
+
+
+def root_planar_vel_b(env: ManagerBasedEnv) -> torch.Tensor:
+    """Get the root body planar velocity (x_lin, omega_ang) in the robot base frame."""
+    x = root_lin_vel_b(env)[:, 0]
+    omega = root_ang_vel_b(env)[:, 2]
+    return torch.stack([x, omega], dim=-1)

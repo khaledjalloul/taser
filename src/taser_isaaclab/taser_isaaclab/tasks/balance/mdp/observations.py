@@ -1,9 +1,8 @@
-import isaaclab.envs.mdp as mdp
-from isaaclab.managers import ObservationGroupCfg
-from isaaclab.managers import ObservationTermCfg
+from isaaclab.envs import mdp
+from isaaclab.managers import ObservationGroupCfg, ObservationTermCfg
 from isaaclab.utils import configclass
 
-from taser_isaaclab.common.obs_utils import base_pos_b, base_quat_w, root_vel_b
+from taser_isaaclab.common.obs_utils import base_pos_b, base_quat_w, base_vel_w
 
 
 @configclass
@@ -14,16 +13,20 @@ class ObservationsCfg:
     class PolicyCfg(ObservationGroupCfg):
         """Observations for policy group."""
 
-        # observation terms (order preserved)
+        # Proprioceptive information
         joint_pos = ObservationTermCfg(func=mdp.joint_pos)
         joint_vel = ObservationTermCfg(func=mdp.joint_vel)
-        base_pos_b = ObservationTermCfg(func=base_pos_b)
-        base_quat_w = ObservationTermCfg(func=base_quat_w)
-        root_vel_b = ObservationTermCfg(func=root_vel_b)
 
-        def __post_init__(self) -> None:
-            self.enable_corruption = False
-            self.concatenate_terms = True
+        # Base position in environment frame to stay close to the origin
+        base_pos_b = ObservationTermCfg(func=base_pos_b)
+
+        # Base orientation useful for balancing
+        base_quat_w = ObservationTermCfg(func=base_quat_w)
+
+        # Base velocity useful for balancing
+        # NOTE: Using world frame instead of body frame since the former is more stable
+        # and leads to better performance
+        base_vel_w = ObservationTermCfg(func=base_vel_w)
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()

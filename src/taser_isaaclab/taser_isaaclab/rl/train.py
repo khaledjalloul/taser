@@ -3,7 +3,7 @@ import argparse
 parser = argparse.ArgumentParser(
     description="Train one of the TASER tasks."
 )
-parser.add_argument("--task", type=str, default="Balance",
+parser.add_argument("--task", type=str, default="TrackVelocity",
                     help="Task to train on.")
 parser.add_argument("--num_envs", type=int, default=128,
                     help="Number of environments to spawn.")
@@ -79,21 +79,12 @@ def train(env: gym.Env):
     # Initialize trainer
     trainer = PPOTrainer(env=env, cfg=trainer_cfg)
 
-    # Load checkpoint if resuming
-    start_update = 0
-    if args.resume is not None:
-        trainer.policy.load(args.resume)
-        try:
-            start_update = int(Path(args.resume).stem.split('_')[-1])
-        except:
-            pass
-
     # Training loop
     num_updates = trainer_cfg.total_num_steps // (args.num_envs *
                                                   trainer_cfg.num_rollout_steps)
     best_reward = float('-inf')
 
-    for update in tqdm(range(start_update, num_updates)):
+    for update in tqdm(range(num_updates)):
         # Training update
         train_info = trainer.train_step()
 
@@ -132,7 +123,7 @@ def train(env: gym.Env):
             logger.save_model(model_path)
 
     # Save final model
-    final_model_path = output_path / "model_final.pth"
+    final_model_path = output_path / "final_model.pth"
     trainer.policy.save(final_model_path)
     logger.save_model(final_model_path)
 

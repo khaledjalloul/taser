@@ -1,4 +1,3 @@
-import math
 import torch
 from isaaclab.utils import configclass
 
@@ -21,13 +20,13 @@ class TaserEnv(BaseTaserEnv):
     def __init__(self, cfg: TaserEnvCfg, **kwargs):
         self._target_vel_b = torch.zeros(
             (cfg.scene.num_envs, 2)).to(cfg.sim.device)
-        self._t = 0.0
-        self._max_lin_vel = 10
-        self._max_ang_vel = torch.pi / 2
+        self._t = torch.zeros(cfg.scene.num_envs).to(cfg.sim.device)
+        self._max_lin_vel = 1
+        self._max_ang_vel = 0.2
         super().__init__(cfg, **kwargs)
 
     def reset(self, **kwargs):
-        self._t = 0.0
+        self._t = torch.zeros(self.cfg.scene.num_envs).to(self.cfg.sim.device)
         self._generate_target_vel()
         return super().reset(**kwargs)
 
@@ -38,8 +37,8 @@ class TaserEnv(BaseTaserEnv):
 
     def _generate_target_vel(self):
         """Generate a target velocity at the current time step to be used as an observation for the robot training."""
-        base_sin_t = math.sin(
-            2 * math.pi / self.cfg.episode_length_s * self._t)
+        base_sin_t = torch.sin(
+            2 * torch.pi / self.cfg.episode_length_s * self._t)
         v = self._max_lin_vel * base_sin_t
         w = self._max_ang_vel * base_sin_t
         self._target_vel_b[:, 0] = v

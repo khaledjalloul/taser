@@ -1,4 +1,4 @@
-import isaaclab.envs.mdp as mdp
+from isaaclab.envs import mdp
 from isaaclab.utils import configclass
 
 

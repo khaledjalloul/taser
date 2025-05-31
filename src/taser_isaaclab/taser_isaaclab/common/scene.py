@@ -25,5 +25,5 @@ class SceneCfg(InteractiveSceneCfg):
 
     # Robot
     robot = TASER_CONFIG.replace(
-        prim_path="{ENV_REGEX_NS}/taser"
+        prim_path="{ENV_REGEX_NS}/Robot"
     )

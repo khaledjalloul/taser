@@ -44,14 +44,11 @@ def main():
     model.load(args.model_path)
     model.eval()
 
-    count = 0
     while simulation_app.is_running():
         with torch.inference_mode():
             action_dist, _ = model(obs)
             action = action_dist.sample()
-
             obs, rewards, terminated, truncated, info = env.step(action)
-            count += 1
 
     env.close()
 

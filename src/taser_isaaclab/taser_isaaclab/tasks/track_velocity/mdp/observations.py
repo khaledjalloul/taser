@@ -1,9 +1,8 @@
-import isaaclab.envs.mdp as mdp
-from isaaclab.managers import ObservationGroupCfg
-from isaaclab.managers import ObservationTermCfg
+from isaaclab.envs import mdp
+from isaaclab.managers import ObservationGroupCfg, ObservationTermCfg
 from isaaclab.utils import configclass
 
-from taser_isaaclab.common.obs_utils import base_quat_w, root_vel_b
+from taser_isaaclab.common.obs_utils import base_quat_w, base_vel_w, root_planar_vel_b
 
 
 @configclass
@@ -14,16 +13,25 @@ class ObservationsCfg:
     class PolicyCfg(ObservationGroupCfg):
         """Observations for policy group."""
 
-        # observation terms (order preserved)
+        # Proprioceptive information
         joint_pos = ObservationTermCfg(func=mdp.joint_pos)
         joint_vel = ObservationTermCfg(func=mdp.joint_vel)
+
+        # Base orientation useful for balancing
         base_quat_w = ObservationTermCfg(func=base_quat_w)
-        root_vel_b = ObservationTermCfg(func=root_vel_b)
+
+        # Base velocity useful for balancing
+        base_vel_w = ObservationTermCfg(func=base_vel_w)
+
+        # Root planar velocity useful for tracking
+        root_planar_vel_b = ObservationTermCfg(func=root_planar_vel_b)
+
+        # Target planar velocity
         target_vel_b = ObservationTermCfg(func=lambda env: env.target_vel_b)
 
-        def __post_init__(self) -> None:
-            self.enable_corruption = False
-            self.concatenate_terms = True
+        # Velocity error
+        vel_error = ObservationTermCfg(
+            func=lambda env: root_planar_vel_b(env) - env.target_vel_b)
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
