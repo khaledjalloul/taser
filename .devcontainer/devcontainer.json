@@ -53,8 +53,7 @@
     ],
     "runArgs": [
         "--device=/dev/dri",
-        "--hostname=taser",
-        "--env-file=.env.local"
+        "--hostname=taser"
     ],
     "containerEnv": {
         // Enable GUI

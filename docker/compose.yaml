@@ -10,8 +10,6 @@ services:
       - /dev/dri:/dev/dri
     environment: &environment
       - DISPLAY=${DISPLAY}
-    env_file: &env_file
-      - ../.env.local
     volumes: &volumes
       # Enable GUI
       - type: bind
@@ -39,7 +37,6 @@ services:
     hostname: *hostname
     devices: *devices
     environment: *environment
-    env_file: *env_file
     volumes:
       - <<: *volumes
       - type: volume
@@ -56,7 +53,6 @@ services:
     hostname: *hostname
     devices: *devices
     environment: *environment
-    env_file: *env_file
     volumes:
       - <<: *volumes
       - type: volume

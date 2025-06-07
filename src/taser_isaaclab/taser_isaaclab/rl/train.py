@@ -7,7 +7,7 @@ parser.add_argument("--task", type=str, default="TrackVelocity",
                     help="Task to train on.")
 parser.add_argument("--num_envs", type=int, default=128,
                     help="Number of environments to spawn.")
-parser.add_argument("--num_iters", type=int, default=100,
+parser.add_argument("--num_iters", type=int, default=200,
                     help="Number of iterations (rollout + training).")
 parser.add_argument("--output_path", type=str,
                     help="Directory to save checkpoints.")
@@ -78,6 +78,10 @@ def train(env: gym.Env):
 
     # Initialize trainer
     trainer = PPOTrainer(env=env, cfg=trainer_cfg)
+
+    # Load checkpoint if resuming
+    if args.resume:
+        trainer.policy.load(args.resume)
 
     # Training loop
     num_updates = trainer_cfg.total_num_steps // (args.num_envs *

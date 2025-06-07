@@ -29,8 +29,8 @@ class ActionsCfg:
     wheel_efforts = mdp.JointEffortActionCfg(
         asset_name="robot",
         joint_names=[
-            "base_wheel_1_joint",
-            "base_wheel_2_joint"
+            "base_wheel_1_joint",  # left wheel
+            "base_wheel_2_joint"  # right wheel
         ],
         scale=10000.0
     )

@@ -40,7 +40,8 @@ class EventsCfg:
                 "y": (0.0, 0.0),
                 "z": (0.0, 0.0),
                 "roll": (0.0, 0.0),
-                "pitch": (0.0, 0.0),
+                # Randomized starting pitch to help explore scenarios where the robot is about to fall
+                "pitch": (-0.3, 0.3),
                 "yaw": (-math.pi, math.pi),
             },
             "velocity_range": {

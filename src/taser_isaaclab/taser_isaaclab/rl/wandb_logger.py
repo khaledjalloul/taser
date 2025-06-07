@@ -1,7 +1,8 @@
+import logging
 import wandb
+from dotenv import dotenv_values
 from pathlib import Path
 from typing import Dict, Any, Optional
-from datetime import datetime
 
 
 class WandbLogger:
@@ -9,14 +10,12 @@ class WandbLogger:
 
     # Default wandb configuration
     WANDB_PROJECT = "TASER"
-    WANDB_ENTITY = "khaledjalloul-eth-zurich"
 
     def __init__(
         self,
         config: Dict[str, Any],
         exp_name: Optional[str] = None,
         project: Optional[str] = None,
-        entity: Optional[str] = None,
         base_path: Optional[str] = None
     ):
         """Initialize the wandb logger.
@@ -25,11 +24,25 @@ class WandbLogger:
             config: Dictionary of training configuration/hyperparameters
             exp_name: Name of the experiment (run)
             project: Wandb project name
-            entity: Wandb entity (username or team name)
+            base_path: Path to save the model checkpoints
         """
-        self.run = wandb.init(
+
+        logger = logging.getLogger("TASER")
+
+        env_config = dotenv_values(".env.local")
+        api_key = env_config.get("WANDB_API_KEY")
+
+        if not api_key:
+            logger.warning("WANDB_API_KEY environment variable not set. "
+                           "Weights & Biases logging will not be available.")
+            self.enabled = False
+            return
+
+        self.enabled = True
+
+        wandb.login(key=api_key)
+        wandb.init(
             project=project or self.WANDB_PROJECT,
-            entity=entity or self.WANDB_ENTITY,
             name=exp_name,
             config=config,
         )
@@ -44,6 +57,9 @@ class WandbLogger:
         train_info: Dict[str, float],
         update: int
     ):
+        if not self.enabled:
+            return
+
         """Log training metrics for a single update step."""
         wandb.log({
             "train/policy_loss": train_info['policy_loss'],
@@ -59,6 +75,9 @@ class WandbLogger:
         best_reward: float,
         update: int
     ):
+        if not self.enabled:
+            return
+
         """Log evaluation metrics."""
         wandb.log({
             "eval/mean_reward": eval_reward,
@@ -67,8 +86,14 @@ class WandbLogger:
 
     def save_model(self, model_path: Path):
         """Save model checkpoint to wandb."""
+        if not self.enabled:
+            return
+
         wandb.save(str(model_path), base_path=self.base_path)
 
     def finish(self):
         """Close the wandb run."""
+        if not self.enabled:
+            return
+
         wandb.finish()

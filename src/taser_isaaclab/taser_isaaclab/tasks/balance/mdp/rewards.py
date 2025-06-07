@@ -6,10 +6,9 @@ from isaaclab.utils import configclass
 from taser_isaaclab.common.obs_utils import base_pos_b, base_vel_w
 
 
-# TODO: Try to change this to a reward with gaussian function
-def position_error(env: ManagerBasedEnv):
+def position_reward(env: ManagerBasedEnv, std: float = 1.0):
     """Get the distances from the robot's position to the environment's origin."""
-    return torch.clamp(torch.linalg.vector_norm(base_pos_b(env)[:, :2], dim=-1), max=1.0)
+    return torch.exp(-torch.linalg.vector_norm(base_pos_b(env)[:, :2], dim=-1) ** 2 / (2 * std ** 2))
 
 
 def spinning_velocity(env: ManagerBasedEnv):
@@ -25,7 +24,7 @@ class RewardsCfg:
     alive = RewardTermCfg(func=mdp.is_alive, weight=1.0)
 
     # Termination penalty
-    terminating = RewardTermCfg(func=mdp.is_terminated, weight=-5.0)
+    terminating = RewardTermCfg(func=mdp.is_terminated, weight=-10.0)
 
     # Tilt penalty
     tilt = RewardTermCfg(
@@ -35,7 +34,7 @@ class RewardsCfg:
     )
 
     # Position error penalty: Keep x and y close to 0
-    pos = RewardTermCfg(func=position_error, weight=-3.0)
+    pos = RewardTermCfg(func=position_reward, weight=3.0)
 
     # Spinning penalty
     spin = RewardTermCfg(func=spinning_velocity, weight=-2.0)

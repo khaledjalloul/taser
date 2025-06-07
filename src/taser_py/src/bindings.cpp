@@ -54,7 +54,9 @@ PYBIND11_MODULE(taser, m) {
            py::arg("v_l"), py::arg("v_r"))
       .def("step", &base::Kinematics::step, py::arg("dt"))
       .def_readwrite("pose", &base::Kinematics::pose)
-      .def_readwrite("base_velocity", &base::Kinematics::base_velocity);
+      .def_readwrite("base_velocity", &base::Kinematics::base_velocity)
+      .def_readwrite("v_l", &base::Kinematics::v_l)
+      .def_readwrite("v_r", &base::Kinematics::v_r);
 
   // Base RRT* Path Planner
   py::class_<base::PathPlanner>(base, "PathPlanner")
