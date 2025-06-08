@@ -41,7 +41,7 @@ services:
       - <<: *volumes
       - type: volume
         source: taser-omni-cache
-        target: /home/taser/venv/lib/python3.10/site-packages/omni/cache
+        target: /home/taser/.local/lib/python3.10/site-packages/omni/cache
 
   taser-isaaclab-ros-humble:
     image: khaledjalloul/taser:isaaclab-ros-humble
@@ -57,7 +57,7 @@ services:
       - <<: *volumes
       - type: volume
         source: taser-omni-cache
-        target: /home/taser/venv/lib/python3.10/site-packages/omni/cache
+        target: /home/taser/.local/lib/python3.10/site-packages/omni/cache
     entrypoint:
       - "/bin/bash"
       - "-c"

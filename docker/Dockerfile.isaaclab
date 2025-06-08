@@ -16,7 +16,7 @@ RUN apt install -y \
     sudo \
     # Python
     python3.10 \
-    python3-virtualenv \
+    python3-pip \
     # Cmake
     build-essential \
     cmake \
@@ -30,20 +30,20 @@ RUN apt install -y \
 RUN useradd -m -s /bin/bash ${USERNAME}
 RUN echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
+# Create python command symlink
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
 USER ${USERNAME}
 
-# Create Python virtual environment
-RUN virtualenv /home/${USERNAME}/venv
-RUN echo 'export PYTHONPATH=$PYTHONPATH:/home/${USERNAME}/venv/lib/python3.10/site-packages' >> /home/${USERNAME}/venv/bin/activate
-
 # Install Isaac Sim
-RUN /home/${USERNAME}/venv/bin/pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu118
-RUN /home/${USERNAME}/venv/bin/pip install 'isaacsim[all,extscache]==4.5.0' --extra-index-url https://pypi.nvidia.com
+RUN pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu118
+RUN pip install 'isaacsim[all,extscache]==4.5.0' --extra-index-url https://pypi.nvidia.com
 
 # Install Isaac Lab
 RUN cd /home/${USERNAME} && git clone https://github.com/isaac-sim/IsaacLab.git
-RUN . /home/${USERNAME}/venv/bin/activate && \
-    /home/${USERNAME}/IsaacLab/isaaclab.sh --install
+RUN mkdir -p /home/${USERNAME}/IsaacLab/_isaac_sim
+RUN ln -s /usr/bin/python3 /home/${USERNAME}/IsaacLab/_isaac_sim/python.sh
+RUN sudo /home/${USERNAME}/IsaacLab/isaaclab.sh --install
 
 USER root
 
@@ -68,7 +68,7 @@ RUN apt install -y \
 USER ${USERNAME}
 
 # Install Python packages
-RUN /home/${USERNAME}/venv/bin/pip install --no-input \
+RUN pip install --no-input \
     catkin_pkg \
     cvxpy \
     empy==3.3.4 \
@@ -87,7 +87,7 @@ WORKDIR /home/${USERNAME}/colcon_ws
 RUN sudo chown -R ${USERNAME} .
 
 # Build the project
-RUN /home/${USERNAME}/venv/bin/pip install -e src/taser_isaaclab
+RUN pip install -e src/taser_isaaclab
 
 ########################################
 
@@ -137,6 +137,9 @@ RUN apt install -y \
     ros-humble-rviz2 \
     ros-humble-xacro
 
+# Remove apt-installed matplotlib to avoid version conflicts
+RUN apt remove -y python3-matplotlib
+
 USER ${USERNAME}
 
 # Copy the source code
@@ -148,7 +151,7 @@ RUN sudo chown -R ${USERNAME} .
 RUN rosdep update
 RUN rosdep install -iry --from-paths src
 RUN . /opt/ros/humble/setup.sh && colcon build --packages-ignore taser_isaaclab
-RUN /home/${USERNAME}/venv/bin/pip install -e src/taser_isaaclab
+RUN pip install -e src/taser_isaaclab
 
 # Automatically source the install/setup.bash file
 RUN echo "source /opt/ros/humble/setup.bash" >> /home/${USERNAME}/.bashrc

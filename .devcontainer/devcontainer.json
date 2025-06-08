@@ -1,6 +1,6 @@
 {
     "name": "TASER",
-    // Build the image using `docker compose build taser-<target>`
+    // Build the image using `docker compose -f docker/compose.yaml build taser-<target>`
     // "image": "khaledjalloul/taser:ros-jazzy",
     "image": "khaledjalloul/taser:isaaclab-ros-humble",
     "postCreateCommand": "bash .devcontainer/post_create.bash",
@@ -49,7 +49,7 @@
         // Enable Docker-in-Docker
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
         // Persist Omniverse cache
-        "source=taser-omni-cache,target=/home/taser/venv/lib/python3.10/site-packages/omni/cache,type=volume"
+        "source=taser-omni-cache,target=/home/taser/.local/lib/python3.10/site-packages/omni/cache,type=volume"
     ],
     "runArgs": [
         "--device=/dev/dri",

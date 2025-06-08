@@ -103,10 +103,10 @@ if __name__ == "__main__":
         plot_controller_step(ax_no_mpc, base_no_mpc, start, goal,
                              obstacles, inflated_obstacles, path, dim)
 
+        plt.ginput(1, timeout=dt)
+
         if get_euclidean_distance(base_mpc.pose, goal) < 0.1 and get_euclidean_distance(base_no_mpc.pose, goal) < 0.2:
             break
-
-        plt.ginput(1, timeout=dt)
 
         local_path = path[step:step + N]
         local_path_vel = path_vel[step:step + N]

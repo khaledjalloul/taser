@@ -5,7 +5,7 @@ kj setup cli-completion
 sudo chown -R $(whoami) .
 
 # Change ownership of the omni cache used in Docker volume
-sudo chown -R $(whoami) /home/$(whoami)/venv/lib/python3.10/site-packages/omni/cache
+sudo chown -R $(whoami) /home/$(whoami)/.local/lib/python3.10/site-packages/omni/cache
 
 # Install new ROS dependencies in case of changes
 # rosdep update
