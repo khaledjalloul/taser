@@ -115,7 +115,6 @@ def train(env: gym.Env):
                 best_reward = eval_reward.mean()
                 best_model_path = output_path / "best_model.pth"
                 trainer.policy.save(best_model_path)
-                logger.save_model(best_model_path)
 
             # Log evaluation metrics
             logger.log_evaluation(eval_reward.item(), best_reward, update)
@@ -124,12 +123,10 @@ def train(env: gym.Env):
         if update % trainer_cfg.save_freq == 0 and update != 0:
             model_path = progress_path / f"model_{update + 1}.pth"
             trainer.policy.save(model_path)
-            logger.save_model(model_path)
 
     # Save final model
     final_model_path = output_path / "final_model.pth"
     trainer.policy.save(final_model_path)
-    logger.save_model(final_model_path)
 
     # Close wandb run
     logger.finish()

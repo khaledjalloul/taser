@@ -5,7 +5,8 @@ from isaaclab.managers import SceneEntityCfg, EventTermCfg
 
 
 def reset_target_velocity_t(env: ManagerBasedEnv, env_ids: torch.Tensor):
-    env._t[env_ids] = 0.0
+    # env._t[env_ids] = 0.0
+    env._generate_target_vel(env_ids)
 
 
 @configclass
@@ -44,7 +45,8 @@ class EventsCfg:
                 "y": (0.0, 0.0),
                 "z": (0.0, 0.0),
                 "roll": (0.0, 0.0),
-                "pitch": (0.0, 0.0),
+                "pitch": (-0.3, 0.3),
+                # "pitch": (0.0, 0.0),
                 "yaw": (-torch.pi, torch.pi),
             },
             "velocity_range": {

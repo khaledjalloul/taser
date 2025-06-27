@@ -31,6 +31,7 @@
             "settings": {
                 "python.defaultInterpreterPath": "/home/taser/venv/bin/python",
                 "python.analysis.typeCheckingMode": "off",
+                "cursorpyright.analysis.typeCheckingMode": "off",
                 "C_Cpp.default.includePath": [
                     "${workspaceFolder}/**",
                     "/opt/ros/jazzy/include/**",

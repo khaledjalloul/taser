@@ -8,7 +8,6 @@ from isaaclab.utils import configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
-    # Robot falling
     robot_falling = TerminationTermCfg(
         func=mdp.bad_orientation,
         params={

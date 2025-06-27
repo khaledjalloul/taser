@@ -47,7 +47,7 @@ def main():
     while simulation_app.is_running():
         with torch.inference_mode():
             action_dist, _ = model(obs)
-            action = action_dist.sample()
+            action = action_dist.mean
             obs, rewards, terminated, truncated, info = env.step(action)
 
     env.close()

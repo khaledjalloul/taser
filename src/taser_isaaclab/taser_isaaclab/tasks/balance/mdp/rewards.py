@@ -20,21 +20,16 @@ def spinning_velocity(env: ManagerBasedEnv):
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    # Constant running reward
-    alive = RewardTermCfg(func=mdp.is_alive, weight=1.0)
+    alive_reward = RewardTermCfg(func=mdp.is_alive, weight=1.0)
 
-    # Termination penalty
-    terminating = RewardTermCfg(func=mdp.is_terminated, weight=-10.0)
+    termination_penalty = RewardTermCfg(func=mdp.is_terminated, weight=-10.0)
 
-    # Tilt penalty
-    tilt = RewardTermCfg(
+    tilt_penalty = RewardTermCfg(
         func=mdp.flat_orientation_l2,
         weight=-5.0,
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
-    # Position error penalty: Keep x and y close to 0
-    pos = RewardTermCfg(func=position_reward, weight=3.0)
+    pos_reward = RewardTermCfg(func=position_reward, weight=3.0)
 
-    # Spinning penalty
-    spin = RewardTermCfg(func=spinning_velocity, weight=-2.0)
+    spin_penalty = RewardTermCfg(func=spinning_velocity, weight=-2.0)
