@@ -7,8 +7,8 @@ A wheeled robot with two arms that detects targets in an environment and moves t
 ### Environment
 
 - ROS 2 Jazzy
-- Simulation in Rviz
-- (In progress) Isaac Sim and Isaac Lab for RL training
+- Rviz Simulation (without physics)
+- Isaac Lab for RL training with physics
 
 <div align="center">
     <img src="./media/full.gif" alt="Full Simulation" width="100%" />
@@ -49,9 +49,21 @@ The MPC uses linearized dynamics of the differential drive model.
     <img src="./media/base_mpc.gif" alt="Tracking Controller" width="100%" />
 </div>
 
-<br/>
 
-To Do: The base will be trained with reinforcement learning in Isaac Lab to learn how to balance and not fall over while following a path once gravity is enabled.
+### RL Training for Balancing
+
+The Rviz simulation does not include physics or gravity, so the robot never has to stay in balance to avoid falling over.
+
+Isaac Lab is thus used to train the robot to stay balanced in a realistic simulation environment with gravity. The robot is trained in different scenarios:
+
+- Stationary:
+
+<img src="./media/isaaclab/balance.gif" alt="Isaac Lab Stationary Balancing" />
+
+- Tracking linear and angular velocities generated from the MPC tracking controller:
+
+<img src="./media/isaaclab/track_velocity.gif" alt="Isaac Lab Balancing and Velocity Tracking"/>
+
 
 ### State Machine
 
