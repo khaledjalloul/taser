@@ -1,6 +1,6 @@
 FROM nvidia/cuda:11.8.0-devel-ubuntu22.04 AS isaaclab-base
 
-ARG USERNAME=taser
+ARG USERNAME
 
 # Environment variables for Isaac Sim and Isaac Lab
 ENV DEBIAN_FRONTEND=noninteractive
@@ -40,10 +40,11 @@ RUN pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.py
 RUN pip install 'isaacsim[all,extscache]==4.5.0' --extra-index-url https://pypi.nvidia.com
 
 # Install Isaac Lab
-RUN cd /home/${USERNAME} && git clone https://github.com/isaac-sim/IsaacLab.git
-RUN mkdir -p /home/${USERNAME}/IsaacLab/_isaac_sim
-RUN ln -s /usr/bin/python3 /home/${USERNAME}/IsaacLab/_isaac_sim/python.sh
-RUN sudo /home/${USERNAME}/IsaacLab/isaaclab.sh --install
+RUN sudo mkdir -p /workspaces && sudo chown -R ${USERNAME} /workspaces 
+RUN cd /workspaces && git clone https://github.com/isaac-sim/IsaacLab.git
+RUN mkdir -p /workspaces/IsaacLab/_isaac_sim
+RUN ln -s /usr/bin/python3 /workspaces/IsaacLab/_isaac_sim/python.sh
+RUN sudo /workspaces/IsaacLab/isaaclab.sh --install
 
 USER root
 
@@ -82,8 +83,8 @@ RUN pip install --no-input \
 FROM isaaclab-base AS isaaclab
 
 # Copy the source code
-COPY ./src/ /home/${USERNAME}/colcon_ws/src
-WORKDIR /home/${USERNAME}/colcon_ws
+COPY ./src/ /workspaces/taser_ws/src
+WORKDIR /workspaces/taser_ws
 RUN sudo chown -R ${USERNAME} .
 
 # Build the project
@@ -143,8 +144,8 @@ RUN apt remove -y python3-matplotlib
 USER ${USERNAME}
 
 # Copy the source code
-COPY ./src/ /home/${USERNAME}/colcon_ws/src
-WORKDIR /home/${USERNAME}/colcon_ws
+COPY ./src/ /workspaces/taser_ws/src
+WORKDIR /workspaces/taser_ws
 RUN sudo chown -R ${USERNAME} .
 
 # Build the project
@@ -155,4 +156,4 @@ RUN pip install -e src/taser_isaaclab
 
 # Automatically source the install/setup.bash file
 RUN echo "source /opt/ros/humble/setup.bash" >> /home/${USERNAME}/.bashrc
-RUN echo "source /home/${USERNAME}/colcon_ws/install/local_setup.bash" >> /home/${USERNAME}/.bashrc
+RUN echo "source /workspaces/taser_ws/install/local_setup.bash" >> /home/${USERNAME}/.bashrc

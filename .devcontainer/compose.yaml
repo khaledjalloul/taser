@@ -1,0 +1,80 @@
+services:
+  taser-ros-jazzy:
+    image: khaledjalloul/taser:ros-jazzy
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.ros-jazzy
+      args:
+        USERNAME: &username taser
+    container_name: taser-ros-jazzy
+    hostname: &hostname taser
+    environment: &environment
+      - DISPLAY=${DISPLAY}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    runtime: &runtime nvidia
+    deploy: &deploy
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: &command bash -c "while sleep 1000; do :; done"
+    volumes: &volumes
+      # Bind source code
+      - type: bind
+        source: ..
+        target: /workspaces/taser_ws
+      # Enable GUI
+      - type: bind
+        source: /tmp/.X11-unix
+        target: /tmp/.X11-unix
+
+  taser-isaaclab:
+    image: khaledjalloul/taser:isaaclab
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.isaaclab
+      target: isaaclab
+      args:
+        USERNAME: *username
+    container_name: taser-isaaclab
+    hostname: *hostname
+    environment: *environment
+    runtime: *runtime
+    deploy: *deploy
+    command: *command
+    volumes: &isaaclab-volumes
+      - <<: *volumes
+      # Persist Omniverse cache
+      - type: volume
+        source: taser-omni-cache
+        target: /home/taser/.local/lib/python3.10/site-packages/omni/cache
+
+  taser-isaaclab-ros-humble:
+    image: khaledjalloul/taser:isaaclab-ros-humble
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.isaaclab
+      target: isaaclab-ros-humble
+      args:
+        USERNAME: *username
+    container_name: taser-isaaclab-ros-humble
+    hostname: *hostname
+    environment: *environment
+    runtime: *runtime
+    deploy: *deploy
+    command: *command
+    volumes: *isaaclab-volumes
+
+  # taser-dev:
+  #   extends:
+  #     service: taser-isaaclab-ros-humble
+  #   build: !reset null
+  #   container_name: taser-dev
+
+volumes:
+  taser-omni-cache:
+    # Override default compose volume name
+    name: taser-omni-cache

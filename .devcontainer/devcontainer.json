@@ -1,63 +1,50 @@
 {
     "name": "TASER",
-    // Build the image using `docker compose -f docker/compose.yaml build taser-<target>`
-    // "image": "khaledjalloul/taser:ros-jazzy",
-    "image": "khaledjalloul/taser:isaaclab-ros-humble",
+    "dockerComposeFile": "compose.yaml",
+    "service": "taser-isaaclab-ros-humble",
+    "runServices": [
+        "taser-isaaclab-ros-humble"
+    ],
+    "workspaceFolder": "/workspaces/taser_ws",
     "postCreateCommand": "bash .devcontainer/post_create.bash",
     "customizations": {
         "vscode": {
             "extensions": [
                 // Python
                 "ms-python.python",
-                "ms-python.autopep8",
+                "charliermarsh.ruff",
                 "ms-python.vscode-pylance",
+                "tamasfe.even-better-toml",
                 // C++
                 "ms-vscode.cpptools",
                 "ms-vscode.cpptools-extension-pack",
                 "kylinideteam.cmake-intellisence",
                 "xaver.clang-format",
+                // ROS
+                "morningfrog.urdf-visualizer",
+                // Yaml
+                "redhat.vscode-yaml",
+                // XML
+                "redhat.vscode-xml",
+                // Markdown
+                "yzhang.markdown-all-in-one",
                 // Docker
                 "ms-azuretools.vscode-docker",
-                // Misc
-                "redhat.vscode-yaml",
-                "redhat.vscode-xml",
-                "yzhang.markdown-all-in-one",
-                "foxundermoon.shell-format",
                 // GitLens
                 "eamodio.gitlens",
-                // ROS
-                "morningfrog.urdf-visualizer"
+                // Shell Formatter
+                "foxundermoon.shell-format"
             ],
             "settings": {
+                "gitlens.codeLens.authors.enabled": false,
+                "gitlens.codeLens.recentChange.enabled": false,
                 "python.defaultInterpreterPath": "/home/taser/venv/bin/python",
-                "python.analysis.typeCheckingMode": "off",
-                "cursorpyright.analysis.typeCheckingMode": "off",
                 "C_Cpp.default.includePath": [
                     "${workspaceFolder}/**",
                     "/opt/ros/jazzy/include/**",
                     "/opt/ros/humble/include/**"
-                ],
-                "gitlens.codeLens.authors.enabled": false,
-                "gitlens.codeLens.recentChange.enabled": false
+                ]
             }
         }
-    },
-    "workspaceMount": "source=${localWorkspaceFolder},target=/home/taser/colcon_ws,type=bind",
-    "workspaceFolder": "/home/taser/colcon_ws",
-    "mounts": [
-        // Enable GUI
-        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
-        // Enable Docker-in-Docker
-        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-        // Persist Omniverse cache
-        "source=taser-omni-cache,target=/home/taser/.local/lib/python3.10/site-packages/omni/cache,type=volume"
-    ],
-    "runArgs": [
-        "--device=/dev/dri",
-        "--hostname=taser"
-    ],
-    "containerEnv": {
-        // Enable GUI
-        "DISPLAY": "${env:DISPLAY}"
     }
 }

@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-ARG USERNAME=taser
+ARG USERNAME
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install essentials
@@ -88,8 +88,8 @@ RUN /home/${USERNAME}/venv/bin/pip install --no-input \
     numpy
 
 # Copy the source code
-COPY ./src/ /home/${USERNAME}/colcon_ws/src
-WORKDIR /home/${USERNAME}/colcon_ws
+COPY ./src/ /workspaces/taser_ws/src
+WORKDIR /workspaces/taser_ws
 RUN sudo chown -R ${USERNAME} .
 
 # Build the project
@@ -99,4 +99,4 @@ RUN . /opt/ros/jazzy/setup.sh && colcon build
 
 # Automatically source the install/setup.bash file
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/${USERNAME}/.bashrc
-RUN echo "source /home/${USERNAME}/colcon_ws/install/local_setup.bash" >> /home/${USERNAME}/.bashrc
+RUN echo "source /workspaces/taser_ws/install/local_setup.bash" >> /home/${USERNAME}/.bashrc
