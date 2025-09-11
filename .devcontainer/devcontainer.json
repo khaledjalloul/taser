@@ -1,10 +1,7 @@
 {
     "name": "TASER",
     "dockerComposeFile": "compose.yaml",
-    "service": "taser-isaaclab-ros-humble",
-    "runServices": [
-        "taser-isaaclab-ros-humble"
-    ],
+    "service": "taser",
     "workspaceFolder": "/workspaces/taser_ws",
     "postCreateCommand": "bash .devcontainer/post_create.bash",
     "customizations": {
@@ -38,11 +35,10 @@
             "settings": {
                 "gitlens.codeLens.authors.enabled": false,
                 "gitlens.codeLens.recentChange.enabled": false,
-                "python.defaultInterpreterPath": "/home/taser/venv/bin/python",
+                "python.defaultInterpreterPath": "/workspaces/isaacsim/kit/python/bin/python3",
                 "C_Cpp.default.includePath": [
                     "${workspaceFolder}/**",
-                    "/opt/ros/jazzy/include/**",
-                    "/opt/ros/humble/include/**"
+                    "/opt/ros/jazzy/include/**"
                 ]
             }
         }
