@@ -4,7 +4,7 @@ from isaaclab.utils.math import quat_conjugate, quat_mul
 
 
 def _get_body_index(env: ManagerBasedEnv, body_name: str) -> int:
-    return env.scene['robot'].data.body_names.index(body_name)
+    return env.scene["robot"].data.body_names.index(body_name)
 
 
 # World frame
@@ -12,32 +12,32 @@ def _get_body_index(env: ManagerBasedEnv, body_name: str) -> int:
 
 def base_pos_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body position in the world frame."""
-    return env.scene['robot'].data.body_pos_w[:, _get_body_index(env, 'base')]
+    return env.scene["robot"].data.body_pos_w[:, _get_body_index(env, "base")]
 
 
 def base_quat_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body quaternion in the world frame."""
-    return env.scene['robot'].data.body_quat_w[:, _get_body_index(env, 'base')]
+    return env.scene["robot"].data.body_quat_w[:, _get_body_index(env, "base")]
 
 
 def base_lin_vel_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body linear velocity in the world frame."""
-    return env.scene['robot'].data.body_lin_vel_w[:, _get_body_index(env, 'base')]
+    return env.scene["robot"].data.body_lin_vel_w[:, _get_body_index(env, "base")]
 
 
 def base_ang_vel_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body angular velocity in the world frame."""
-    return env.scene['robot'].data.body_ang_vel_w[:, _get_body_index(env, 'base')]
+    return env.scene["robot"].data.body_ang_vel_w[:, _get_body_index(env, "base")]
 
 
 def base_vel_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body velocity in the world frame."""
-    return env.scene['robot'].data.body_vel_w[:, _get_body_index(env, 'base')]
+    return env.scene["robot"].data.body_vel_w[:, _get_body_index(env, "base")]
 
 
 def base_state_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body state (pose and velocity) in the world frame."""
-    return env.scene['robot'].data.body_state_w[:, _get_body_index(env, 'base')]
+    return env.scene["robot"].data.body_state_w[:, _get_body_index(env, "base")]
 
 
 # Environment frame

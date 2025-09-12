@@ -2,13 +2,14 @@ import torch
 from isaaclab.envs import ManagerBasedEnv, mdp
 from isaaclab.managers import RewardTermCfg, SceneEntityCfg
 from isaaclab.utils import configclass
-
 from taser_isaaclab.common.obs_utils import base_pos_b, base_vel_w
 
 
 def position_reward(env: ManagerBasedEnv, std: float = 1.0):
     """Get the distances from the robot's position to the environment's origin."""
-    return torch.exp(-torch.linalg.vector_norm(base_pos_b(env)[:, :2], dim=-1) ** 2 / (2 * std ** 2))
+    return torch.exp(
+        -(torch.linalg.vector_norm(base_pos_b(env)[:, :2], dim=-1) ** 2) / (2 * std**2)
+    )
 
 
 def spinning_velocity(env: ManagerBasedEnv):

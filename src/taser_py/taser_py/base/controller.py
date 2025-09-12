@@ -1,11 +1,11 @@
 # type: ignore
 
-import cvxpy as cp
-import numpy as np
 import logging
 
-from taser import Pose2D, BaseVelocity
+import cvxpy as cp
+import numpy as np
 
+from taser import BaseVelocity, Pose2D
 
 logging.basicConfig(level=logging.INFO)
 
@@ -23,14 +23,18 @@ class Controller:
         self.Q = np.diag([10, 10, 10])
         self.R = np.diag([0.5, 0.1])
 
-    def step(self, x0: Pose2D, x_ref: list[Pose2D], u_ref: list[BaseVelocity]) -> BaseVelocity:
+    def step(
+        self, x0: Pose2D, x_ref: list[Pose2D], u_ref: list[BaseVelocity]
+    ) -> BaseVelocity:
         if len(x_ref) < self.N:
             logging.warning(
-                "Cannot step base MPC controller, reference path x_ref has less than N elements.")
+                "Cannot step base MPC controller, reference path x_ref has less than N elements."
+            )
             return BaseVelocity()
         if len(u_ref) < self.N:
             logging.warning(
-                "Cannot step base MPC controller, reference velocity profile u_ref has less than N elements.")
+                "Cannot step base MPC controller, reference velocity profile u_ref has less than N elements."
+            )
             return BaseVelocity()
 
         delta_x = cp.Variable((self.nx, self.N + 1))
@@ -48,8 +52,9 @@ class Controller:
             constraints += [
                 delta_x[:, k + 1] == A @ delta_x[:, k] + B @ delta_u[:, k],
             ]
-            cost += cp.quad_form(delta_x[:, k], self.Q) + \
-                cp.quad_form(delta_u[:, k], self.R)
+            cost += cp.quad_form(delta_x[:, k], self.Q) + cp.quad_form(
+                delta_u[:, k], self.R
+            )
 
         prob = cp.Problem(cp.Minimize(cost), constraints)
         result = prob.solve(solver=cp.OSQP)
@@ -61,7 +66,9 @@ class Controller:
 
         return BaseVelocity(u_opt[0], u_opt[1])
 
-    def get_linearized_model(self, x0: Pose2D, u0: BaseVelocity) -> tuple[np.ndarray, np.ndarray]:
+    def get_linearized_model(
+        self, x0: Pose2D, u0: BaseVelocity
+    ) -> tuple[np.ndarray, np.ndarray]:
         A = np.eye(self.nx)
         A[0, 2] = -np.sin(x0.theta) * u0.v * self.dt
         A[1, 2] = np.cos(x0.theta) * u0.v * self.dt

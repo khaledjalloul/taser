@@ -13,15 +13,13 @@ class PPOTrainer:
         self.cfg = cfg
 
         # Initialize policy network
-        self.policy = ActorCritic(
-            env.unwrapped.obs_dim,
-            env.unwrapped.act_dim
-        ).to(cfg.device)
+        self.policy = ActorCritic(env.unwrapped.obs_dim, env.unwrapped.act_dim).to(
+            cfg.device
+        )
         self.policy.train()
 
         self.optimizer = torch.optim.Adam(
-            self.policy.parameters(),
-            lr=cfg.learning_rate
+            self.policy.parameters(), lr=cfg.learning_rate
         )
 
     def train_step(self):
@@ -50,13 +48,20 @@ class PPOTrainer:
 
             policy_ratio = torch.exp(log_prob - log_prob_old)
             full_loss = policy_ratio * adv
-            clipped_loss = torch.clamp(policy_ratio, 1.0 - self.cfg.clip_eps,
-                                       1.0 + self.cfg.clip_eps) * adv
+            clipped_loss = (
+                torch.clamp(
+                    policy_ratio, 1.0 - self.cfg.clip_eps, 1.0 + self.cfg.clip_eps
+                )
+                * adv
+            )
             policy_loss = -torch.min(full_loss, clipped_loss).mean()
             value_loss = F.mse_loss(value, ret)
 
-            loss: torch.Tensor = policy_loss + self.cfg.vf_coef * \
-                value_loss - self.cfg.ent_coef * entropy
+            loss: torch.Tensor = (
+                policy_loss
+                + self.cfg.vf_coef * value_loss
+                - self.cfg.ent_coef * entropy
+            )
 
             total_loss += loss.item()
             total_policy_loss += policy_loss.item()
@@ -73,11 +78,11 @@ class PPOTrainer:
 
         num_epochs = _ + 1  # Actual number of epochs completed
         return {
-            'loss': total_loss / num_epochs,
-            'policy_loss': total_policy_loss / num_epochs,
-            'value_loss': total_value_loss / num_epochs,
-            'entropy': total_entropy / num_epochs,
-            'kl': total_kl / num_epochs,
+            "loss": total_loss / num_epochs,
+            "policy_loss": total_policy_loss / num_epochs,
+            "value_loss": total_value_loss / num_epochs,
+            "entropy": total_entropy / num_epochs,
+            "kl": total_kl / num_epochs,
         }
 
     def rollout(self):
@@ -121,24 +126,21 @@ class PPOTrainer:
         std_buf = torch.stack(std_buf)  # (T, N, act_dim)
 
         # Compute advantages and returns
-        adv_buf, ret_buf = self.compute_gae(
-            rew_buf,
-            val_buf,
-            done_buf
-        )
+        adv_buf, ret_buf = self.compute_gae(rew_buf, val_buf, done_buf)
 
         # Flatten buffers
         obs_flat = obs_buf.reshape(-1, obs_buf.shape[-1])
         act_flat = act_buf.reshape(-1, act_buf.shape[-1])
-        adv_flat = (adv_buf.reshape(-1) - adv_buf.mean()) / \
-            (adv_buf.std() + 1e-8)
+        adv_flat = (adv_buf.reshape(-1) - adv_buf.mean()) / (adv_buf.std() + 1e-8)
         ret_flat = ret_buf.reshape(-1)
         mu_old_flat = mu_buf.reshape(-1, mu_buf.shape[-1])
         std_old_flat = std_buf.reshape(-1, std_buf.shape[-1])
 
         return obs_flat, act_flat, adv_flat, ret_flat, mu_old_flat, std_old_flat
 
-    def compute_gae(self, rewards: torch.Tensor, values: torch.Tensor, dones: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def compute_gae(
+        self, rewards: torch.Tensor, values: torch.Tensor, dones: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute Generalized Advantage Estimation (GAE).
 
         Args:
@@ -160,10 +162,13 @@ class PPOTrainer:
             next_value = values[t + 1]
             next_non_terminal = torch.logical_not(dones[t])
 
-            delta = rewards[t] + self.cfg.gamma * next_value * \
-                next_non_terminal - values[t]
-            last_gae = delta + self.cfg.gamma * \
-                self.cfg.gae_lambda * next_non_terminal * last_gae
+            delta = (
+                rewards[t] + self.cfg.gamma * next_value * next_non_terminal - values[t]
+            )
+            last_gae = (
+                delta
+                + self.cfg.gamma * self.cfg.gae_lambda * next_non_terminal * last_gae
+            )
             advantages[t] = last_gae
 
         returns = advantages + values[:-1]

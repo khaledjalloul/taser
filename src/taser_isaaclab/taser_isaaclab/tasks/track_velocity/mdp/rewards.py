@@ -2,7 +2,6 @@ import torch
 from isaaclab.envs import ManagerBasedEnv, mdp
 from isaaclab.managers import RewardTermCfg, SceneEntityCfg
 from isaaclab.utils import configclass
-
 from taser_isaaclab.common.obs_utils import base_vel_w, root_planar_vel_b
 
 
@@ -10,10 +9,12 @@ def velocity_tracking_reward(env: ManagerBasedEnv, std: float):
     """Get the reward for tracking the target velocity."""
     planar_vel = root_planar_vel_b(env)
 
-    lin_vel_reward = torch.exp(- (planar_vel[:, 0] - env.target_vel_b[:, 0]) ** 2
-                               / (2 * std ** 2))
-    ang_vel_reward = torch.exp(- (planar_vel[:, 1] - env.target_vel_b[:, 1]) ** 2
-                               / (2 * std ** 2))
+    lin_vel_reward = torch.exp(
+        -((planar_vel[:, 0] - env.target_vel_b[:, 0]) ** 2) / (2 * std**2)
+    )
+    ang_vel_reward = torch.exp(
+        -((planar_vel[:, 1] - env.target_vel_b[:, 1]) ** 2) / (2 * std**2)
+    )
 
     return lin_vel_reward + ang_vel_reward
 
@@ -38,21 +39,17 @@ class RewardsCfg:
     )
 
     vel_reward_1 = RewardTermCfg(
-        func=velocity_tracking_reward, weight=0.5,
-        params={"std": 20.0}
+        func=velocity_tracking_reward, weight=0.5, params={"std": 20.0}
     )
 
     vel_reward_2 = RewardTermCfg(
-        func=velocity_tracking_reward, weight=0.5,
-        params={"std": 10.0}
+        func=velocity_tracking_reward, weight=0.5, params={"std": 10.0}
     )
 
     vel_reward_3 = RewardTermCfg(
-        func=velocity_tracking_reward, weight=0.5,
-        params={"std": 1.0}
+        func=velocity_tracking_reward, weight=0.5, params={"std": 1.0}
     )
 
     vel_reward_4 = RewardTermCfg(
-        func=velocity_tracking_reward, weight=0.5,
-        params={"std": 0.1}
+        func=velocity_tracking_reward, weight=0.5, params={"std": 0.1}
     )

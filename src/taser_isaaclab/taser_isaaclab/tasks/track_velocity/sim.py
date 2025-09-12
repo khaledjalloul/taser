@@ -1,14 +1,16 @@
 import argparse
 from pathlib import Path
 
-parser = argparse.ArgumentParser(
-    description="Simulate the TASER robot balance task."
+parser = argparse.ArgumentParser(description="Simulate the TASER robot balance task.")
+parser.add_argument(
+    "--num_envs", type=int, default=4, help="Number of environments to spawn."
 )
-parser.add_argument("--num_envs", type=int, default=4,
-                    help="Number of environments to spawn.")
-parser.add_argument("--model_path", type=str,
-                    default=Path(__file__).parent / 'data' / 'model.pth',
-                    help="Path to the trained model.")
+parser.add_argument(
+    "--model_path",
+    type=str,
+    default=Path(__file__).parent / "data" / "model.pth",
+    help="Path to the trained model.",
+)
 
 ############################################################
 
@@ -22,11 +24,10 @@ simulation_app = app_launcher.app
 
 ############################################################
 
-import torch
 import gymnasium as gym
-
+import torch
 from taser_isaaclab.rl import ActorCritic
-from taser_isaaclab.tasks.track_velocity import TaserEnvCfg, TASK_NAME
+from taser_isaaclab.tasks.track_velocity import TASK_NAME, TaserEnvCfg
 
 
 def main():

@@ -1,7 +1,7 @@
 import torch
 from isaaclab.envs import ManagerBasedEnv, mdp
+from isaaclab.managers import EventTermCfg, SceneEntityCfg
 from isaaclab.utils import configclass
-from isaaclab.managers import SceneEntityCfg, EventTermCfg
 
 
 def reset_target_velocity_t(env: ManagerBasedEnv, env_ids: torch.Tensor):
@@ -27,8 +27,8 @@ class EventsCfg:
                     "right_arm_1_right_arm_2_joint",
                     "right_arm_2_right_arm_3_joint",
                     "base_wheel_1_joint",
-                    "base_wheel_2_joint"
-                ]
+                    "base_wheel_2_joint",
+                ],
             ),
             "position_range": (0.0, 0.0),
             "velocity_range": (0.0, 0.0),

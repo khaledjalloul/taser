@@ -48,7 +48,7 @@ class ActorCritic(nn.Module):
             nn.Linear(64, 64),
             nn.LayerNorm(64),
             nn.ReLU(),
-            nn.Linear(64, act_dim)
+            nn.Linear(64, act_dim),
         )
 
         self.critic = nn.Sequential(
@@ -58,13 +58,15 @@ class ActorCritic(nn.Module):
             nn.Linear(64, 64),
             nn.LayerNorm(64),
             nn.ReLU(),
-            nn.Linear(64, 1)
+            nn.Linear(64, 1),
         )
 
         # log_std initialized small and clamped during forward pass
         self.log_std = nn.Parameter(torch.ones(act_dim) * -0.5)
 
-    def forward(self, obs: torch.Tensor, update_norm: bool = False) -> tuple[Normal, torch.Tensor]:
+    def forward(
+        self, obs: torch.Tensor, update_norm: bool = False
+    ) -> tuple[Normal, torch.Tensor]:
         if update_norm:
             self.obs_norm.update(obs)
         obs_norm = self.obs_norm.normalize(obs)
@@ -80,12 +82,15 @@ class ActorCritic(nn.Module):
         return action_dist, value
 
     def save(self, path: str):
-        torch.save({
-            "model_state_dict": self.state_dict(),
-            "obs_mean": self.obs_norm.mean,
-            "obs_var": self.obs_norm.var,
-            "obs_count": self.obs_norm.count,
-        }, path)
+        torch.save(
+            {
+                "model_state_dict": self.state_dict(),
+                "obs_mean": self.obs_norm.mean,
+                "obs_var": self.obs_norm.var,
+                "obs_count": self.obs_norm.count,
+            },
+            path,
+        )
 
     def load(self, path: str):
         saved_data = torch.load(path, weights_only=True)

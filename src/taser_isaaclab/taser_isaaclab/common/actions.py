@@ -11,9 +11,9 @@ class ActionsCfg:
         joint_names=[
             "base_left_arm_1_joint",
             "left_arm_1_left_arm_2_joint",
-            "left_arm_2_left_arm_3_joint"
+            "left_arm_2_left_arm_3_joint",
         ],
-        scale=10.0
+        scale=10.0,
     )
 
     right_arm_efforts = mdp.JointEffortActionCfg(
@@ -21,16 +21,16 @@ class ActionsCfg:
         joint_names=[
             "base_right_arm_1_joint",
             "right_arm_1_right_arm_2_joint",
-            "right_arm_2_right_arm_3_joint"
+            "right_arm_2_right_arm_3_joint",
         ],
-        scale=10.0
+        scale=10.0,
     )
 
     wheel_efforts = mdp.JointEffortActionCfg(
         asset_name="robot",
         joint_names=[
             "base_wheel_1_joint",  # left wheel
-            "base_wheel_2_joint"  # right wheel
+            "base_wheel_2_joint",  # right wheel
         ],
-        scale=10000.0
+        scale=10000.0,
     )

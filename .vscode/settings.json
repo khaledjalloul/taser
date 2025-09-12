@@ -87,15 +87,5 @@
         "orderingmethods": "cpp",
         "*.txx": "cpp",
         "ios": "cpp"
-    },
-    "python.analysis.extraPaths": [
-        "/workspaces/taser_ws/install/taser_py/lib/python3.12/site-packages",
-        "/workspaces/taser_ws/install/taser_py/local/lib/python3.10/dist-packages",
-        "/workspaces/IsaacLab/source/isaaclab",
-        "/workspaces/IsaacLab/source/isaaclab_tasks"
-    ],
-    "autopep8.args": [
-        "--ignore",
-        "E402"
-    ]
+    }
 }

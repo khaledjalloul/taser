@@ -1,18 +1,20 @@
 import argparse
 
-parser = argparse.ArgumentParser(
-    description="Train one of the TASER tasks."
+parser = argparse.ArgumentParser(description="Train one of the TASER tasks.")
+parser.add_argument(
+    "--task", type=str, default="TrackVelocity", help="Task to train on."
 )
-parser.add_argument("--task", type=str, default="TrackVelocity",
-                    help="Task to train on.")
-parser.add_argument("--num_envs", type=int, default=128,
-                    help="Number of environments to spawn.")
-parser.add_argument("--num_iters", type=int, default=200,
-                    help="Number of iterations (rollout + training).")
-parser.add_argument("--output_path", type=str,
-                    help="Directory to save checkpoints.")
-parser.add_argument("--resume", type=str,
-                    help="Path to checkpoint to resume from.")
+parser.add_argument(
+    "--num_envs", type=int, default=128, help="Number of environments to spawn."
+)
+parser.add_argument(
+    "--num_iters",
+    type=int,
+    default=200,
+    help="Number of iterations (rollout + training).",
+)
+parser.add_argument("--output_path", type=str, help="Directory to save checkpoints.")
+parser.add_argument("--resume", type=str, help="Path to checkpoint to resume from.")
 
 ############################################################
 
@@ -26,12 +28,13 @@ simulation_app = app_launcher.app
 
 ############################################################
 
-import gymnasium as gym
-import torch
 from dataclasses import asdict
 from datetime import datetime
-from isaaclab_tasks.utils import parse_env_cfg
 from pathlib import Path
+
+import gymnasium as gym
+import torch
+from isaaclab_tasks.utils import parse_env_cfg
 from tqdm import tqdm
 
 from taser_isaaclab.rl import PPOTrainer, PPOTrainerCfg, WandbLogger
@@ -70,10 +73,7 @@ def train(env: gym.Env):
     logger = WandbLogger(
         exp_name=run_name,
         base_path=output_path,
-        config={
-            "num_envs": args.num_envs,
-            **asdict(trainer_cfg)
-        }
+        config={"num_envs": args.num_envs, **asdict(trainer_cfg)},
     )
 
     # Initialize trainer
@@ -84,9 +84,10 @@ def train(env: gym.Env):
         trainer.policy.load(args.resume)
 
     # Training loop
-    num_updates = trainer_cfg.total_num_steps // (args.num_envs *
-                                                  trainer_cfg.num_rollout_steps)
-    best_reward = float('-inf')
+    num_updates = trainer_cfg.total_num_steps // (
+        args.num_envs * trainer_cfg.num_rollout_steps
+    )
+    best_reward = float("-inf")
 
     for update in tqdm(range(num_updates)):
         # Training update
@@ -97,8 +98,7 @@ def train(env: gym.Env):
 
         # Evaluation
         if update % trainer_cfg.eval_freq == 0:
-            eval_rewards = torch.zeros(
-                args.num_envs, device=env.unwrapped.device)
+            eval_rewards = torch.zeros(args.num_envs, device=env.unwrapped.device)
             obs = env.reset()
 
             with torch.no_grad():

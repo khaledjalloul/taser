@@ -1,6 +1,7 @@
 import math
+
 from isaaclab.envs import mdp
-from isaaclab.managers import SceneEntityCfg, EventTermCfg
+from isaaclab.managers import EventTermCfg, SceneEntityCfg
 from isaaclab.utils import configclass
 
 
@@ -22,8 +23,8 @@ class EventsCfg:
                     "right_arm_1_right_arm_2_joint",
                     "right_arm_2_right_arm_3_joint",
                     "base_wheel_1_joint",
-                    "base_wheel_2_joint"
-                ]
+                    "base_wheel_2_joint",
+                ],
             ),
             "position_range": (0.0, 0.0),
             "velocity_range": (0.0, 0.0),

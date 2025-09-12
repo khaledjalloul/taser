@@ -32,13 +32,13 @@ class BaseTaserEnv(ManagerBasedRLEnv):
 
     def reset(self, **kwargs):
         obs_dict, _ = super().reset(**kwargs)
-        obs = torch.nan_to_num(obs_dict['policy'], nan=0.0)
+        obs = torch.nan_to_num(obs_dict["policy"], nan=0.0)
         return obs
 
     def step(self, action: torch.Tensor, **kwargs):
         obs_dict, rewards, terminated, truncated, info = super().step(action, **kwargs)
 
-        obs = torch.nan_to_num(obs_dict['policy'], nan=0.0)
+        obs = torch.nan_to_num(obs_dict["policy"], nan=0.0)
         rewards = torch.nan_to_num(rewards, nan=0.0)
 
         return obs, rewards, terminated, truncated, info

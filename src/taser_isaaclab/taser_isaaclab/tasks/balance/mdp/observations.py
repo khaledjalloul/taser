@@ -1,7 +1,6 @@
 from isaaclab.envs import mdp
 from isaaclab.managers import ObservationGroupCfg, ObservationTermCfg
 from isaaclab.utils import configclass
-
 from taser_isaaclab.common.obs_utils import base_pos_b, base_quat_w, base_vel_w
 
 
