@@ -87,5 +87,8 @@
         "orderingmethods": "cpp",
         "*.txx": "cpp",
         "ios": "cpp"
-    }
+    },
+    "python.defaultInterpreterPath": "/workspaces/isaacsim/python.sh",
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": []
 }

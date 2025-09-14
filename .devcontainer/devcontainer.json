@@ -19,6 +19,8 @@
                 "xaver.clang-format",
                 // ROS
                 "morningfrog.urdf-visualizer",
+                // Isaac Sim
+                "nvidia.isaacsim-vscode-edition",
                 // Yaml
                 "redhat.vscode-yaml",
                 // XML
@@ -35,10 +37,11 @@
             "settings": {
                 "gitlens.codeLens.authors.enabled": false,
                 "gitlens.codeLens.recentChange.enabled": false,
-                "python.defaultInterpreterPath": "/workspaces/isaacsim/kit/python/bin/python3",
+                "python.defaultInterpreterPath": "/workspaces/isaacsim/python.sh",
                 "C_Cpp.default.includePath": [
                     "${workspaceFolder}/**",
-                    "/opt/ros/jazzy/include/**"
+                    "/opt/ros/jazzy/include/**",
+                    "/opt/ros/humble/include/**"
                 ]
             }
         }

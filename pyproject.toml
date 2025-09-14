@@ -1,6 +1,8 @@
 [project]
 name = "taser"
-version = "0.0.0"
+version = "0.1.0"
+description = "A wheeled robot with two arms that detects targets in an environment and moves towards them to catch them."
+readme = "README.md"
 authors = [{ "name" = "Khaled Jalloul", email = "khaled.jalloul@hotmail.com" }]
 
 dependencies = []

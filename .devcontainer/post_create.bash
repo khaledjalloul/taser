@@ -1,3 +1,10 @@
+# Create the cache folders if not existing and handle correct permissions
+sudo mkdir -p ${HOME}/.cache/ov && sudo mkdir -p /workspaces/isaacsim/kit/cache
+if [ -n "$USERNAME" ]; then \
+    sudo chown -R ${USERNAME} ${HOME}/.cache/ov; \
+    sudo chown -R ${USERNAME} /workspaces/isaacsim/kit/cache; \
+    fi
+
 # Set up CLI completion
 kj setup cli completion
 
@@ -8,8 +15,8 @@ echo 'source /workspaces/taser_ws/.devcontainer/utils.bash' >> ~/.bashrc
 echo 'source /workspaces/taser_ws/.env.local' >> ~/.bashrc
 
 # Build the project
-source /opt/ros/jazzy/setup.sh && colcon build --packages-ignore taser_isaaclab
-/workspaces/isaacsim/python.sh -m pip install -e src/taser_isaaclab
+source /opt/ros/${ROS_DISTRO}/setup.sh \
+&& colcon build --packages-ignore taser_isaaclab \
+&& echo "source /workspaces/taser_ws/install/local_setup.bash" >> ${HOME}/.bashrc
 
-# Create URDF file
-source /opt/ros/jazzy/setup.sh && xacro /workspaces/taser_ws/src/taser_ros/urdf/robot.urdf.xacro -o /tmp/taser/robot.urdf
+/workspaces/isaacsim/python.sh -m pip install -e src/taser_isaaclab

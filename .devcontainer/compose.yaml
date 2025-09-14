@@ -5,7 +5,9 @@ services:
       context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
-        USERNAME: ${USERNAME}
+        USERNAME: ${USERNAME} # Set as empty string to use root
+        BASE_IMAGE: nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+        ROS_DISTRO: jazzy # Ubuntu 24.04 -> jazzy, Ubuntu 22.04 -> humble
     container_name: taser
     hostname: taser
     environment:
@@ -13,6 +15,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
       - OMNI_KIT_ACCEPT_EULA=YES # Isaac Sim Requirement
+      - OMNI_KIT_ALLOW_ROOT=1 # In case the user was root
     runtime: nvidia
     deploy:
       resources:
@@ -20,7 +23,7 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     command: bash -c "while sleep 1000; do :; done"
     volumes:
       # Bind source code
@@ -34,7 +37,7 @@ services:
       # Persist Isaac Sim cache
       - type: volume
         source: ov-cache
-        target: /home/${USERNAME}/.cache/ov
+        target: ${HOME}/.cache/ov # Set to /root if necessary
       - type: volume
         source: isaacsim-kit-cache
         target: /workspaces/isaacsim/kit/cache
