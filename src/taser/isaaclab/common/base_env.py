@@ -36,13 +36,14 @@ class BaseTaserEnv(ManagerBasedRLEnv):
         obs = torch.nan_to_num(obs_dict["policy"], nan=0.0)
         return obs
 
+    # omni_python /workspaces/isaaclab/scripts/reinforcement_learning/rsl_rl/train.py --task Isaac-TASER-TrackVelocity-v0 --num_envs 128 --headless
     def step(self, action: torch.Tensor, **kwargs):
         obs_dict, rewards, terminated, truncated, info = super().step(action, **kwargs)
 
-        obs = torch.nan_to_num(obs_dict["policy"], nan=0.0)
+        obs_dict["policy"] = torch.nan_to_num(obs_dict["policy"], nan=0.0)
         rewards = torch.nan_to_num(rewards, nan=0.0)
 
-        return obs, rewards, terminated, truncated, info
+        return obs_dict, rewards, terminated, truncated, info
 
     @property
     def obs_dim(self):

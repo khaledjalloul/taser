@@ -130,6 +130,7 @@ RUN echo "unset PYTHONSTARTUP" >> ${HOME}/.bashrc
 RUN /workspaces/isaacsim/python.sh -m pip install --no-input \
     cvxpy \
     open3d \
+    pybind11 \
     pyqt6 \
     roboticstoolbox-python
 

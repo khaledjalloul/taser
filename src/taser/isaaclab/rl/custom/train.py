@@ -37,7 +37,7 @@ import torch
 from isaaclab_tasks.utils import parse_env_cfg
 from tqdm import tqdm
 
-from taser.isaaclab.rl import PPOTrainer, PPOTrainerCfg, WandbLogger
+from taser.isaaclab.rl.custom import PPOTrainer, PPOTrainerCfg, WandbLogger
 
 
 def train(env: gym.Env):

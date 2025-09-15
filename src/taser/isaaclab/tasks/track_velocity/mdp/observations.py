@@ -5,6 +5,14 @@ from isaaclab.utils import configclass
 from taser.isaaclab.common.obs_utils import base_quat_w, base_vel_w, root_planar_vel_b
 
 
+def target_vel_b(env):
+    return env.target_vel_b
+
+
+def vel_error(env):
+    return root_planar_vel_b(env) - env.target_vel_b
+
+
 @configclass
 class ObservationsCfg:
     """Observation specifications for the environment."""
@@ -27,12 +35,10 @@ class ObservationsCfg:
         root_planar_vel_b = ObservationTermCfg(func=root_planar_vel_b)
 
         # Target planar velocity
-        target_vel_b = ObservationTermCfg(func=lambda env: env.target_vel_b)
+        target_vel_b = ObservationTermCfg(func=target_vel_b)
 
         # Velocity error
-        vel_error = ObservationTermCfg(
-            func=lambda env: root_planar_vel_b(env) - env.target_vel_b
-        )
+        vel_error = ObservationTermCfg(func=vel_error)
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()

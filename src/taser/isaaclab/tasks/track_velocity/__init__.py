@@ -7,6 +7,7 @@ from .mdp.terminations import TerminationsCfg
 
 from .env import TaserEnv, TaserEnvCfg  # isort: skip
 
+
 TASK_NAME = "Isaac-TASER-TrackVelocity-v0"
 
 gym.register(
@@ -15,6 +16,7 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": f"{__name__}.env:TaserEnvCfg",
+        "rsl_rl_cfg_entry_point": "taser.isaaclab.rl.rsl_rl.ppo_cfg:TaserPPORunnerCfg",
     },
 )
 
