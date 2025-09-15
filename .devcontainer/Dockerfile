@@ -178,6 +178,8 @@ WORKDIR ${WORKSPACE_PATH}
 # Build project
 COPY . ${WORKSPACE_PATH}
 RUN /workspaces/isaacsim/python.sh -m pip install --verbose -e .
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/workspaces/isaacsim/kit/python/lib/python3.11/site-packages/lib
+ENV CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/workspaces/isaacsim/kit/python/lib/python3.11/site-packages
 
 # Install additional dependencies
 RUN rosdep update

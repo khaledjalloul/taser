@@ -29,6 +29,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 ament_target_dependencies(${PROJECT_NAME} ${PACKAGE_DEPENDENCIES})
+target_link_libraries(${PROJECT_NAME} taser::taser)
 
 # Executable
 add_executable(${PROJECT_NAME}_node

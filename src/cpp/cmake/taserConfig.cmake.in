@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+# Declare dependencies so consumers can auto-find them
+include(CMakeFindDependencyMacro)
+find_package(Boost REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(osqp REQUIRED)
+find_package(OsqpEigen REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/taserTargets.cmake")
+check_required_components(taser)

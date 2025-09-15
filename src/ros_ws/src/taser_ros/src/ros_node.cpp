@@ -97,7 +97,7 @@ void RosNode::create_robot_instance() {
       get_parameter("base.controller.mpc_horizon").as_int(),
       get_parameter("base.path_planner.velocity").as_double(),
       get_parameter("base.path_planner.rrt_num_samples").as_int(),
-      taser::base::Dimensions{
+      taser::navigation::Dimensions{
           get_parameter("base.path_planner.dimensions.x_min").as_double(),
           get_parameter("base.path_planner.dimensions.x_max").as_double(),
           get_parameter("base.path_planner.dimensions.y_min").as_double(),
@@ -198,7 +198,7 @@ void RosNode::spawn_obstacles() {
 
     obstacles_pub->publish(marker);
 
-    auto obstacle = taser::base::get_box_corners(position[0], position[1],
+    auto obstacle = taser::navigation::get_box_corners(position[0], position[1],
                                                  size[0], size[1]);
 
     obstacles.push_back(obstacle);

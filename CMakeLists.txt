@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(taser)
+set(PROJECT_VERSION 0.1.0)
 
 # Declare dependencies
 set(PACKAGE_DEPENDENCIES
@@ -30,7 +31,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cpp/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PUBLIC
   Eigen3::Eigen
   osqp::osqp
   OsqpEigen::OsqpEigen
@@ -46,20 +47,46 @@ install(
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
-# Create Python package "taser_cpp" from bindings
+# Create and install CMake config files
+include(CMakePackageConfigHelpers)
+
+# <project>Config.cmake (from a template)
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/cpp/cmake/${PROJECT_NAME}Config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+  INSTALL_DESTINATION lib/cmake/${PROJECT_NAME}
+)
+
+# <project>ConfigVersion.cmake
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+
+# Exported targets file (${PROJECT_NAME}Targets.cmake)
+install(
+  EXPORT export_${PROJECT_NAME}
+  NAMESPACE ${PROJECT_NAME}::
+  FILE ${PROJECT_NAME}Targets.cmake
+  DESTINATION lib/cmake/${PROJECT_NAME}
+)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+  DESTINATION lib/cmake/${PROJECT_NAME}
+)
+
+# Create Python package "${PROJECT_NAME}_cpp" from bindings
 pybind11_add_module(
   ${PROJECT_NAME}_cpp
   src/cpp/py/bindings.cpp
 )
 target_link_libraries(${PROJECT_NAME}_cpp PRIVATE ${PROJECT_NAME})
-
-# Update runtime library search path to point to the installed library
-set_target_properties(${PROJECT_NAME}_cpp PROPERTIES
-  INSTALL_RPATH
-  "${CMAKE_INSTALL_PREFIX}/lib;/workspaces/isaacsim/kit/python/lib/python3.11/site-packages/lib"
-)
 
 # Install Python package
 install(
