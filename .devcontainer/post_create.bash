@@ -9,14 +9,14 @@ if [ -n "$USERNAME" ]; then \
 kj setup cli completion
 
 # Add utils.bash to .bashrc
-echo 'source /workspaces/taser_ws/.devcontainer/utils.bash' >> ~/.bashrc
+echo 'source ${WORKSPACE_PATH}/.devcontainer/utils.bash' >> ~/.bashrc
 
 # Load environment variables
-echo 'source /workspaces/taser_ws/.env.local' >> ~/.bashrc
+echo 'source ${WORKSPACE_PATH}/.env.local' >> ~/.bashrc
 
 # Build the project
-source /opt/ros/${ROS_DISTRO}/setup.sh \
-&& colcon build --packages-ignore taser_isaaclab \
-&& echo "source /workspaces/taser_ws/install/local_setup.bash" >> ${HOME}/.bashrc
+# source /opt/ros/${ROS_DISTRO}/setup.sh \
+# && cd src/ros_ws \
+# && colcon build \
+# && echo "source ${WORKSPACE_PATH}/install/local_setup.bash" >> ${HOME}/.bashrc
 
-/workspaces/isaacsim/python.sh -m pip install -e src/taser_isaaclab

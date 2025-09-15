@@ -5,7 +5,14 @@ description = "A wheeled robot with two arms that detects targets in an environm
 readme = "README.md"
 authors = [{ "name" = "Khaled Jalloul", email = "khaled.jalloul@hotmail.com" }]
 
-dependencies = []
+dependencies = ["cvxpy", "matplotlib", "numpy"]
+
+[build-system]
+requires = ["scikit-build-core"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+wheel.packages = ["src/taser"]
 
 [tool.ruff]
 select = [
@@ -18,11 +25,6 @@ typeCheckingMode = "off"
 reportUnusedImport = false # Already handled by ruff
 
 extraPaths = [
-    # Python Bindings
-    "/workspaces/taser_ws/install/taser_py/lib/python3.12/site-packages",
-    "/workspaces/taser_ws/install/taser_py/local/lib/python3.10/dist-packages",
-    # Extra
-    "/home/kjalloul/.local/lib/python3.11/site-packages",
     # Isaac Sim & Lab
     "/workspaces/isaaclab/_isaac_sim/exts/isaacsim.app.about",
     "/workspaces/isaaclab/_isaac_sim/exts/isaacsim.app.selector",

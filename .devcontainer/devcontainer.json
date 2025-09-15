@@ -2,7 +2,7 @@
     "name": "TASER",
     "dockerComposeFile": "compose.yaml",
     "service": "taser",
-    "workspaceFolder": "/workspaces/taser_ws",
+    "workspaceFolder": "/workspaces/taser",
     "postCreateCommand": "bash .devcontainer/post_create.bash",
     "customizations": {
         "vscode": {

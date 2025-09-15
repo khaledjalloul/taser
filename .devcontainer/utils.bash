@@ -27,4 +27,4 @@ alias launch='ros2 launch state_machine state_machine.launch.yaml'
 alias spawn='ros2 service call /spawn_random_target std_srvs/srv/Trigger'
 
 # Run the Isaac Lab training script
-alias train='python /workspaces/taser_ws/src/taser_isaaclab/taser_isaaclab/rl/train.py'
+alias train='python ${WORKSPACE_PATH}/src/taser_isaaclab/taser_isaaclab/rl/train.py'

@@ -29,7 +29,7 @@ services:
       # Bind source code
       - type: bind
         source: ..
-        target: /workspaces/taser_ws
+        target: /workspaces/taser
       # Enable GUI
       - type: bind
         source: /tmp/.X11-unix

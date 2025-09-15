@@ -172,12 +172,16 @@ RUN apt install -y khaled-cli
 # Finalization
 
 USER ${USERNAME:-root}
-WORKDIR /workspaces/taser_ws
+ENV WORKSPACE_PATH=/workspaces/taser
+WORKDIR ${WORKSPACE_PATH}
+
+# Build project
+COPY . ${WORKSPACE_PATH}
+RUN /workspaces/isaacsim/python.sh -m pip install --verbose -e .
 
 # Install additional dependencies
 RUN rosdep update
-COPY ./src/ /workspaces/taser_ws/src
-RUN . /opt/ros/${ROS_DISTRO}/setup.bash && rosdep install --from-paths src --ignore-src -ry 
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash && rosdep install --from-paths src/ros_ws --ignore-src -ry 
 
 # RUN git clone https://github.com/isaac-sim/IsaacSim-ros_workspaces.git /workspaces/IsaacSim-ros_workspaces
 # RUN cd /workspaces/IsaacSim-ros_workspaces/${ROS_DISTRO}_ws && . /opt/ros/${ROS_DISTRO}/setup.bash && rosdep install --from-paths src --ignore-src -ry 
