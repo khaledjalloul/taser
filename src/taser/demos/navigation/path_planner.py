@@ -9,7 +9,7 @@ from taser_cpp.navigation import (
     get_minimum_turning_radius,
 )
 
-from taser.demos.path_planning.dubins import plot_dubins_segment
+from taser.demos.navigation.dubins import plot_dubins_segment
 
 if __name__ == "__main__":
     RRT_NUM_SAMPLES = 120

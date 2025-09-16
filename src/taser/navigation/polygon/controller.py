@@ -1,5 +1,3 @@
-# type: ignore
-
 import logging
 
 import cvxpy as cp
@@ -10,6 +8,10 @@ logging.basicConfig(level=logging.INFO)
 
 
 class Controller:
+    """
+    Python implementation of taser_cpp.navigation.Controller
+    """
+
     def __init__(self, dt: float, N: int, v_max: float, omega_max: float):
         self.dt = dt
         self.N = N
