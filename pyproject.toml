@@ -13,6 +13,7 @@ build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
 wheel.packages = ["src/taser"]
+cmake.source-dir = "src/taser_cpp"
 
 [tool.ruff]
 select = [
