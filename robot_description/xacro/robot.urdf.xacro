@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="sketch_follower">
 
-    <xacro:include filename="$(find taser_ros)/urdf/base.xacro" />
-    <xacro:include filename="$(find taser_ros)/urdf/arm.xacro" />
-    <xacro:include filename="$(find taser_ros)/urdf/wheel.xacro" />
-    <xacro:include filename="$(find taser_ros)/urdf/ros2_control.xacro" />
+    <xacro:include filename="$(find taser_ros)/robot_description/xacro/base.xacro" />
+    <xacro:include filename="$(find taser_ros)/robot_description/xacro/arm.xacro" />
+    <xacro:include filename="$(find taser_ros)/robot_description/xacro/wheel.xacro" />
+    <xacro:include filename="$(find taser_ros)/robot_description/xacro/ros2_control.xacro" />
 
     <xacro:taser_ros2_control />
 

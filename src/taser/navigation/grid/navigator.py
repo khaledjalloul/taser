@@ -41,9 +41,9 @@ class GridNavigator:
 
         return [Pose(p[0], p[1], 0.0) for p in path]
 
-    def step(self, current_pose: Pose, v_current: float) -> VelocityCommand:
+    def step(self, current_pose: Pose, v_current: float) -> tuple[VelocityCommand, bool]:
         cmd, reached, info = self._controller.step(current_pose, v_current)
-        return cmd
+        return cmd, reached
 
     @property
     def inflated_occupancy_grid(self) -> OccupancyGrid:

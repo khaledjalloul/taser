@@ -19,7 +19,7 @@ launch:
         - name: use_sim_time
           value: true
         - name: robot_description
-          value: $(command 'xacro $(find-pkg-share taser_ros)/urdf/robot.urdf.xacro')
+          value: $(command 'xacro $(find-pkg-share taser_ros)/robot_description/xacro/robot.urdf.xacro')
 
   - node:
       pkg: joint_state_publisher_gui
