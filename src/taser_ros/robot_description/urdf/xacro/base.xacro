@@ -33,11 +33,11 @@
             <child link="base" />
         </joint>
 
-        <joint name="odom_base_wrapper_joint" type="fixed">
+        <!-- <joint name="odom_base_wrapper_joint" type="fixed">
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0" />
-            <parent link="odom" />
+            <parent link="map" />
             <child link="base_wrapper" />
-        </joint>
+        </joint> -->
     </xacro:macro>
 
 </robot>

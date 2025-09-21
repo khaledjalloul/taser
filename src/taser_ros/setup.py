@@ -17,7 +17,7 @@ setup(
             "share/" + package_name + "/config",
             [
                 "config/config.rviz",
-                "config/parameters.yaml",
+                "config/sim_parameters.yaml",
                 "config/controller_manager.yaml",
             ],
         ),
@@ -53,6 +53,7 @@ setup(
     entry_points={
         "console_scripts": [
             "sim = taser_ros.sim:main",
+            "cmd_gui = taser_ros.cmd_gui:main",
         ],
     },
 )

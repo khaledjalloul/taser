@@ -5,7 +5,17 @@ launch:
   - node:
       pkg: taser_ros
       exec: sim
-      name: taser
+      name: sim
+      namespace: taser
       output: screen
       param:
-        - from: $(find-pkg-share taser_ros)/config/parameters.yaml
+        - from: $(find-pkg-share taser_ros)/config/sim_parameters.yaml
+
+  - node:
+      pkg: taser_ros
+      exec: cmd_gui
+      name: cmd_gui
+      namespace: taser
+      output: screen
+      param:
+        - from: $(find-pkg-share taser_ros)/config/sim_parameters.yaml

@@ -9,15 +9,15 @@
     <xacro:taser_ros2_control />
 
     <!-- map -> odom - Localization corrections (ex. SLAM) -->
-    <link name="map" />
+    <!-- <link name="map" /> -->
     <!-- odom -> base - Robot motion relative to starting position -->
-    <link name="odom" />
+    <!-- <link name="odom" /> -->
 
-    <joint name="map_odom_joint" type="fixed">
+    <!-- <joint name="map_odom_joint" type="fixed">
         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0" />
         <parent link="map" />
         <child link="odom" />
-    </joint>
+    </joint> -->
 
     <xacro:base />
 

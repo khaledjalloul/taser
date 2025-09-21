@@ -26,3 +26,11 @@ launch:
       exec: joint_state_publisher_gui
       name: joint_state_publisher_gui
       if: $(var use_joint_state_publisher_gui)
+
+  - node:
+      pkg: tf2_ros
+      exec: static_transform_publisher
+      name: map_to_base_wrapper
+      output: screen
+      args: 0 0 0 0 0 0 map base_wrapper
+      if: $(var use_joint_state_publisher_gui)

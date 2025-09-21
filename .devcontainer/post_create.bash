@@ -8,14 +8,16 @@ if [ -n "$USERNAME" ]; then \
 # Set up CLI completion
 kj setup cli completion
 
-# Add utils.bash to .bashrc
-echo 'source ${WORKSPACE_PATH}/.devcontainer/utils.bash' >> ~/.bashrc
-
 # Load environment variables
-echo 'source ${WORKSPACE_PATH}/.env.local' >> ~/.bashrc
+echo 'source ${WORKSPACE}/.env.local' >> ~/.bashrc
 
 # Build the project
 source /opt/ros/${ROS_DISTRO}/setup.sh \
-&& cd src/ros_ws \
-&& colcon build \
-&& echo "source ${WORKSPACE_PATH}/src/ros_ws/install/local_setup.bash" >> ${HOME}/.bashrc
+&& /workspaces/colcon_venv/bin/colcon build \
+&& echo "source ${WORKSPACE}/install/local_setup.bash" >> ${HOME}/.bashrc
+
+# Launch the simulation and state machine
+echo "alias sim_ros='ros2 launch taser_ros sim.launch.yaml'" >> ~/.bashrc
+
+# Run the Isaac Lab training script
+echo "alias train='python ${WORKSPACE}/src/taser_isaaclab/taser_isaaclab/rl/train.py'" >> ~/.bashrc

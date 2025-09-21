@@ -5,15 +5,17 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-from taser.common.datatypes import Pose, VelocityCommand
+from taser.common.datatypes import Pose, VelocityCommand, Workspace
 from taser.navigation import PolygonNavigator
 
 L = 0.3
 DT = 0.1
 V_MAX = 2.0
 W_MAX = 1.0
+NUM_RRT_SAMPLES = 120
+MPC_HORIZON = 10
 
-WORKSPACE = (0, 7, 0, 7)  # x_min, x_max, y_min, y_max
+WORKSPACE = Workspace(x_min=0, x_max=7, y_min=0, y_max=7)
 START = Pose(1, 1, 0)
 GOAL = Pose(6, 6, 0)
 
@@ -29,8 +31,8 @@ def plot_controller_step(
     ax.clear()
     ax.set_facecolor("white")
     ax.grid(color="lightgray")
-    ax.set_xlim(WORKSPACE[0], WORKSPACE[1])
-    ax.set_ylim(WORKSPACE[2], WORKSPACE[3])
+    ax.set_xlim(WORKSPACE.x_min, WORKSPACE.x_max)
+    ax.set_ylim(WORKSPACE.y_min, WORKSPACE.y_max)
     ax.set_aspect("equal", adjustable="box")
 
     # Plot obstacles
@@ -93,6 +95,8 @@ if __name__ == "__main__":
         w_max=W_MAX,
         wheel_base=L,
         dt=DT,
+        num_rrt_samples=NUM_RRT_SAMPLES,
+        mpc_horizon=MPC_HORIZON,
     )
     path = navigator.plan_path(START, GOAL)
 

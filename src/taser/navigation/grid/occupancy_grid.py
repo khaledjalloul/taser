@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from taser.common.datatypes import Workspace
+
 
 class OccupancyGrid:
     """
@@ -10,20 +12,23 @@ class OccupancyGrid:
 
     def __init__(
         self,
-        workspace: tuple[int, int, int, int],
+        workspace: Workspace,
         cellsize: float,
         grid: np.ndarray = None,
     ):
         self._workspace = workspace
-        self._x_min, self._x_max, self._y_min, self._y_max = workspace
         self._cellsize = cellsize
 
         if grid is not None:
             self._grid = grid
             x_shape, y_shape = grid.shape
         else:
-            x_shape = int((self._x_max - self._x_min) // cellsize) + 2
-            y_shape = int((self._y_max - self._y_min) // cellsize) + 2
+            x_shape = (
+                int((self._workspace.x_max - self._workspace.x_min) // cellsize) + 2
+            )
+            y_shape = (
+                int((self._workspace.y_max - self._workspace.y_min) // cellsize) + 2
+            )
             self._grid = np.zeros((y_shape, x_shape))
 
     def set(self, region: tuple[int, int, int, int], value: float) -> None:
@@ -39,8 +44,8 @@ class OccupancyGrid:
 
     def w2g(self, point: tuple[float, float]) -> tuple[int, int]:
         x_w, y_w = point
-        x_g = (x_w - self._x_min) // self._cellsize
-        y_g = (y_w - self._y_min) // self._cellsize
+        x_g = (x_w - self._workspace.x_min) // self._cellsize
+        y_g = (y_w - self._workspace.y_min) // self._cellsize
         return (
             int(x_g) + (1 if x_g != 0 else 0),
             int(y_g) + (1 if y_g != 0 else 0),
@@ -48,12 +53,14 @@ class OccupancyGrid:
 
     def g2w(self, point: tuple[float, float]) -> tuple[float, float]:
         x_g, y_g = point
-        x_w = x_g * self._cellsize + self._x_min
-        y_w = y_g * self._cellsize + self._y_min
+        x_w = x_g * self._cellsize + self._workspace.x_min
+        y_w = y_g * self._cellsize + self._workspace.y_min
         return x_w, y_w
 
     def plot(self) -> None:
-        plt.imshow(self._grid, origin="lower", extent=self._workspace, cmap="Greys")
+        plt.imshow(
+            self._grid, origin="lower", extent=self._workspace.tuple(), cmap="Greys"
+        )
         plt.show(block=False)
         plt.pause(0.1)
         plt.clf()

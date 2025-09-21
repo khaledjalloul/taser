@@ -84,7 +84,7 @@ class PurePursuitController:
                     w = max(-self.w_max, min(self.w_max, self.turn_gain * yaw_err))
                     return (
                         VelocityCommand(0.0, w),
-                        True,
+                        False,
                         {"reason": "final_yaw_align"},
                     )
             return VelocityCommand(0.0, 0.0), True, {"reason": "goal_reached"}

@@ -2,17 +2,15 @@ import logging
 
 import cvxpy as cp
 import numpy as np
+from taser_cpp.navigation import Controller
 
+from taser.common.datatypes import Pose, VelocityCommand
 from taser_cpp import BaseVelocity, Pose2D
 
 logging.basicConfig(level=logging.INFO)
 
 
-class Controller:
-    """
-    Python implementation of taser_cpp.navigation.Controller
-    """
-
+class MPCController:
     def __init__(self, dt: float, N: int, v_max: float, omega_max: float):
         self.dt = dt
         self.N = N
@@ -26,25 +24,25 @@ class Controller:
         self.R = np.diag([0.5, 0.1])
 
     def step(
-        self, x0: Pose2D, x_ref: list[Pose2D], u_ref: list[BaseVelocity]
-    ) -> BaseVelocity:
+        self, x0: Pose, x_ref: list[Pose], u_ref: list[VelocityCommand]
+    ) -> VelocityCommand:
         if len(x_ref) < self.N:
             logging.warning(
                 "Cannot step base MPC controller, reference path x_ref has less than N elements."
             )
-            return BaseVelocity()
+            return VelocityCommand()
         if len(u_ref) < self.N:
             logging.warning(
                 "Cannot step base MPC controller, reference velocity profile u_ref has less than N elements."
             )
-            return BaseVelocity()
+            return VelocityCommand()
 
         delta_x = cp.Variable((self.nx, self.N + 1))
         delta_u = cp.Variable((self.nu, self.N))
 
         cost = 0
         constraints = [
-            delta_x[:, 0] == np.array(x0.list()) - x_ref[0].list(),
+            delta_x[:, 0] == np.array(x0.tuple()) - x_ref[0].tuple(),
             # delta_x[:, -1] == 0
         ]
 
@@ -62,14 +60,14 @@ class Controller:
         result = prob.solve(solver=cp.OSQP)
         if np.isinf(result):
             logging.warning("Problem is infeasible")
-            return BaseVelocity()
+            return VelocityCommand()
 
-        u_opt = u_ref[0].list() + delta_u[:, 0].value
+        u_opt = u_ref[0].tuple() + delta_u[:, 0].value
 
-        return BaseVelocity(u_opt[0], u_opt[1])
+        return VelocityCommand(u_opt[0], u_opt[1])
 
     def get_linearized_model(
-        self, x0: Pose2D, u0: BaseVelocity
+        self, x0: Pose, u0: VelocityCommand
     ) -> tuple[np.ndarray, np.ndarray]:
         A = np.eye(self.nx)
         A[0, 2] = -np.sin(x0.theta) * u0.v * self.dt
@@ -81,3 +79,25 @@ class Controller:
         B[2, 1] = self.dt
 
         return A, B
+
+
+class MPCControllerCpp:
+    def __init__(self, dt: float, N: int, v_max: float, omega_max: float):
+        self._controller = Controller(dt, N, v_max, omega_max)
+
+    def step(
+        self, x0: Pose, x_ref: list[Pose], u_ref: list[VelocityCommand]
+    ) -> VelocityCommand:
+        x0_cpp = Pose2D(x0.x, x0.y, x0.theta)
+        x_ref_cpp = [Pose2D(p.x, p.y, p.theta) for p in x_ref]
+        u_ref_cpp = [BaseVelocity(v.v, v.w) for v in u_ref]
+        cmd_cpp = self._controller.step(x0_cpp, x_ref_cpp, u_ref_cpp)
+        return VelocityCommand(cmd_cpp.v, cmd_cpp.omega)
+
+    def get_linearized_model(
+        self, x0: Pose, u0: VelocityCommand
+    ) -> tuple[np.ndarray, np.ndarray]:
+        x0_cpp = Pose2D(x0.x, x0.y, x0.theta)
+        u0_cpp = BaseVelocity(u0.v, u0.w)
+        A_cpp, B_cpp = self._controller.get_linearized_model(x0_cpp, u0_cpp)
+        return np.array(A_cpp), np.array(B_cpp)

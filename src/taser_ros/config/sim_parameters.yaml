@@ -1,0 +1,36 @@
+/taser/**:
+  ros__parameters:
+    dt: 0.01
+    initial_pose:
+      x: -7.0
+      y: 0.0
+      theta: 0.0
+
+    locomotion:
+      wheel_base: 2.25 # Obtained using transform from left wheel to right wheel
+      wheel_radius: 0.5
+
+    manipulation:
+      controller_kp: 5.0
+
+    navigation:
+      workspace:
+        x_min: -15.0
+        x_max: 15.0
+        y_min: -15.0
+        y_max: 15.0
+      v_max: 7.0
+      w_max: 1.0
+      num_rrt_samples: 200
+      mpc_horizon: 30
+      polygons:
+        _polygon_count: 3
+        polygon_0:
+          position: [0.0, 0.0, 2.5]
+          size: [2.0, 10.0, 5.0]
+        polygon_1:
+          position: [5.0, -6.0, 2.5]
+          size: [12.0, 2.0, 5.0]
+        polygon_2:
+          position: [-5.0, 6.0, 2.5]
+          size: [12.0, 2.0, 5.0]

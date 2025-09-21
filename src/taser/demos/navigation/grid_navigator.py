@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-from taser.common.datatypes import Pose, VelocityCommand
+from taser.common.datatypes import Pose, VelocityCommand, Workspace
 from taser.navigation import GridNavigator
 from taser.navigation.grid import OccupancyGrid
 
@@ -12,7 +12,7 @@ DT = 0.05
 V_MAX = 3.0
 W_MAX = 2
 
-WORKSPACE = (-5, 5, -5, 5)  # x_min, x_max, y_min, y_max
+WORKSPACE = Workspace(x_min=-5, x_max=5, y_min=-5, y_max=5)
 START = Pose(-4, -4, 3 * np.pi / 4)
 GOAL = Pose(4, 4, 0)
 
@@ -36,8 +36,8 @@ def plot_controller_step(
     ax.clear()
     ax.set_facecolor("white")
     ax.grid(color="lightgray")
-    ax.set_xlim(WORKSPACE[0], WORKSPACE[1])
-    ax.set_ylim(WORKSPACE[2], WORKSPACE[3])
+    ax.set_xlim(WORKSPACE.x_min, WORKSPACE.x_max)
+    ax.set_ylim(WORKSPACE.y_min, WORKSPACE.y_max)
     ax.set_aspect("equal", adjustable="box")
 
     # Plot inflated occupancy grid
@@ -48,7 +48,7 @@ def plot_controller_step(
         interpolation="none",
         vmin=0,
         vmax=1,
-        extent=WORKSPACE,
+        extent=WORKSPACE.tuple(),
     )
 
     # Plot start and goal poses and orientations
@@ -123,6 +123,7 @@ if __name__ == "__main__":
 
     robot = Pose(x=START.x, y=START.y, theta=START.theta)
     cmd = VelocityCommand(0.0, 0.0)
+    reached = False
 
     fig, plt_ax = plt.subplots(1, 1)
     traj_x, traj_y = [robot.x], [robot.y]
@@ -138,13 +139,10 @@ if __name__ == "__main__":
         )
         plt.pause(DT)
 
-        if (
-            math.dist((robot.x, robot.y, robot.theta), (GOAL.x, GOAL.y, GOAL.theta))
-            < 0.1
-        ):
+        if reached:
             break
 
-        cmd = navigator.step(robot, cmd.v)
+        cmd, reached = navigator.step(robot, cmd.v)
 
         robot.x += cmd.v * math.cos(robot.theta) * DT
         robot.y += cmd.v * math.sin(robot.theta) * DT

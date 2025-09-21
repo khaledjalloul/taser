@@ -1,13 +1,13 @@
 import numpy as np
 
-from taser.common.datatypes import Pose, VelocityCommand
+from taser.common.datatypes import Pose, VelocityCommand, Workspace
 from taser.navigation.grid import OccupancyGrid, PathPlanner, PurePursuitController
 
 
 class GridNavigator:
     def __init__(
         self,
-        workspace: tuple[float, float, float, float],
+        workspace: Workspace,
         occupancy_grid: OccupancyGrid | np.ndarray,
         v_max: float,
         w_max: float,
