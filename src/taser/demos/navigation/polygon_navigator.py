@@ -5,8 +5,8 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
+from taser.common.datatypes import Pose, VelocityCommand
 from taser.navigation import PolygonNavigator
-from taser.navigation.custom_types import Pose, VelocityCommand
 
 L = 0.3
 DT = 0.1

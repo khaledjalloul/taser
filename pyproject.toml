@@ -5,7 +5,15 @@ description = "A wheeled robot with two arms that detects targets in an environm
 readme = "README.md"
 authors = [{ "name" = "Khaled Jalloul", email = "khaled.jalloul@hotmail.com" }]
 
-dependencies = ["cvxpy", "matplotlib", "numpy"]
+dependencies = [
+    "cvxpy",
+    "matplotlib",
+    "numpy==1.26.0",
+    "open3d",
+    "pybind11",
+    "pyqt6",
+    "roboticstoolbox-python==1.1.1",
+]
 
 [build-system]
 requires = ["scikit-build-core"]
@@ -13,6 +21,7 @@ build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
 wheel.packages = ["src/taser"]
+cmake.source-dir = "src/taser_cpp"
 
 [tool.ruff]
 select = [

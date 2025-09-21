@@ -3,8 +3,8 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
+from taser.common.datatypes import Pose, VelocityCommand
 from taser.navigation import GridNavigator
-from taser.navigation.custom_types import Pose, VelocityCommand
 from taser.navigation.grid import OccupancyGrid
 
 L = 1

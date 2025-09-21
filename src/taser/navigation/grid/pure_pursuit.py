@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
-from taser.navigation.custom_types import Pose, Vec2, VelocityCommand
+from taser.common.datatypes import Pose, Vec2, VelocityCommand
 
 
 def wrap_angle(a: float) -> float:

@@ -1,7 +1,7 @@
 import numpy as np
 from roboticstoolbox import DistanceTransformPlanner
 
-from taser.navigation.custom_types import Pose
+from taser.common.datatypes import Pose
 from taser.navigation.grid.occupancy_grid import OccupancyGrid
 
 FILTER_THRESHOLD = 0.4

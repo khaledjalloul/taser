@@ -1,5 +1,0 @@
-# Request
-int8[] states
----
-# Response
-string data

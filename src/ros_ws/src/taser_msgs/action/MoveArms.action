@@ -1,8 +1,0 @@
-# Goal: Target ID or desired eef positions
-int32 target_id
-geometry_msgs/Vector3 left_arm
-geometry_msgs/Vector3 right_arm
----
-# Result
----
-# Feedback

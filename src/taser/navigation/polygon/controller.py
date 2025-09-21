@@ -2,6 +2,7 @@ import logging
 
 import cvxpy as cp
 import numpy as np
+
 from taser_cpp import BaseVelocity, Pose2D
 
 logging.basicConfig(level=logging.INFO)

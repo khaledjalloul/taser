@@ -1,0 +1,11 @@
+launch:
+  - include:
+      file: $(find-pkg-share taser_ros)/launch/rviz_control.launch.yaml
+
+  - node:
+      pkg: taser_ros
+      exec: sim
+      name: taser
+      output: screen
+      param:
+        - from: $(find-pkg-share taser_ros)/config/parameters.yaml

@@ -126,14 +126,6 @@ USER ${USERNAME:-root}
 # Unset python interactive startup script created by vscode
 RUN echo "unset PYTHONSTARTUP" >> ${HOME}/.bashrc
 
-# Install packages
-RUN /workspaces/isaacsim/python.sh -m pip install --no-input \
-    cvxpy \
-    open3d \
-    pybind11 \
-    pyqt6 \
-    roboticstoolbox-python
-
 ###############################################
 # Install Dependencies
 
