@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from taser.common.datatypes import Pose, VelocityCommand, Workspace
-from taser.navigation import GridNavigator
-from taser.navigation.grid import OccupancyGrid
+from taser.navigation import GridNavigator, OccupancyGrid
 
 L = 1
 DT = 0.05

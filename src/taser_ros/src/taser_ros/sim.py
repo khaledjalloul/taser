@@ -20,10 +20,11 @@ class RvizSim:
         params = load_sim_parameters(self.node)
 
         self._dt: float = params.general.dt
+        self._current_velocity: float = 0.0
         self._path_plan: list[Pose] = []
         self._polygons = params.navigation.polygons
 
-        self.navigator = PolygonNavigator(
+        self._navigator = PolygonNavigator(
             workspace=params.navigation.workspace,
             polygons=self._polygons,
             v_max=params.navigation.v_max,
@@ -54,16 +55,23 @@ class RvizSim:
 
         self.node.spawn_target_in_sim(target_pose)
 
-        self._path_plan = self.navigator.plan_path(pose, target_pose)
+        self._path_plan = self._navigator.plan_path(pose, target_pose)
 
     def step(self):
         vel_cmd = None
         pose = self.node.get_robot_pose_from_sim()
 
         if self._path_plan:
-            vel_cmd = self.navigator.step(pose)
+            vel_cmd, reached = self._navigator.step(pose, self._current_velocity)
+            self._current_velocity = vel_cmd.v
+            if reached:
+                self._path_plan = []
 
         if vel_cmd:
+            wheel_velocities = self.diff_drive_kinematics.step(vel_cmd)
+            msg = Float64MultiArray(data=wheel_velocities)
+            self.node._wheels_joint_velocity_pub.publish(msg)
+
             self.node.set_robot_pose_in_sim(
                 Pose(
                     pose.x + vel_cmd.v * math.cos(pose.theta) * self._dt,

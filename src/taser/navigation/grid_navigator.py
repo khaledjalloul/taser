@@ -1,7 +1,11 @@
 import numpy as np
 
 from taser.common.datatypes import Pose, VelocityCommand, Workspace
-from taser.navigation.grid import OccupancyGrid, PathPlanner, PurePursuitController
+from taser.navigation import (
+    DistanceTransformPathPlanner,
+    OccupancyGrid,
+    PurePursuitController,
+)
 
 
 class GridNavigator:
@@ -40,7 +44,7 @@ class GridNavigator:
         path = self._planner.plan(start, goal)
         self._controller.set_path(path, goal_yaw=goal.theta)
 
-        return [Pose(p[0], p[1], 0.0) for p in path]
+        return path
 
     def step(
         self, current_pose: Pose, v_current: float
@@ -62,7 +66,7 @@ class GridNavigator:
         else:
             self._occupancy_grid = occupancy_grid
 
-        self._planner = PathPlanner(
+        self._planner = DistanceTransformPathPlanner(
             occupancy_grid=self._occupancy_grid,
             wheel_base=self._wheel_base,
         )

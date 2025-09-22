@@ -120,7 +120,7 @@ if __name__ == "__main__":
         if math.dist((robot.x, robot.y), (GOAL.x, GOAL.y)) < 0.1:
             break
 
-        cmd = navigator.step(robot, None)
+        cmd, reached = navigator.step(robot, cmd.v)
 
         robot.x += cmd.v * math.cos(robot.theta) * DT
         robot.y += cmd.v * math.sin(robot.theta) * DT

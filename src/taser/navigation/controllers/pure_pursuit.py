@@ -43,13 +43,13 @@ class PurePursuitController:
         self.goal_yaw_tol = goal_yaw_tol
         self.turn_gain = turn_gain
 
-        self._path: List[Vec2] = []
+        self._path: List[Pose] = []
         self._cum_s: List[float] = [0.0]
         self._total_s: float = 0.0
         self._goal_yaw: Optional[float] = None
 
     # ---------- public API ----------
-    def set_path(self, pts: List[Vec2], goal_yaw: Optional[float] = None):
+    def set_path(self, pts: List[Pose], goal_yaw: Optional[float] = None):
         if len(pts) < 2:
             raise ValueError("Path must have at least 2 points.")
         self._path = pts
@@ -73,7 +73,7 @@ class PurePursuitController:
             return VelocityCommand(0.0, 0.0), True, {"reason": "no_path"}
 
         # Goal check (position)
-        gx, gy = self._path[-1]
+        gx, gy = self._path[-1].x, self._path[-1].y
         dxg, dyg = gx - pose.x, gy - pose.y
         dist_goal = math.hypot(dxg, dyg)
         if dist_goal <= self.goal_pos_tol:
@@ -156,25 +156,25 @@ class PurePursuitController:
     def _precompute_lengths(self):
         self._cum_s = [0.0]
         for i in range(len(self._path) - 1):
-            x1, y1 = self._path[i]
-            x2, y2 = self._path[i + 1]
+            x1, y1 = self._path[i].x, self._path[i].y
+            x2, y2 = self._path[i + 1].x, self._path[i + 1].y
             self._cum_s.append(self._cum_s[-1] + math.hypot(x2 - x1, y2 - y1))
         self._total_s = self._cum_s[-1]
 
     def _interpolate_at_s(self, s: float) -> Vec2:
         # s in [0, total]; find segment i with cum_s[i] <= s <= cum_s[i+1]
         if s <= 0.0:
-            return self._path[0]
+            return self._path[0].x, self._path[0].y
         if s >= self._total_s:
-            return self._path[-1]
+            return self._path[-1].x, self._path[-1].y
         # linear search is fine for modest paths; for long paths, binary search would be faster
         i = 0
         while i + 1 < len(self._cum_s) and self._cum_s[i + 1] < s:
             i += 1
         seg_len = self._cum_s[i + 1] - self._cum_s[i]
         t = 0.0 if seg_len < 1e-9 else (s - self._cum_s[i]) / seg_len
-        x1, y1 = self._path[i]
-        x2, y2 = self._path[i + 1]
+        x1, y1 = self._path[i].x, self._path[i].y
+        x2, y2 = self._path[i + 1].x, self._path[i + 1].y
         return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
 
     def _closest_s_on_path(self, p: Vec2) -> Tuple[float, Vec2]:
@@ -184,8 +184,8 @@ class PurePursuitController:
         best_s = 0.0
         best_pt = self._path[0]
         for i in range(len(self._path) - 1):
-            x1, y1 = self._path[i]
-            x2, y2 = self._path[i + 1]
+            x1, y1 = self._path[i].x, self._path[i].y
+            x2, y2 = self._path[i + 1].x, self._path[i + 1].y
             vx, vy = x2 - x1, y2 - y1
             seg2 = vx * vx + vy * vy
             if seg2 < 1e-12:

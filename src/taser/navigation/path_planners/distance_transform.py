@@ -2,12 +2,12 @@ import numpy as np
 from roboticstoolbox import DistanceTransformPlanner
 
 from taser.common.datatypes import Pose
-from taser.navigation.grid.occupancy_grid import OccupancyGrid
+from taser.navigation import OccupancyGrid
 
 FILTER_THRESHOLD = 0.4
 
 
-class PathPlanner:
+class DistanceTransformPathPlanner:
     """
     Path planner using distance transform method from roboticstoolbox.
     """
@@ -26,7 +26,7 @@ class PathPlanner:
             inflate=((wheel_base / occupancy_grid.cellsize) / 2) * 1.5,
         )
 
-    def plan(self, start: Pose, goal: Pose) -> list[tuple[float, float]]:
+    def plan(self, start: Pose, goal: Pose) -> list[Pose]:
         """
         Plan a path from start to goal.
         The resulting poses are downsampled and filtered to remove points that are too close to each other.
@@ -51,6 +51,7 @@ class PathPlanner:
             ):
                 filtered_path.append(pt)
         path_w = filtered_path[::-1]
+        path_w = [Pose(x=p[0], y=p[1], theta=0.0) for p in path_w]
 
         return path_w
 
