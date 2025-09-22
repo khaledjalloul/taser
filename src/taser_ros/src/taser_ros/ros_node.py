@@ -1,7 +1,7 @@
 import math
 
 import rclpy
-from geometry_msgs.msg import Pose2D, TransformStamped
+from geometry_msgs.msg import Pose2D, TransformStamped, Vector3
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
@@ -11,11 +11,16 @@ from std_msgs.msg import Float64MultiArray
 from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 from visualization_msgs.msg import Marker
 
-from taser.common.datatypes import Pose
+from taser.common.datatypes import Pose, TaserJointState
 
 
 class RosNode(Node):
-    def __init__(self, navigation_target_pose_cb: callable):
+    def __init__(
+        self,
+        navigation_target_pose_cb: callable,
+        left_arm_velocity_cb: callable,
+        right_arm_velocity_cb: callable,
+    ):
         super().__init__("sim", namespace="taser")
         self._joint_state = JointState()
 
@@ -39,6 +44,13 @@ class RosNode(Node):
 
         self._navigation_target_pose_sub = self.create_subscription(
             Pose2D, "/taser/navigation_target_pose", navigation_target_pose_cb, 10
+        )
+
+        self._left_arm_velocity_sub = self.create_subscription(
+            Vector3, "/taser/arm_1_target_velocity", left_arm_velocity_cb, 10
+        )
+        self._right_arm_velocity_sub = self.create_subscription(
+            Vector3, "/taser/arm_2_target_velocity", right_arm_velocity_cb, 10
         )
 
         # RViz markers for targets and obstacles
@@ -129,3 +141,13 @@ class RosNode(Node):
 
     def _joint_state_callback(self, msg: JointState):
         self._joint_state = msg
+
+    @property
+    def joint_positions(self) -> TaserJointState:
+        pos = self._joint_state.position if self._joint_state.position else [0.0] * 8
+        return TaserJointState.from_ros(pos)
+
+    @property
+    def joint_velocities(self) -> TaserJointState:
+        vel = self._joint_state.velocity if self._joint_state.velocity else [0.0] * 8
+        return TaserJointState.from_ros(vel)

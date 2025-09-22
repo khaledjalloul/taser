@@ -31,3 +31,24 @@ class VelocityCommand:
 
     def tuple(self) -> tuple[float, float]:
         return (self.v, self.w)
+
+
+@dataclass
+class TaserJointState:
+    ordered: list[float]
+    left_arm: list[float]
+    right_arm: list[float]
+    wheels: list[float]
+
+    @classmethod
+    def from_ros(cls, ros_state: list[float]) -> "TaserJointState":
+        left_arm = [ros_state[0], ros_state[4], ros_state[5]]
+        right_arm = [ros_state[1], ros_state[6], ros_state[7]]
+        wheels = ros_state[2:4]
+        ordered = [*left_arm, *right_arm, *wheels]
+        return TaserJointState(
+            ordered=ordered,
+            left_arm=left_arm,
+            right_arm=right_arm,
+            wheels=wheels,
+        )

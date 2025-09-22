@@ -405,10 +405,24 @@ class TaserGUI(QtWidgets.QMainWindow):
         )
 
     def _publish_arm1_vel(self, vx: float, vy: float):
-        self.arm1_pub.publish(Vector3(x=float(vx), y=float(vy), z=0.0))
+        ws = self.ws
+        fw = self.mid_canvas.width()
+        scale_x = (ws.x_max - ws.x_min) / (fw)  # m per pixel in x
+        vx = vx * scale_x
+        fh = self.mid_canvas.height()
+        scale_y = (ws.y_max - ws.y_min) / (fh)  # m per pixel in y
+        vy = vy * scale_y
+        self.arm1_pub.publish(Vector3(x=float(vx), y=0.0, z=float(vy)))
 
     def _publish_arm2_vel(self, vx: float, vy: float):
-        self.arm2_pub.publish(Vector3(x=float(vx), y=float(vy), z=0.0))
+        ws = self.ws
+        fw = self.right_canvas.width()
+        scale_x = (ws.x_max - ws.x_min) / (fw)  # m per pixel in x
+        vx = vx * scale_x
+        fh = self.right_canvas.height()
+        scale_y = (ws.y_max - ws.y_min) / (fh)  # m per pixel in y
+        vy = vy * scale_y
+        self.arm2_pub.publish(Vector3(x=float(vx), y=0.0, z=float(vy)))
 
     # --------- TF -> robot overlay ---------
     def _update_robot_overlay(self):

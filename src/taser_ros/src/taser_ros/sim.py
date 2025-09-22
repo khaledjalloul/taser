@@ -1,11 +1,13 @@
 import math
 
+import numpy as np
 import rclpy
-from geometry_msgs.msg import Pose2D
+from geometry_msgs.msg import Pose2D, Vector3
 from std_msgs.msg import Float64MultiArray
 
-from taser.common.datatypes import Pose
+from taser.common.datatypes import Pose, VelocityCommand
 from taser.locomotion.differential_drive import DifferentialDriveKinematics
+from taser.manipulation.ik import IKManipulator
 from taser.navigation import PolygonNavigator
 from taser_ros.parameters import load_sim_parameters
 from taser_ros.ros_node import RosNode
@@ -14,7 +16,9 @@ from taser_ros.ros_node import RosNode
 class RvizSim:
     def __init__(self):
         self.node = RosNode(
-            navigation_target_pose_cb=self.set_navigation_target,
+            navigation_target_pose_cb=self.navigation_target_pose_cb,
+            left_arm_velocity_cb=self.left_arm_velocity_cb,
+            right_arm_velocity_cb=self.right_arm_velocity_cb,
         )
 
         params = load_sim_parameters(self.node)
@@ -22,7 +26,11 @@ class RvizSim:
         self._dt: float = params.general.dt
         self._current_velocity: float = 0.0
         self._path_plan: list[Pose] = []
+        self._left_arm_desired_velocity: Vector3 = Vector3()
+        self._right_arm_desired_velocity: Vector3 = Vector3()
         self._polygons = params.navigation.polygons
+
+        self._manipulator = IKManipulator()
 
         self._navigator = PolygonNavigator(
             workspace=params.navigation.workspace,
@@ -49,7 +57,7 @@ class RvizSim:
     def __del__(self):
         self.node.destroy_node()
 
-    def set_navigation_target(self, target: Pose2D):
+    def navigation_target_pose_cb(self, target: Pose2D):
         pose = self.node.get_robot_pose_from_sim()
         target_pose = Pose(target.x, target.y, target.theta)
 
@@ -57,28 +65,70 @@ class RvizSim:
 
         self._path_plan = self._navigator.plan_path(pose, target_pose)
 
+    def left_arm_velocity_cb(self, v_desired: Vector3):
+        self._left_arm_desired_velocity = v_desired
+
+    def right_arm_velocity_cb(self, v_desired: Vector3):
+        self._right_arm_desired_velocity = v_desired
+
     def step(self):
-        vel_cmd = None
+        # Get wheel commands
         pose = self.node.get_robot_pose_from_sim()
+        base_vel_cmd = VelocityCommand(0.0, 0.0)
 
         if self._path_plan:
-            vel_cmd, reached = self._navigator.step(pose, self._current_velocity)
-            self._current_velocity = vel_cmd.v
+            base_vel_cmd, reached = self._navigator.step(pose, self._current_velocity)
+            self._current_velocity = base_vel_cmd.v
             if reached:
                 self._path_plan = []
 
-        if vel_cmd:
-            wheel_velocities = self.diff_drive_kinematics.step(vel_cmd)
-            msg = Float64MultiArray(data=wheel_velocities)
-            self.node._wheels_joint_velocity_pub.publish(msg)
+        wheel_velocities = self.diff_drive_kinematics.step(base_vel_cmd)
 
-            self.node.set_robot_pose_in_sim(
-                Pose(
-                    pose.x + vel_cmd.v * math.cos(pose.theta) * self._dt,
-                    pose.y + vel_cmd.v * math.sin(pose.theta) * self._dt,
-                    pose.theta + vel_cmd.w * self._dt,
-                )
+        # Get left arm joint commands
+        left_joint_velocities = self._manipulator.get_dq_from_linear_v(
+            v_desired=np.array(
+                [
+                    self._left_arm_desired_velocity.x,
+                    self._left_arm_desired_velocity.y,
+                    self._left_arm_desired_velocity.z,
+                ]
+            ),
+            q_current=self.node.joint_positions.ordered,
+            arm="left",
+        )
+
+        # Get right arm joint commands
+        right_joint_velocities = self._manipulator.get_dq_from_linear_v(
+            v_desired=np.array(
+                [
+                    self._right_arm_desired_velocity.x,
+                    self._right_arm_desired_velocity.y,
+                    self._right_arm_desired_velocity.z,
+                ]
+            ),
+            q_current=self.node.joint_positions.ordered,
+            arm="right",
+        )
+
+        # Publish all commands
+        self.node._wheels_joint_velocity_pub.publish(
+            Float64MultiArray(data=wheel_velocities)
+        )
+        self.node._left_arm_joint_velocity_pub.publish(
+            Float64MultiArray(data=left_joint_velocities)
+        )
+        self.node._right_arm_joint_velocity_pub.publish(
+            Float64MultiArray(data=right_joint_velocities)
+        )
+
+        # Update robot pose in simulation
+        self.node.set_robot_pose_in_sim(
+            Pose(
+                pose.x + base_vel_cmd.v * math.cos(pose.theta) * self._dt,
+                pose.y + base_vel_cmd.v * math.sin(pose.theta) * self._dt,
+                pose.theta + base_vel_cmd.w * self._dt,
             )
+        )
 
 
 def main(args=None):
