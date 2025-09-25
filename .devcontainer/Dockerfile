@@ -1,4 +1,7 @@
 ARG BASE_IMAGE=${BASE_IMAGE:-12.8.1-cudnn-runtime-ubuntu24.04}
+ARG ISAAC_SIM_VERSION=${ISAAC_SIM_VERSION:-5.0.0}
+
+FROM nvcr.io/nvidia/isaac-sim:${ISAAC_SIM_VERSION} AS isaac-sim
 
 FROM ${BASE_IMAGE}
 
@@ -10,6 +13,8 @@ ENV USERNAME=${USERNAME}
 
 ARG ROS_DISTRO=${ROS_DISTRO:-jazzy}
 ENV ROS_DISTRO=${ROS_DISTRO}
+
+ENV ISAAC_SIM_VERSION=${ISAAC_SIM_VERSION}
 
 # Set required environment variables and shell
 ENV PLATFORM=amd64
@@ -39,13 +44,14 @@ RUN if [ -n "$USERNAME" ]; then \
     fi; \
     fi
 
-# Install apt essentials
+# Install apt packages
 RUN apt update
 RUN apt install -y \
     # Essentials
     curl \
     nano \
     # Python
+    python3-pip \
     python3-venv \
     # Cmake
     build-essential \
@@ -102,7 +108,7 @@ RUN sudo mkdir /workspaces
 RUN if [ -n "$USERNAME" ]; then sudo chown -R ${USERNAME} /workspaces; fi
 
 # Copy Isaac Sim folder from its image because downloading and unzipping manually fails in docker due to large file size
-COPY --chown=${USERNAME:-root} --from=nvcr.io/nvidia/isaac-sim:5.0.0 /isaac-sim /workspaces/isaacsim
+COPY --chown=${USERNAME:-root} --from=isaac-sim /isaac-sim /workspaces/isaacsim
 
 # Create aliases for python and pip to use those of Isaac Sim
 RUN printf ' \
@@ -121,8 +127,11 @@ RUN /workspaces/isaaclab/isaaclab.sh --install
 ###############################################
 # Python Environment
 
-# Upgrade pip
+# Upgrade omni_python pip
 RUN sudo /workspaces/isaacsim/python.sh -m pip install --root-user-action=ignore --upgrade pip
+
+# Upgrade install dependencies
+RUN python3 -m pip install -U pip setuptools wheel build packaging scikit-build-core pyproject-metadata
 
 USER ${USERNAME:-root}
 
@@ -171,25 +180,15 @@ USER ${USERNAME:-root}
 ENV WORKSPACE=/workspaces/taser
 WORKDIR ${WORKSPACE}
 
-COPY --chown=${USERNAME:-root} . ${WORKSPACE}
-
-# Create a virtual environment for the ROS workspace
-RUN python3 -m venv /workspaces/colcon_venv
-RUN /workspaces/colcon_venv/bin/python -m pip install -U pip setuptools wheel
-RUN /workspaces/colcon_venv/bin/python -m pip install colcon-common-extensions vcstool rosdep
-RUN echo "alias colcon_venv='/workspaces/colcon_venv/bin/colcon'" >> ${HOME}/.bashrc
-
-# Build project, first for the Isaac Sim python environment, then for the ROS workspace
-RUN /workspaces/isaacsim/python.sh -m pip install --verbose -e .
-RUN /workspaces/colcon_venv/bin/python -m pip install --verbose -e .
+# Install project dependencies
+COPY --chown=${USERNAME:-root} ./pyproject.toml ${WORKSPACE}
+COPY --chown=${USERNAME:-root} ./src/taser_cpp ${WORKSPACE}/src/taser_cpp
+RUN mkdir -p ${WORKSPACE}/src/taser
+RUN python3 -m pip install --verbose -e .
 
 # Update environment variables for the Python bindings
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/workspaces/isaacsim/kit/python/lib/python3.11/site-packages/lib:/workspaces/colcon_venv/lib/python3.12/site-packages/lib
-ENV CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/workspaces/isaacsim/kit/python/lib/python3.11/site-packages
-
-# Install additional dependencies
-RUN rosdep update
-RUN source /opt/ros/${ROS_DISTRO}/setup.bash && rosdep install --from-paths src/taser_ros --ignore-src -ry 
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages/lib
+ENV CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages
 
 # RUN git clone https://github.com/isaac-sim/IsaacSim-ros_workspaces.git /workspaces/IsaacSim-ros_workspaces
 # RUN cd /workspaces/IsaacSim-ros_workspaces/${ROS_DISTRO}_ws && . /opt/ros/${ROS_DISTRO}/setup.bash && rosdep install --from-paths src --ignore-src -ry 

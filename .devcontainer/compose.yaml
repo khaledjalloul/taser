@@ -6,8 +6,9 @@ services:
       dockerfile: .devcontainer/Dockerfile
       args:
         USERNAME: ${USERNAME} # Set as empty string to use root
-        BASE_IMAGE: nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
-        ROS_DISTRO: jazzy # Ubuntu 24.04 -> jazzy, Ubuntu 22.04 -> humble
+        BASE_IMAGE: nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+        ROS_DISTRO: humble # Ubuntu 24.04 -> jazzy, Ubuntu 22.04 -> humble
+        ISAAC_SIM_VERSION: 4.5.0
     container_name: taser
     hostname: taser
     environment:

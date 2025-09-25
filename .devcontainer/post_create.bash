@@ -13,7 +13,7 @@ echo 'source ${WORKSPACE}/.env.local' >> ~/.bashrc
 
 # Build the project
 source /opt/ros/${ROS_DISTRO}/setup.sh \
-&& /workspaces/colcon_venv/bin/colcon build \
+&& colcon build \
 && echo "source ${WORKSPACE}/install/local_setup.bash" >> ${HOME}/.bashrc
 
 # Launch the simulation and state machine

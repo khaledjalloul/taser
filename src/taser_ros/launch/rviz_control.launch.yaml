@@ -10,6 +10,8 @@ launch:
       exec: ros2_control_node
       output: screen
       param:
+        - name: robot_description
+          value: $(command 'xacro $(find-pkg-share taser_ros)/robot_description/urdf/xacro/robot.urdf.xacro')
         - from: $(find-pkg-share taser_ros)/config/controller_manager.yaml
 
   - node:
