@@ -10,14 +10,14 @@
             <visual>
                 <origin xyz="0.0 0.0 0.0" rpy="1.575 0.0 0.0"/>
                 <geometry>
-                    <cylinder length="0.25" radius="0.5"/>
+                    <cylinder length="0.1" radius="0.15"/>
                 </geometry>
                 <material name="pink"/>
             </visual>
             <collision>
                 <origin xyz="0.0 0.0 0.0" rpy="1.575 0.0 0.0"/>
                 <geometry>
-                    <cylinder length="0.25" radius="0.5"/>
+                    <cylinder length="0.1" radius="0.15"/>
                 </geometry>
             </collision>
         </link>

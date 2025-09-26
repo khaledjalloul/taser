@@ -14,30 +14,25 @@
             <visual>
                 <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.8 2 3.5" />
+                    <box size="0.2 0.5 1" />
                 </geometry>
                 <material name="blue" />
             </visual>
             <collision>
                 <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.8 2 3.5" />
+                    <box size="0.2 0.5 1" />
                 </geometry>
             </collision>
         </link>
 
 
         <joint name="base_wrapper_base_joint" type="fixed">
-            <origin xyz="0.0 0.0 2.25" rpy="0.0 0.0 0" />
+            <origin xyz="0.0 0.0 0.65" rpy="0.0 0.0 0" />
             <parent link="base_wrapper" />
             <child link="base" />
         </joint>
 
-        <!-- <joint name="odom_base_wrapper_joint" type="fixed">
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0" />
-            <parent link="map" />
-            <child link="base_wrapper" />
-        </joint> -->
     </xacro:macro>
 
 </robot>

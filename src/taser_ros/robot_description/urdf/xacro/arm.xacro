@@ -11,16 +11,16 @@
     <xacro:macro name="arm" params="name y_offset">
         <link name="${name}_arm_1">
             <visual>
-                <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.15" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.5 0.25 1" />
+                    <box size="0.2 0.1 0.3" />
                 </geometry>
                 <material name="light-blue" />
             </visual>
             <collision>
-                <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.15" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.5 0.25 1" />
+                    <box size="0.2 0.1 0.3" />
                 </geometry>
             </collision>
         </link>
@@ -28,22 +28,22 @@
         <joint name="base_${name}_arm_1_joint" type="continuous">
             <parent link="base" />
             <child link="${name}_arm_1" />
-            <origin xyz="0.0 ${y_offset} 1.5" rpy="0.0 0.0 0.0" />
+            <origin xyz="0.0 ${y_offset} 0.5" rpy="0.0 0.0 0.0" />
             <axis xyz="0 1 0" />
         </joint>
 
         <link name="${name}_arm_2">
             <visual>
-                <origin xyz="0.0 0.0 -0.25" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.25 0.25 0.5" />
+                    <box size="0.1 0.1 0.2" />
                 </geometry>
                 <material name="white" />
             </visual>
             <collision>
-                <origin xyz="0.0 0.0 -0.25" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.25 0.25 0.5" />
+                    <box size="0.1 0.1 0.2" />
                 </geometry>
             </collision>
         </link>
@@ -51,22 +51,22 @@
         <joint name="${name}_arm_1_${name}_arm_2_joint" type="continuous">
             <parent link="${name}_arm_1" />
             <child link="${name}_arm_2" />
-            <origin xyz="0.0 0 -1" rpy="0.0 0.0 0.0" />
+            <origin xyz="0.0 0 -0.3" rpy="0.0 0.0 0.0" />
             <axis xyz="0 0 1" />
         </joint>
 
         <link name="${name}_arm_3">
             <visual>
-                <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.15" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.25 0.25 1" />
+                    <box size="0.1 0.1 0.3" />
                 </geometry>
                 <material name="light-blue" />
             </visual>
             <collision>
-                <origin xyz="0.0 0.0 -0.5" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.15" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.25 0.25 1" />
+                    <box size="0.1 0.1 0.3" />
                 </geometry>
             </collision>
         </link>
@@ -74,7 +74,7 @@
         <joint name="${name}_arm_2_${name}_arm_3_joint" type="continuous">
             <parent link="${name}_arm_2" />
             <child link="${name}_arm_3" />
-            <origin xyz="0.0 0 -0.5" rpy="0.0 0.0 0.0" />
+            <origin xyz="0.0 0 -0.2" rpy="0.0 0.0 0.0" />
             <axis xyz="0 1 0" />
         </joint>
 
@@ -84,7 +84,7 @@
         <joint name="${name}_arm_3_${name}_arm_eef_joint" type="fixed">
             <parent link="${name}_arm_3" />
             <child link="${name}_arm_eef" />
-            <origin xyz="0.0 0 -1" rpy="0.0 0.0 0.0" />
+            <origin xyz="0.0 0 -0.3" rpy="0.0 0.0 0.0" />
         </joint>
 
     </xacro:macro>

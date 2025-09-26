@@ -97,14 +97,6 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        map:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        odom:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         right_arm_1:
           Alpha: 1
           Show Axes: false
@@ -146,7 +138,7 @@ Visualization Manager:
       Enabled: true
       Name: Obstacles
       Namespaces:
-        taser: true
+        taser_polygons: true
       Topic:
         Depth: 5
         Durability Policy: Transient Local
@@ -214,25 +206,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 38.64851379394531
+      Distance: 14.064261436462402
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.237609624862671
-        Y: -1.3106478452682495
-        Z: -0.5621093511581421
+        X: -0.47112128138542175
+        Y: -1.197776198387146
+        Z: -0.8533201813697815
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8703978657722473
+      Pitch: 0.7703979015350342
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.280397653579712
+      Yaw: 1.2653976678848267
     Saved: ~
 Window Geometry:
   Displays:
