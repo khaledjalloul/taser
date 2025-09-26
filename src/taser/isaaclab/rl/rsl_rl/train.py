@@ -33,9 +33,11 @@ parser.add_argument(
     help="Interval between video recordings (in steps).",
 )
 parser.add_argument(
-    "--num_envs", type=int, default=None, help="Number of environments to simulate."
+    "--num_envs", type=int, default=512, help="Number of environments to simulate."
 )
-parser.add_argument("--task", type=str, default=None, help="Name of the task.")
+parser.add_argument(
+    "--task", type=str, default="track_velocity", help="Name of the task."
+)
 parser.add_argument(
     "--agent",
     type=str,
@@ -144,6 +146,8 @@ torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 torch.backends.cudnn.deterministic = False
 torch.backends.cudnn.benchmark = False
+
+args_cli.task = f"TASER-{args_cli.task}"
 
 
 @hydra_task_config(args_cli.task, args_cli.agent)

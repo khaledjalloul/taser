@@ -101,7 +101,11 @@ from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 from rsl_rl.runners import DistillationRunner, OnPolicyRunner
 
+import taser.isaaclab  # noqa: F401
+
 # PLACEHOLDER: Extension template (do not remove this comment)
+
+args_cli.task = f"TASER-{args_cli.task}"
 
 
 @hydra_task_config(args_cli.task, args_cli.agent)

@@ -7,7 +7,12 @@ from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets.articulation import ArticulationCfg
 from isaaclab.sim.converters import UrdfConverterCfg
 
-URDF_PATH = Path("src/ros_ws/src/taser_ros") / "urdf" / "robot.urdf"
+URDF_PATH = (
+    Path(get_package_share_directory("taser_ros"))
+    / "robot_description"
+    / "urdf"
+    / "robot.urdf"
+)
 
 TASER_CONFIG = ArticulationCfg(
     spawn=sim_utils.UrdfFileCfg(
