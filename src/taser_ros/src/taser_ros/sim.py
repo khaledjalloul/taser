@@ -2,10 +2,11 @@ import math
 
 import numpy as np
 import rclpy
-from geometry_msgs.msg import Pose2D, Vector3
+from geometry_msgs.msg import Pose2D as Pose2DRos
+from geometry_msgs.msg import Vector3
 from std_msgs.msg import Float64MultiArray
 
-from taser.common.datatypes import Pose, VelocityCommand
+from taser.common.datatypes import Pose2D, VelocityCommand
 from taser.locomotion.differential_drive import DifferentialDriveKinematics
 from taser.manipulation.ik import IKManipulator
 from taser.navigation import PolygonNavigator
@@ -25,7 +26,7 @@ class RvizSim:
 
         self._dt: float = params.general.dt
         self._current_velocity: float = 0.0
-        self._path_plan: list[Pose] = []
+        self._path_plan: list[Pose2D] = []
         self._left_arm_desired_velocity: Vector3 = Vector3()
         self._right_arm_desired_velocity: Vector3 = Vector3()
         self._polygons = params.navigation.polygons
@@ -57,9 +58,9 @@ class RvizSim:
     def __del__(self):
         self.node.destroy_node()
 
-    def navigation_target_pose_cb(self, target: Pose2D):
+    def navigation_target_pose_cb(self, target: Pose2DRos):
         pose = self.node.get_robot_pose_from_sim()
-        target_pose = Pose(target.x, target.y, target.theta)
+        target_pose = Pose2D(target.x, target.y, target.theta)
 
         self.node.spawn_target_in_sim(target_pose)
 
@@ -123,7 +124,7 @@ class RvizSim:
 
         # Update robot pose in simulation
         self.node.set_robot_pose_in_sim(
-            Pose(
+            Pose2D(
                 pose.x + base_vel_cmd.v * math.cos(pose.theta) * self._dt,
                 pose.y + base_vel_cmd.v * math.sin(pose.theta) * self._dt,
                 pose.theta + base_vel_cmd.w * self._dt,

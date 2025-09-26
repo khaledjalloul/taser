@@ -1,7 +1,8 @@
 import math
 
 import rclpy
-from geometry_msgs.msg import Pose2D, TransformStamped, Vector3
+from geometry_msgs.msg import Pose2D as Pose2DRos
+from geometry_msgs.msg import TransformStamped, Vector3
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
@@ -11,7 +12,7 @@ from std_msgs.msg import Float64MultiArray
 from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 from visualization_msgs.msg import Marker
 
-from taser.common.datatypes import Pose, TaserJointState
+from taser.common.datatypes import Pose2D, TaserJointState
 
 
 class RosNode(Node):
@@ -43,7 +44,7 @@ class RosNode(Node):
         )
 
         self._navigation_target_pose_sub = self.create_subscription(
-            Pose2D, "/taser/navigation_target_pose", navigation_target_pose_cb, 10
+            Pose2DRos, "/taser/navigation_target_pose", navigation_target_pose_cb, 10
         )
 
         self._left_arm_velocity_sub = self.create_subscription(
@@ -60,7 +61,7 @@ class RosNode(Node):
         self._targets_pub = self.create_publisher(Marker, "/targets", qos)
         self._obstacles_pub = self.create_publisher(Marker, "/obstacles", qos)
 
-    def set_robot_pose_in_sim(self, pose: Pose) -> None:
+    def set_robot_pose_in_sim(self, pose: Pose2D) -> None:
         tf_stamped = TransformStamped()
         tf_stamped.header.stamp = self.get_clock().now().to_msg()
         tf_stamped.header.frame_id = "map"
@@ -71,14 +72,14 @@ class RosNode(Node):
         tf_stamped.transform.rotation.z = math.sin(pose.theta / 2.0)
         self._tf_broadcaster.sendTransform(tf_stamped)
 
-    def get_robot_pose_from_sim(self) -> Pose:
+    def get_robot_pose_from_sim(self) -> Pose2D:
         tf = self._buffer.lookup_transform(
             target_frame="map",
             source_frame="base_wrapper",
             time=Time(),
         )
 
-        return Pose(
+        return Pose2D(
             tf.transform.translation.x,
             tf.transform.translation.y,
             2.0 * math.atan2(tf.transform.rotation.z, tf.transform.rotation.w),
@@ -118,7 +119,7 @@ class RosNode(Node):
 
             self._obstacles_pub.publish(marker)
 
-    def spawn_target_in_sim(self, pose: Pose) -> None:
+    def spawn_target_in_sim(self, pose: Pose2D) -> None:
         marker = Marker()
         marker.header.frame_id = "map"
         marker.header.stamp = self.get_clock().now().to_msg()
@@ -130,7 +131,7 @@ class RosNode(Node):
         marker.pose.position.y = pose.y
         marker.pose.position.z = 0.0
         marker.pose.orientation.w = 1.0
-        marker.scale.x = marker.scale.y = marker.scale.z = 1.0
+        marker.scale.x = marker.scale.y = marker.scale.z = 0.3
         marker.color.r = 0.0
         marker.color.g = 1.0
         marker.color.b = 0.0

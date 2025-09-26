@@ -180,6 +180,11 @@ USER ${USERNAME:-root}
 ENV WORKSPACE=/workspaces/taser
 WORKDIR ${WORKSPACE}
 
+# Remove OS conflicting dependencies
+RUN sudo apt remove -y \
+    python3-blinker \
+    python3-matplotlib
+
 # Install project dependencies
 COPY --chown=${USERNAME:-root} ./pyproject.toml ${WORKSPACE}
 COPY --chown=${USERNAME:-root} ./src/taser_cpp ${WORKSPACE}/src/taser_cpp
@@ -187,7 +192,8 @@ RUN mkdir -p ${WORKSPACE}/src/taser
 RUN python3 -m pip install --verbose -e .
 
 # Update environment variables for the Python bindings
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages/lib
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages/lib:/usr/local/lib/python3.10/dist-packages/lib
+ENV PYTHONPATH=${PYTHONPATH}:/workspaces/taser/src:/usr/local/lib/python3.10/dist-packages
 ENV CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages
 
 # RUN git clone https://github.com/isaac-sim/IsaacSim-ros_workspaces.git /workspaces/IsaacSim-ros_workspaces

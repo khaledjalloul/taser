@@ -5,7 +5,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-from taser.common.datatypes import Pose, VelocityCommand, Workspace
+from taser.common.datatypes import Pose2D, VelocityCommand, Workspace
 from taser.navigation import PolygonNavigator
 
 L = 0.3
@@ -16,14 +16,14 @@ NUM_RRT_SAMPLES = 120
 MPC_HORIZON = 10
 
 WORKSPACE = Workspace(x_min=0, x_max=7, y_min=0, y_max=7)
-START = Pose(1, 1, 0)
-GOAL = Pose(6, 6, 0)
+START = Pose2D(1, 1, 0)
+GOAL = Pose2D(6, 6, 0)
 
 
 def plot_controller_step(
     ax: plt.Axes,
-    robot: Pose,
-    path: list[Pose],  # Path to follow
+    robot: Pose2D,
+    path: list[Pose2D],  # Path to follow
     trajectory: tuple[list[float], list[float]],  # Actual trajectory of the robot
     polygons: np.ndarray,
     inflated_polygons: np.ndarray,
@@ -84,8 +84,8 @@ def plot_controller_step(
 
 if __name__ == "__main__":
     polygons = [
-        [Pose(1, 3), Pose(1, 5), Pose(4, 5), Pose(4, 3), Pose(3, 2.5)],
-        [Pose(5, 2), Pose(5, 4), Pose(6, 4), Pose(6, 2)],
+        [Pose2D(1, 3), Pose2D(1, 5), Pose2D(4, 5), Pose2D(4, 3), Pose2D(3, 2.5)],
+        [Pose2D(5, 2), Pose2D(5, 4), Pose2D(6, 4), Pose2D(6, 2)],
     ]
 
     navigator = PolygonNavigator(
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     )
     path = navigator.plan_path(START, GOAL)
 
-    robot = Pose(x=START.x, y=START.y, theta=START.theta)
+    robot = Pose2D(x=START.x, y=START.y, theta=START.theta)
     cmd = VelocityCommand(0.0, 0.0)
 
     fig, plt_ax = plt.subplots(1, 1)

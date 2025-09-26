@@ -1,7 +1,6 @@
 # type: ignore
 import matplotlib.pyplot as plt
 import numpy as np
-from taser_cpp import Pose2D
 from taser_cpp.navigation import (
     Dimensions,
     PathPlanner,
@@ -10,6 +9,7 @@ from taser_cpp.navigation import (
 )
 
 from taser.demos.navigation.dubins import plot_dubins_segment
+from taser_cpp import Pose2D
 
 if __name__ == "__main__":
     RRT_NUM_SAMPLES = 120

@@ -1,6 +1,6 @@
 import numpy as np
 
-from taser.common.datatypes import Pose, VelocityCommand, Workspace
+from taser.common.datatypes import Pose2D, VelocityCommand, Workspace
 from taser.navigation import (
     DistanceTransformPathPlanner,
     OccupancyGrid,
@@ -17,12 +17,11 @@ class GridNavigator:
         w_max: float,
         wheel_base: float,
     ):
-        self._workspace = workspace
-        self._v_max = v_max
-        self._w_max = w_max
-        self._wheel_base = wheel_base
-
-        self._set_occupancy_grid(occupancy_grid)
+        self._planner = DistanceTransformPathPlanner(
+            occupancy_grid=occupancy_grid,
+            wheel_base=wheel_base,
+            workspace=workspace,
+        )
 
         self._controller = PurePursuitController(
             lookahead_base=0.25,
@@ -34,12 +33,12 @@ class GridNavigator:
 
     def plan_path(
         self,
-        start: Pose,
-        goal: Pose,
+        start: Pose2D,
+        goal: Pose2D,
         occupancy_grid: OccupancyGrid | np.ndarray = None,
-    ) -> list[Pose]:
+    ) -> list[Pose2D]:
         if occupancy_grid is not None:
-            self._set_occupancy_grid(occupancy_grid)
+            self._planner.set_occupancy_grid(occupancy_grid)
 
         path = self._planner.plan(start, goal)
         self._controller.set_path(path, goal_yaw=goal.theta)
@@ -47,7 +46,7 @@ class GridNavigator:
         return path
 
     def step(
-        self, current_pose: Pose, v_current: float
+        self, current_pose: Pose2D, v_current: float
     ) -> tuple[VelocityCommand, bool]:
         cmd, reached, info = self._controller.step(current_pose, v_current)
         return cmd, reached
@@ -55,18 +54,3 @@ class GridNavigator:
     @property
     def inflated_occupancy_grid(self) -> OccupancyGrid:
         return self._planner.inflated_occupancy_grid
-
-    def _set_occupancy_grid(self, occupancy_grid: OccupancyGrid | np.ndarray):
-        if isinstance(occupancy_grid, np.ndarray):
-            self._occupancy_grid = OccupancyGrid(
-                workspace=self._workspace,
-                cellsize=0.1,
-                grid=occupancy_grid,
-            )
-        else:
-            self._occupancy_grid = occupancy_grid
-
-        self._planner = DistanceTransformPathPlanner(
-            occupancy_grid=self._occupancy_grid,
-            wheel_base=self._wheel_base,
-        )

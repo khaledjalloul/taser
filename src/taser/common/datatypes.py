@@ -15,7 +15,7 @@ class Workspace:
 
 
 @dataclass
-class Pose:
+class Pose2D:
     x: float
     y: float
     theta: float = 0.0  # yaw (rad)

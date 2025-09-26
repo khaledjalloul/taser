@@ -33,6 +33,10 @@ typeCheckingMode = "off"
 reportUnusedImport = false # Already handled by ruff
 
 extraPaths = [
+    # System site-packages
+    "/usr/local/lib/python3.10/dist-packages",
+    # ROS Package
+    "/workspaces/taser/src/taser_ros/src",
     # Isaac Sim & Lab
     "/workspaces/isaaclab/_isaac_sim/exts/isaacsim.app.about",
     "/workspaces/isaaclab/_isaac_sim/exts/isaacsim.app.selector",

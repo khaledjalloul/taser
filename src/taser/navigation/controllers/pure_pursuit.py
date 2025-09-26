@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
-from taser.common.datatypes import Pose, Vec2, VelocityCommand
+from taser.common.datatypes import Pose2D, Vec2, VelocityCommand
 
 
 def wrap_angle(a: float) -> float:
@@ -43,13 +43,13 @@ class PurePursuitController:
         self.goal_yaw_tol = goal_yaw_tol
         self.turn_gain = turn_gain
 
-        self._path: List[Pose] = []
+        self._path: List[Pose2D] = []
         self._cum_s: List[float] = [0.0]
         self._total_s: float = 0.0
         self._goal_yaw: Optional[float] = None
 
     # ---------- public API ----------
-    def set_path(self, pts: List[Pose], goal_yaw: Optional[float] = None):
+    def set_path(self, pts: List[Pose2D], goal_yaw: Optional[float] = None):
         if len(pts) < 2:
             raise ValueError("Path must have at least 2 points.")
         self._path = pts
@@ -58,7 +58,7 @@ class PurePursuitController:
 
     def step(
         self,
-        pose: Pose,
+        pose: Pose2D,
         v_current: float = 0.0,
         obstacle_distance_ahead: Optional[float] = None,
         safety_radius: float = 0.25,
@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
     pp.set_path(path, goal_yaw=None)
 
-    pose = Pose(x=0.0, y=-0.2, theta=math.radians(15))
+    pose = Pose2D(x=0.0, y=-0.2, theta=math.radians(15))
     v_curr = 0.0
     traj_x, traj_y = [pose.x], [pose.y]
 

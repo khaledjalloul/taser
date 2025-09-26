@@ -4,7 +4,7 @@ from typing import Any
 from rcl_interfaces.msg import ParameterValue
 from rclpy.node import Node
 
-from taser.common.datatypes import Pose, Workspace
+from taser.common.datatypes import Pose2D, Workspace
 
 
 @dataclass
@@ -12,7 +12,7 @@ class TaserSimParameters:
     @dataclass
     class General:
         dt: float
-        initial_pose: Pose
+        initial_pose: Pose2D
 
     @dataclass
     class Locomotion:
@@ -31,7 +31,7 @@ class TaserSimParameters:
         num_rrt_samples: int
         mpc_horizon: int
         polygons_sim: list[dict]
-        polygons: list[list[Pose]]
+        polygons: list[list[Pose2D]]
 
     general: General
     locomotion: Locomotion
@@ -54,7 +54,7 @@ def load_sim_parameters(node: Node) -> TaserSimParameters:
     params = TaserSimParameters(
         general=TaserSimParameters.General(
             dt=load_parameter(node, "dt", 0.0).double_value,
-            initial_pose=Pose(
+            initial_pose=Pose2D(
                 load_parameter(node, "initial_pose.x", 0.0).double_value,
                 load_parameter(node, "initial_pose.y", 0.0).double_value,
                 load_parameter(node, "initial_pose.theta", 0.0).double_value,
@@ -112,7 +112,7 @@ def load_sim_parameters(node: Node) -> TaserSimParameters:
         back_left = position[0] - size[0] / 2, position[1] - size[1] / 2
         back_right = position[0] - size[0] / 2, position[1] + size[1] / 2
         polygon_corners = (back_left, back_right, front_right, front_left)
-        polygon = [Pose(*p) for p in polygon_corners]
+        polygon = [Pose2D(*p) for p in polygon_corners]
 
         params.navigation.polygons_sim.append({"position": position, "size": size})
         params.navigation.polygons.append(polygon)

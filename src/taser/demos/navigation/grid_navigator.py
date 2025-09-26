@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-from taser.common.datatypes import Pose, VelocityCommand, Workspace
+from taser.common.datatypes import Pose2D, VelocityCommand, Workspace
 from taser.navigation import GridNavigator, OccupancyGrid
 
 L = 1
@@ -12,8 +12,8 @@ V_MAX = 3.0
 W_MAX = 2
 
 WORKSPACE = Workspace(x_min=-5, x_max=5, y_min=-5, y_max=5)
-START = Pose(-4, -4, 3 * np.pi / 4)
-GOAL = Pose(4, 4, 0)
+START = Pose2D(-4, -4, 3 * np.pi / 4)
+GOAL = Pose2D(4, 4, 0)
 
 
 def set_up_occupancy_grid() -> OccupancyGrid:
@@ -26,8 +26,8 @@ def set_up_occupancy_grid() -> OccupancyGrid:
 
 def plot_controller_step(
     ax: plt.Axes,
-    robot: Pose,
-    path: list[Pose],  # Path to follow
+    robot: Pose2D,
+    path: list[Pose2D],  # Path to follow
     trajectory: tuple[list[float], list[float]],  # Actual trajectory of the robot
     occupancy_grid: np.ndarray,
     inflated_occupancy_grid: np.ndarray,
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     )
     path = navigator.plan_path(START, GOAL)
 
-    robot = Pose(x=START.x, y=START.y, theta=START.theta)
+    robot = Pose2D(x=START.x, y=START.y, theta=START.theta)
     cmd = VelocityCommand(0.0, 0.0)
     reached = False
 
