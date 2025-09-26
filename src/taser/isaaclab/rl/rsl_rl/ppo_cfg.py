@@ -18,6 +18,10 @@ class TaserPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     max_iterations = 10000
     save_interval = 50
     experiment_name = "taser"
+    obs_groups = {
+        "policy": ["proprio", "policy"],
+        "critic": ["proprio", "policy"],
+    }
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
         actor_obs_normalization=False,

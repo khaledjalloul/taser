@@ -37,7 +37,7 @@ class ActionsCfg:
             "base_wheel_1_joint",  # left wheel
             "base_wheel_2_joint",  # right wheel
         ],
-        scale=1.0,
+        scale=10.0,
     )
 
 
@@ -60,7 +60,7 @@ class SceneCfg(InteractiveSceneCfg):
 
 
 @configclass
-class BaseTaserEnvCfg(ManagerBasedRLEnvCfg):
+class TaserBaseEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the TASER robot environment."""
 
     scene = SceneCfg(num_envs=1, env_spacing=3)
@@ -74,5 +74,5 @@ class BaseTaserEnvCfg(ManagerBasedRLEnvCfg):
         # viewer settings
         self.viewer.eye = (8.0, 0.0, 5.0)
         # simulation settings
-        self.sim.dt = 0.01
+        self.sim.dt = 0.05
         self.sim.render_interval = 5
