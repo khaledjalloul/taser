@@ -1,8 +1,7 @@
 from pathlib import Path
 
-from ament_index_python.packages import get_package_share_directory
-
 import isaaclab.sim as sim_utils
+from ament_index_python.packages import get_package_share_directory
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets.articulation import ArticulationCfg
 from isaaclab.sim.converters import UrdfConverterCfg

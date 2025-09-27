@@ -12,10 +12,18 @@ class PPOTrainer:
         self.env = env
         self.cfg = cfg
 
+        # @property
+        # def obs_dim(self):
+        #     return self.observation_space["policy"].shape[1]
+
+        # @property
+        # def act_dim(self):
+        #     return self.action_space.shape[1]
+        obs_dim = sum([o.shape[1] for o in env.unwrapped.observation_space.values()])
+        act_dim = env.unwrapped.action_space.shape[1]
+
         # Initialize policy network
-        self.policy = ActorCritic(env.unwrapped.obs_dim, env.unwrapped.act_dim).to(
-            cfg.device
-        )
+        self.policy = ActorCritic(obs_dim, act_dim).to(cfg.device)
         self.policy.train()
 
         self.optimizer = torch.optim.Adam(
@@ -86,7 +94,8 @@ class PPOTrainer:
         }
 
     def rollout(self):
-        obs = self.env.reset()
+        obs_dict, _ = self.env.reset()
+        obs = torch.cat([v for v in obs_dict.values()], dim=-1)
 
         obs_buf: list[torch.Tensor] = []
         act_buf: list[torch.Tensor] = []
@@ -100,7 +109,8 @@ class PPOTrainer:
             action_dist, value = self.policy(obs, update_norm=True)
             action = action_dist.sample()
 
-            next_obs, reward, terminated, truncated, _ = self.env.step(action)
+            next_obs_dict, reward, terminated, truncated, _ = self.env.step(action)
+            next_obs = torch.cat([v for v in next_obs_dict.values()], dim=-1)
             done = torch.logical_or(terminated, truncated)
 
             obs_buf.append(obs)

@@ -13,7 +13,6 @@ parser.add_argument(
     default=200,
     help="Number of iterations (rollout + training).",
 )
-parser.add_argument("--output_path", type=str, help="Directory to save checkpoints.")
 parser.add_argument("--resume", type=str, help="Path to checkpoint to resume from.")
 
 ############################################################
@@ -22,6 +21,7 @@ from isaaclab.app import AppLauncher
 
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
+args.task = f"TASER-{args.task}"
 
 app_launcher = AppLauncher(args)
 simulation_app = app_launcher.app
@@ -44,11 +44,7 @@ def train(env: gym.Env):
     # Set up output path
     run_name = f"PPO_{args.task}_{datetime.now().strftime('%m%d%H%M%S')}"
 
-    if args.output_path is None:
-        output_path = Path.home() / "colcon_ws" / "outputs" / run_name
-    else:
-        output_path = Path(args.output_path)
-
+    output_path = Path.cwd() / "outputs" / run_name
     progress_path = output_path / "progress"
     progress_path.mkdir(parents=True, exist_ok=True)
 
@@ -99,13 +95,15 @@ def train(env: gym.Env):
         # Evaluation
         if update % trainer_cfg.eval_freq == 0:
             eval_rewards = torch.zeros(args.num_envs, device=env.unwrapped.device)
-            obs = env.reset()
+            obs_dict, _ = env.reset()
+            obs = torch.cat([v for v in obs_dict.values()], dim=-1)
 
             with torch.no_grad():
                 for _ in range(trainer_cfg.num_eval_steps):
                     dist, _ = trainer.policy(obs)
                     action = dist.mean  # Use mean action for evaluation
-                    obs, reward, _, _, _ = env.step(action)
+                    obs_dict, reward, _, _, _ = env.step(action)
+                    obs = torch.cat([v for v in obs_dict.values()], dim=-1)
                     eval_rewards += reward
 
             eval_reward = eval_rewards.mean()
@@ -133,12 +131,11 @@ def train(env: gym.Env):
 
 
 if __name__ == "__main__":
-    full_task_name = f"Isaac-TASER-{args.task}-v0"
     env_cfg = parse_env_cfg(
-        full_task_name,
+        task_name=args.task,
         num_envs=args.num_envs,
     )
-    env = gym.make(full_task_name, cfg=env_cfg)
+    env = gym.make(args.task, cfg=env_cfg)
 
     train(env)
 
