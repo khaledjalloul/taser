@@ -10,10 +10,10 @@
 
     <xacro:base />
 
-    <xacro:arm name="left" y_offset="0.3" />
-    <xacro:arm name="right" y_offset="-0.3" />
+    <xacro:arm side="left" offset_sign="+" />
+    <xacro:arm side="right" offset_sign="-" />
 
-    <xacro:wheel index="1" parent_link="base" y_offset="0.3" z_offset="-0.5" />
-    <xacro:wheel index="2" parent_link="base" y_offset="-0.3" z_offset="-0.5" />
+    <xacro:wheel side="left" offset_sign="+" />
+    <xacro:wheel side="right" offset_sign="-" />
 
 </robot>
