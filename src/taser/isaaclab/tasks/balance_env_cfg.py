@@ -2,7 +2,6 @@ import math
 
 import numpy as np
 import torch
-
 from isaaclab.envs import ManagerBasedEnv, mdp
 from isaaclab.managers import (
     EventTermCfg,
@@ -13,6 +12,7 @@ from isaaclab.managers import (
     TerminationTermCfg,
 )
 from isaaclab.utils import configclass
+
 from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg
 from taser.isaaclab.common.obs_utils import base_pos_b, base_quat_w, base_vel_w
 
@@ -28,14 +28,14 @@ class EventsCfg:
             "asset_cfg": SceneEntityCfg(
                 "robot",
                 joint_names=[
-                    "base_left_arm_1_joint",
+                    "base_left_arm_shoulder_joint",
                     "left_arm_1_left_arm_2_joint",
                     "left_arm_2_left_arm_3_joint",
-                    "base_right_arm_1_joint",
+                    "base_right_arm_shoulder_joint",
                     "right_arm_1_right_arm_2_joint",
                     "right_arm_2_right_arm_3_joint",
-                    "base_wheel_1_joint",
-                    "base_wheel_2_joint",
+                    "base_left_wheel_joint",
+                    "base_right_wheel_joint",
                 ],
             ),
             "position_range": (0.0, 0.0),

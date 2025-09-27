@@ -11,33 +11,33 @@ from taser.isaaclab.common.articulation import TASER_CONFIG
 class ActionsCfg:
     """Action specifications for the environment."""
 
-    left_arm_efforts = mdp.JointVelocityActionCfg(
+    left_arm_efforts = mdp.JointEffortActionCfg(
         asset_name="robot",
         joint_names=[
-            "base_left_arm_1_joint",
+            "base_left_arm_shoulder_joint",
             "left_arm_1_left_arm_2_joint",
             "left_arm_2_left_arm_3_joint",
         ],
-        scale=10.0,
+        scale=1.0,
     )
 
-    right_arm_efforts = mdp.JointVelocityActionCfg(
+    right_arm_efforts = mdp.JointEffortActionCfg(
         asset_name="robot",
         joint_names=[
-            "base_right_arm_1_joint",
+            "base_right_arm_shoulder_joint",
             "right_arm_1_right_arm_2_joint",
             "right_arm_2_right_arm_3_joint",
         ],
-        scale=10.0,
+        scale=1.0,
     )
 
-    wheel_efforts = mdp.JointVelocityActionCfg(
+    wheel_efforts = mdp.JointEffortActionCfg(
         asset_name="robot",
         joint_names=[
-            "base_wheel_1_joint",  # left wheel
-            "base_wheel_2_joint",  # right wheel
+            "base_left_wheel_joint",
+            "base_right_wheel_joint",
         ],
-        scale=10.0,
+        scale=100.0,
     )
 
 

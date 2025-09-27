@@ -37,6 +37,7 @@ import torch
 from isaaclab_tasks.utils import parse_env_cfg
 from tqdm import tqdm
 
+import taser.isaaclab.tasks  # noqa: F401 # register tasks
 from taser.isaaclab.rl.custom import PPOTrainer, PPOTrainerCfg, WandbLogger
 
 
@@ -85,12 +86,20 @@ def train(env: gym.Env):
     )
     best_reward = float("-inf")
 
-    for update in tqdm(range(num_updates)):
+    for update in tqdm(
+        range(num_updates), desc="Training", dynamic_ncols=True, leave=True
+    ):
         # Training update
         train_info = trainer.train_step()
 
         # Log training metrics
         logger.log_training_step(train_info, update)
+
+        # Update tqdm with wandb stats (e.g., reward, loss)
+        tqdm.write(
+            f"Update {update}: "
+            + ", ".join(f"{k}={v:.4f}" for k, v in train_info.items())
+        )
 
         # Evaluation
         if update % trainer_cfg.eval_freq == 0:
@@ -116,6 +125,11 @@ def train(env: gym.Env):
 
             # Log evaluation metrics
             logger.log_evaluation(eval_reward.item(), best_reward, update)
+
+            # Update tqdm with evaluation stats
+            tqdm.write(
+                f"Eval {update}: eval_reward={eval_reward.item():.4f}, best_reward={best_reward:.4f}"
+            )
 
         # Regular checkpointing
         if update % trainer_cfg.save_freq == 0 and update != 0:
