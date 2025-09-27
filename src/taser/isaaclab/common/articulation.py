@@ -19,7 +19,7 @@ TASER_CONFIG = ArticulationCfg(
         asset_path=str(URDF_PATH.resolve()),
         fix_base=False,
         merge_fixed_joints=False,
-        self_collision=True,
+        self_collision=False,
         root_link_name="base_wrapper",
         joint_drive=UrdfConverterCfg.JointDriveCfg(
             gains=UrdfConverterCfg.JointDriveCfg.PDGainsCfg(stiffness=0.1)

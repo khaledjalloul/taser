@@ -11,33 +11,33 @@ from taser.isaaclab.common.articulation import TASER_CONFIG
 class ActionsCfg:
     """Action specifications for the environment."""
 
-    left_arm_efforts = mdp.JointEffortActionCfg(
+    left_arm_efforts = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=[
             "base_left_arm_1_joint",
             "left_arm_1_left_arm_2_joint",
             "left_arm_2_left_arm_3_joint",
         ],
-        scale=1.0,
+        scale=0.1,
     )
 
-    right_arm_efforts = mdp.JointEffortActionCfg(
+    right_arm_efforts = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=[
             "base_right_arm_1_joint",
             "right_arm_1_right_arm_2_joint",
             "right_arm_2_right_arm_3_joint",
         ],
-        scale=1.0,
+        scale=0.1,
     )
 
-    wheel_efforts = mdp.JointEffortActionCfg(
+    wheel_efforts = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=[
             "base_wheel_1_joint",  # left wheel
             "base_wheel_2_joint",  # right wheel
         ],
-        scale=10.0,
+        scale=0.1,
     )
 
 
@@ -74,5 +74,5 @@ class TaserBaseEnvCfg(ManagerBasedRLEnvCfg):
         # viewer settings
         self.viewer.eye = (8.0, 0.0, 5.0)
         # simulation settings
-        self.sim.dt = 0.05
+        self.sim.dt = 0.01
         self.sim.render_interval = 5
