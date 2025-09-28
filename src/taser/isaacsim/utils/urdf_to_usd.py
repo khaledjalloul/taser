@@ -45,8 +45,8 @@ def main():
 
     # Update the joint drive parameters for better stiffness and damping
     for joint in robot_model.joints:
-        robot_model.joints[joint].drive.strength = 0.1
-        robot_model.joints[joint].drive.damping = 0.1
+        robot_model.joints[joint].drive.strength = 0.0
+        robot_model.joints[joint].drive.damping = 1e12 if "wheel" in joint else 1e8
 
     # Import the robot onto the current stage and retrieve its prim path
     result, _ = omni.kit.commands.execute(

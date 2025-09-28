@@ -28,7 +28,7 @@ TASER_CONFIG_URDF = ArticulationCfg(
         self_collision=True,
         root_link_name="base_wrapper",
         joint_drive=UrdfConverterCfg.JointDriveCfg(
-            gains=UrdfConverterCfg.JointDriveCfg.PDGainsCfg(stiffness=0.1)
+            gains=UrdfConverterCfg.JointDriveCfg.PDGainsCfg(stiffness=0)
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
@@ -51,8 +51,8 @@ TASER_CONFIG_URDF = ArticulationCfg(
                 "left_arm_1_left_arm_2_joint",
                 "left_arm_2_left_arm_3_joint",
             ],
-            stiffness=0.1,
-            damping=0.1,
+            stiffness=None,
+            damping=None,
         ),
         "right_arm_joints": ImplicitActuatorCfg(
             joint_names_expr=[
@@ -60,13 +60,13 @@ TASER_CONFIG_URDF = ArticulationCfg(
                 "right_arm_1_right_arm_2_joint",
                 "right_arm_2_right_arm_3_joint",
             ],
-            stiffness=0.1,
-            damping=0.1,
+            stiffness=None,
+            damping=None,
         ),
         "wheel_joints": ImplicitActuatorCfg(
             joint_names_expr=["base_left_wheel_joint", "base_right_wheel_joint"],
-            stiffness=0.1,
-            damping=0.1,
+            stiffness=None,
+            damping=None,
         ),
     },
 )

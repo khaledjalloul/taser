@@ -18,7 +18,6 @@ class ActionsCfg:
             "left_arm_1_left_arm_2_joint",
             "left_arm_2_left_arm_3_joint",
         ],
-        scale=500.0,
     )
 
     right_arm_efforts = mdp.JointVelocityActionCfg(
@@ -28,7 +27,6 @@ class ActionsCfg:
             "right_arm_1_right_arm_2_joint",
             "right_arm_2_right_arm_3_joint",
         ],
-        scale=500.0,
     )
 
     wheel_efforts = mdp.JointVelocityActionCfg(
@@ -37,7 +35,6 @@ class ActionsCfg:
             "base_left_wheel_joint",
             "base_right_wheel_joint",
         ],
-        scale=5000.0,
     )
 
 
