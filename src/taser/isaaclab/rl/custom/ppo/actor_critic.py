@@ -65,8 +65,10 @@ class ActorCritic(nn.Module):
         self.log_std = nn.Parameter(torch.ones(act_dim) * -0.5)
 
     def forward(
-        self, obs: torch.Tensor, update_norm: bool = False
+        self, obs_dict: dict[str, torch.Tensor], update_norm: bool = False
     ) -> tuple[Normal, torch.Tensor]:
+        obs = torch.cat([v for v in obs_dict.values()], dim=-1)
+
         if update_norm:
             self.obs_norm.update(obs)
         obs_norm = self.obs_norm.normalize(obs)

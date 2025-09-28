@@ -12,10 +12,11 @@ class PPOTrainer:
         self.env = env
         self.cfg = cfg
 
+        obs_dim = sum([o.shape[1] for o in env.unwrapped.observation_space.values()])
+        act_dim = env.unwrapped.action_space.shape[1]
+
         # Initialize policy network
-        self.policy = ActorCritic(env.unwrapped.obs_dim, env.unwrapped.act_dim).to(
-            cfg.device
-        )
+        self.policy = ActorCritic(obs_dim, act_dim).to(cfg.device)
         self.policy.train()
 
         self.optimizer = torch.optim.Adam(
@@ -25,7 +26,7 @@ class PPOTrainer:
     def train_step(self):
         # Rollout
         with torch.no_grad():
-            obs, act, adv, ret, mu_old, std_old = self.rollout()
+            obs_dict, act, adv, ret, mu_old, std_old = self.rollout()
 
             # Create old distribution
             old_action_dist = torch.distributions.Normal(mu_old, std_old)
@@ -40,7 +41,7 @@ class PPOTrainer:
 
         # PPO update
         for _ in range(self.cfg.num_epochs):
-            action_dist, value = self.policy(obs)
+            action_dist, value = self.policy(obs_dict)
             log_prob = action_dist.log_prob(act).sum(-1)
             entropy = action_dist.entropy().mean()
 
@@ -86,9 +87,9 @@ class PPOTrainer:
         }
 
     def rollout(self):
-        obs = self.env.reset()
+        obs_dict, _ = self.env.reset()
 
-        obs_buf: list[torch.Tensor] = []
+        obs_dict_buf: list[dict[str, torch.Tensor]] = []
         act_buf: list[torch.Tensor] = []
         rew_buf: list[torch.Tensor] = []
         val_buf: list[torch.Tensor] = []
@@ -97,13 +98,21 @@ class PPOTrainer:
         std_buf: list[torch.Tensor] = []
 
         for _ in range(self.cfg.num_rollout_steps):
-            action_dist, value = self.policy(obs, update_norm=True)
+            action_dist, value = self.policy(obs_dict, update_norm=True)
             action = action_dist.sample()
 
-            next_obs, reward, terminated, truncated, _ = self.env.step(action)
+            next_obs_dict, reward, terminated, truncated, _ = self.env.step(action)
             done = torch.logical_or(terminated, truncated)
 
-            obs_buf.append(obs)
+            obs_dict = {k: torch.nan_to_num(v, nan=0.0) for k, v in obs_dict.items()}
+            action = torch.nan_to_num(action, nan=0.0)
+            reward = torch.nan_to_num(reward, nan=0.0)
+            done = torch.nan_to_num(done, nan=0.0)
+            next_obs_dict = {
+                k: torch.nan_to_num(v, nan=0.0) for k, v in next_obs_dict.items()
+            }
+
+            obs_dict_buf.append(obs_dict)
             act_buf.append(action)
             rew_buf.append(reward)
             val_buf.append(value)
@@ -111,13 +120,15 @@ class PPOTrainer:
             mu_buf.append(action_dist.loc)
             std_buf.append(action_dist.scale)
 
-            obs = next_obs
+            obs_dict = next_obs_dict
 
         # Compute final value for bootstrapping
-        _, final_val = self.policy(obs, update_norm=True)
+        _, final_val = self.policy(obs_dict, update_norm=True)
         val_buf.append(final_val)
 
-        obs_buf = torch.stack(obs_buf)  # (T, N, obs_dim)
+        obs_dict_buf = {
+            k: torch.stack([d[k] for d in obs_dict_buf]) for k in obs_dict_buf[0]
+        }  # (T, N, obs_dim)
         act_buf = torch.stack(act_buf)  # (T, N, act_dim)
         rew_buf = torch.stack(rew_buf)  # (T, N)
         val_buf = torch.stack(val_buf)  # (T+1, N)
@@ -129,14 +140,16 @@ class PPOTrainer:
         adv_buf, ret_buf = self.compute_gae(rew_buf, val_buf, done_buf)
 
         # Flatten buffers
-        obs_flat = obs_buf.reshape(-1, obs_buf.shape[-1])
+        obs_dict_flat = {
+            k: v.reshape(-1, v.shape[-1]) for k, v in obs_dict_buf.items()
+        }  # (T*N, obs_dim)
         act_flat = act_buf.reshape(-1, act_buf.shape[-1])
         adv_flat = (adv_buf.reshape(-1) - adv_buf.mean()) / (adv_buf.std() + 1e-8)
         ret_flat = ret_buf.reshape(-1)
         mu_old_flat = mu_buf.reshape(-1, mu_buf.shape[-1])
         std_old_flat = std_buf.reshape(-1, std_buf.shape[-1])
 
-        return obs_flat, act_flat, adv_flat, ret_flat, mu_old_flat, std_old_flat
+        return obs_dict_flat, act_flat, adv_flat, ret_flat, mu_old_flat, std_old_flat
 
     def compute_gae(
         self, rewards: torch.Tensor, values: torch.Tensor, dones: torch.Tensor

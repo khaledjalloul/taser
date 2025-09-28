@@ -13,7 +13,7 @@ import sys
 from isaaclab.app import AppLauncher
 
 # local imports
-import cli_args  # isort: skip
+from taser.isaaclab.rl.rsl_rl.cli_args import add_rsl_rl_args, update_rsl_rl_cfg
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
@@ -63,7 +63,7 @@ parser.add_argument(
     help="Export IO descriptors.",
 )
 # append RSL-RL cli arguments
-cli_args.add_rsl_rl_args(parser)
+add_rsl_rl_args(parser)
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
@@ -138,7 +138,7 @@ from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 from rsl_rl.runners import DistillationRunner, OnPolicyRunner
 
-import taser.isaaclab  # noqa: F401
+import taser.isaaclab.tasks  # noqa: F401 # register tasks
 
 # PLACEHOLDER: Extension template (do not remove this comment)
 
@@ -157,7 +157,7 @@ def main(
 ):
     """Train with RSL-RL agent."""
     # override configurations with non-hydra CLI arguments
-    agent_cfg = cli_args.update_rsl_rl_cfg(agent_cfg, args_cli)
+    agent_cfg = update_rsl_rl_cfg(agent_cfg, args_cli)
     env_cfg.scene.num_envs = (
         args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
     )

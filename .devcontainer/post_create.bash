@@ -19,6 +19,8 @@ source /opt/ros/${ROS_DISTRO}/setup.sh \
 # Launch the simulation and state machine
 echo "alias sim_ros='ros2 launch taser_ros sim.launch.yaml'" >> ~/.bashrc
 
-# Run the Isaac Lab training script
-echo "alias train='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/rsl_rl/train.py'" >> ~/.bashrc
-echo "alias play='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/rsl_rl/play.py'" >> ~/.bashrc
+# Alias the Isaac Lab training script
+echo "alias train='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/custom/train.py'" >> ~/.bashrc
+echo "alias play='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/custom/play.py'" >> ~/.bashrc
+echo "alias train_rsl='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/rsl_rl/train.py'" >> ~/.bashrc
+echo "alias play_rsl='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/rsl_rl/play.py'" >> ~/.bashrc

@@ -2,7 +2,6 @@ import math
 
 import numpy as np
 import torch
-
 from isaaclab.envs import mdp
 from isaaclab.managers import (
     EventTermCfg,
@@ -13,7 +12,8 @@ from isaaclab.managers import (
     TerminationTermCfg,
 )
 from isaaclab.utils import configclass
-from taser.isaaclab.common.base_env_cfg import BaseTaserEnvCfg
+
+from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg
 from taser.isaaclab.common.obs_utils import base_quat_w, base_vel_w
 
 
@@ -91,19 +91,6 @@ class ObservationsCfg:
     """Observation specifications for the environment."""
 
     @configclass
-    class PolicyCfg(ObservationGroupCfg):
-        """Observations for policy group."""
-
-        # Current planar velocity
-        base_lin_vel = ObservationTermCfg(func=mdp.base_lin_vel)
-        base_ang_vel = ObservationTermCfg(func=mdp.base_ang_vel)
-
-        # Target planar velocity
-        target_vel_b = ObservationTermCfg(
-            func=mdp.generated_commands, params={"command_name": "base_velocity"}
-        )
-
-    @configclass
     class ProprioCfg(ObservationGroupCfg):
         """Proprioceptive observations."""
 
@@ -117,9 +104,22 @@ class ObservationsCfg:
         joint_pos = ObservationTermCfg(func=mdp.joint_pos)
         joint_vel = ObservationTermCfg(func=mdp.joint_vel)
 
-    # observation groups
-    policy: PolicyCfg = PolicyCfg()
+    @configclass
+    class PolicyCfg(ObservationGroupCfg):
+        """Observations for policy group."""
+
+        # Current planar velocity
+        base_lin_vel = ObservationTermCfg(func=mdp.base_lin_vel)
+        base_ang_vel = ObservationTermCfg(func=mdp.base_ang_vel)
+
+        # Target planar velocity
+        target_vel_b = ObservationTermCfg(
+            func=mdp.generated_commands, params={"command_name": "base_velocity"}
+        )
+
+    # Observation groups
     proprio: ProprioCfg = ProprioCfg()
+    policy: PolicyCfg = PolicyCfg()
 
 
 @configclass
@@ -186,7 +186,7 @@ class TerminationsCfg:
 
 
 @configclass
-class TaserEnvCfg(BaseTaserEnvCfg):
+class TaserTrackVelocityEnvCfg(TaserBaseEnvCfg):
     """TASER environment configuration for the track velocity task."""
 
     commands = CommandsCfg()

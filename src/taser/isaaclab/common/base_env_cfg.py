@@ -60,7 +60,7 @@ class SceneCfg(InteractiveSceneCfg):
 
 
 @configclass
-class BaseTaserEnvCfg(ManagerBasedRLEnvCfg):
+class TaserBaseEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the TASER robot environment."""
 
     scene = SceneCfg(num_envs=1, env_spacing=3)

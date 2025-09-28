@@ -2,7 +2,6 @@ import math
 
 import numpy as np
 import torch
-
 from isaaclab.envs import ManagerBasedEnv, mdp
 from isaaclab.managers import (
     EventTermCfg,
@@ -13,7 +12,8 @@ from isaaclab.managers import (
     TerminationTermCfg,
 )
 from isaaclab.utils import configclass
-from taser.isaaclab.common.base_env_cfg import BaseTaserEnvCfg
+
+from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg
 from taser.isaaclab.common.obs_utils import base_pos_b, base_quat_w, base_vel_w
 
 
@@ -55,7 +55,9 @@ class EventsCfg:
                 "roll": (0.0, 0.0),
                 # Randomized starting pitch to help explore scenarios where the robot is about to fall
                 "pitch": (-0.3, 0.3),
+                # "pitch": (0.0, 0.0),
                 "yaw": (-math.pi, math.pi),
+                # "yaw": (0.0, 0.0),
             },
             "velocity_range": {
                 "x": (0.0, 0.0),
@@ -74,13 +76,6 @@ class ObservationsCfg:
     """Observation specifications for the environment."""
 
     @configclass
-    class PolicyCfg(ObservationGroupCfg):
-        """Observations for policy group."""
-
-        # Base position in environment frame to stay close to the origin
-        base_pos_b = ObservationTermCfg(func=base_pos_b)
-
-    @configclass
     class ProprioCfg(ObservationGroupCfg):
         """Proprioceptive observations."""
 
@@ -96,9 +91,16 @@ class ObservationsCfg:
         # and leads to better performance
         base_vel_w = ObservationTermCfg(func=base_vel_w)
 
-    # observation groups
-    policy: PolicyCfg = PolicyCfg()
+    @configclass
+    class PolicyCfg(ObservationGroupCfg):
+        """Observations for policy group."""
+
+        # Base position in environment frame to stay close to the origin
+        base_pos_b = ObservationTermCfg(func=base_pos_b)
+
+    # Observation groups
     proprio: ProprioCfg = ProprioCfg()
+    policy: PolicyCfg = PolicyCfg()
 
 
 def position_reward(env: ManagerBasedEnv, std: float = 1.0):
@@ -146,7 +148,7 @@ class TerminationsCfg:
 
 
 @configclass
-class TaserEnvCfg(BaseTaserEnvCfg):
+class TaserBalanceEnvCfg(TaserBaseEnvCfg):
     """TASER environment configuration for the balance task."""
 
     events = EventsCfg()
