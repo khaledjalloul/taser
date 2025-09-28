@@ -9,7 +9,7 @@ class IKManipulator:
     def __init__(self):
         taser_ros_share_dir = get_package_share_directory("taser_ros")
         urdf_path = (
-            Path(taser_ros_share_dir) / "robot_description" / "urdf" / "robot.urdf"
+            Path(taser_ros_share_dir) / "robot_description" / "urdf" / "taser.urdf"
         )
 
         self._right_arm = Robot.URDF(

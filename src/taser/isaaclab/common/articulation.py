@@ -10,7 +10,7 @@ URDF_PATH = (
     Path(get_package_share_directory("taser_ros"))
     / "robot_description"
     / "urdf"
-    / "robot.urdf"
+    / "taser.urdf"
 )
 
 TASER_CONFIG = ArticulationCfg(

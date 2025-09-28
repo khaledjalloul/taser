@@ -16,11 +16,15 @@ source /opt/ros/${ROS_DISTRO}/setup.sh \
 && colcon build \
 && echo "source ${WORKSPACE}/install/local_setup.bash" >> ${HOME}/.bashrc
 
-# Launch the simulation and state machine
+# Simulation aliases
 echo "alias sim_ros='ros2 launch taser_ros sim.launch.yaml'" >> ~/.bashrc
+echo "alias sim_isaac='omni_python ${WORKSPACE}/src/taser/isaacsim/sim.py'" >> ~/.bashrc
 
-# Alias the Isaac Lab training script
+# Isaac Lab aliases
 echo "alias train='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/custom/train.py'" >> ~/.bashrc
 echo "alias play='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/custom/play.py'" >> ~/.bashrc
 echo "alias train_rsl='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/rsl_rl/train.py'" >> ~/.bashrc
 echo "alias play_rsl='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/rsl_rl/play.py'" >> ~/.bashrc
+
+# Other aliases
+echo "alias update_urdf='xacro ${WORKSPACE}/src/taser_ros/robot_description/urdf/xacro/robot.urdf.xacro -o ${WORKSPACE}/src/taser_ros/robot_description/urdf/taser.urdf'" >> ~/.bashrc

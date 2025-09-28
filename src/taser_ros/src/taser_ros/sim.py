@@ -7,8 +7,8 @@ from geometry_msgs.msg import Vector3
 from std_msgs.msg import Float64MultiArray
 
 from taser.common.datatypes import Pose2D, VelocityCommand
-from taser.locomotion.differential_drive import DifferentialDriveKinematics
-from taser.manipulation.ik import IKManipulator
+from taser.locomotion import DifferentialDriveKinematics
+from taser.manipulation import IKManipulator
 from taser.navigation import PolygonNavigator
 from taser_ros.parameters import load_sim_parameters
 from taser_ros.ros_node import RosNode

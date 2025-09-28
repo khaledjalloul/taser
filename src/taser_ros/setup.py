@@ -1,9 +1,19 @@
+from pathlib import Path
+
 from setuptools import find_packages, setup
-import glob
 
 package_name = "taser_ros"
 
-robot_description_files = glob.glob("robot_description/**/*", recursive=True)
+
+def get_install_files(folder_name: str) -> list[tuple[str, list[str]]]:
+    share_folder = f"share/{package_name}/"
+    out = {}
+    for file in Path(folder_name).rglob("*"):
+        if file.is_file():
+            out.setdefault(f"{share_folder}{file.parent}", [])
+            out[f"{share_folder}{file.parent}"].append(str(file))
+    return list(out.items())
+
 
 setup(
     name=package_name,
@@ -13,36 +23,9 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
-        (
-            "share/" + package_name + "/config",
-            [
-                "config/config.rviz",
-                "config/sim_parameters.yaml",
-                "config/controller_manager.yaml",
-            ],
-        ),
-        (
-            "share/" + package_name + "/launch",
-            [
-                "launch/sim.launch.yaml",
-                "launch/rviz_control.launch.yaml",
-                "launch/rviz.launch.yaml",
-            ],
-        ),
-        (
-            "share/" + package_name + "/robot_description/urdf",
-            ["robot_description/urdf/robot.urdf"],
-        ),
-        (
-            "share/" + package_name + "/robot_description/urdf/xacro",
-            [
-                "robot_description/urdf/xacro/arm.xacro",
-                "robot_description/urdf/xacro/base.xacro",
-                "robot_description/urdf/xacro/wheel.xacro",
-                "robot_description/urdf/xacro/ros2_control.xacro",
-                "robot_description/urdf/xacro/robot.urdf.xacro",
-            ],
-        ),
+        *get_install_files("config"),
+        *get_install_files("launch"),
+        *get_install_files("robot_description"),
     ],
     install_requires=["setuptools"],
     zip_safe=True,

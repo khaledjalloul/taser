@@ -2,7 +2,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Arc
-from taser_cpp import Pose2D
 from taser_cpp.navigation import (
     Circle,
     Direction,
@@ -11,6 +10,8 @@ from taser_cpp.navigation import (
     get_tangent,
     get_turning_circles,
 )
+
+from taser_cpp import Pose2D
 
 
 def plot_dubins_segment(
