@@ -4,40 +4,40 @@ from isaaclab.envs import ManagerBasedRLEnvCfg, mdp
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.utils import configclass
 
-from taser.isaaclab.common.articulation import TASER_CONFIG
+from taser.isaaclab.common.articulation import TASER_CONFIG_USD
 
 
 @configclass
 class ActionsCfg:
     """Action specifications for the environment."""
 
-    left_arm_efforts = mdp.JointEffortActionCfg(
+    left_arm_efforts = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=[
             "base_left_arm_shoulder_joint",
             "left_arm_1_left_arm_2_joint",
             "left_arm_2_left_arm_3_joint",
         ],
-        scale=1.0,
+        scale=500.0,
     )
 
-    right_arm_efforts = mdp.JointEffortActionCfg(
+    right_arm_efforts = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=[
             "base_right_arm_shoulder_joint",
             "right_arm_1_right_arm_2_joint",
             "right_arm_2_right_arm_3_joint",
         ],
-        scale=1.0,
+        scale=500.0,
     )
 
-    wheel_efforts = mdp.JointEffortActionCfg(
+    wheel_efforts = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=[
             "base_left_wheel_joint",
             "base_right_wheel_joint",
         ],
-        scale=1.0,
+        scale=5000.0,
     )
 
 
@@ -56,7 +56,7 @@ class SceneCfg(InteractiveSceneCfg):
     )
 
     # Robot
-    robot = TASER_CONFIG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    robot = TASER_CONFIG_USD.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
 
 @configclass

@@ -13,7 +13,14 @@ URDF_PATH = (
     / "taser.urdf"
 )
 
-TASER_CONFIG = ArticulationCfg(
+USD_PATH = (
+    Path(get_package_share_directory("taser_ros"))
+    / "robot_description"
+    / "usd"
+    / "taser.usd"
+)
+
+TASER_CONFIG_URDF = ArticulationCfg(
     spawn=sim_utils.UrdfFileCfg(
         asset_path=str(URDF_PATH.resolve()),
         fix_base=False,
@@ -62,4 +69,10 @@ TASER_CONFIG = ArticulationCfg(
             damping=0.1,
         ),
     },
+)
+
+TASER_CONFIG_USD = TASER_CONFIG_URDF.replace(
+    spawn=sim_utils.UsdFileCfg(
+        usd_path=str(USD_PATH.resolve()),
+    ),
 )

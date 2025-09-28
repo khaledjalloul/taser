@@ -26,7 +26,7 @@ def main():
         orientation=(1.0, 0.0, 0.0, 0.0),
     )
 
-    world = World(stage_units_in_meters=1.0)
+    world = World(stage_units_in_meters=1.0, physics_dt=0.01)
     set_up_scene(world=world, robot=robot)
 
     world.reset()

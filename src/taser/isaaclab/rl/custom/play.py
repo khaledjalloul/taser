@@ -11,11 +11,21 @@ parser.add_argument(
 
 ############################################################
 
+from pathlib import Path
+
 from isaaclab.app import AppLauncher
 
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 args.task = f"TASER-{args.task}"
+
+if not args.model_path:
+    outputs_dir = Path("/workspaces/taser/outputs")
+    subdirs = sorted(
+        [outputs_dir / d for d in outputs_dir.glob(f"*{args.task}*") if d.is_dir()]
+    )
+    args.model_path = subdirs[-1] / "best_model.pth"
+    print(f"No model path provided. Using the latest model at {args.model_path}")
 
 app_launcher = AppLauncher(args)
 simulation_app = app_launcher.app

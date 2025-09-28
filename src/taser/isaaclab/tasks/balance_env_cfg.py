@@ -103,16 +103,18 @@ class ObservationsCfg:
     policy: PolicyCfg = PolicyCfg()
 
 
-def position_reward(env: ManagerBasedEnv, std: float = 1.0):
+def origin_position_reward(env: ManagerBasedEnv, std: float = 1.0):
     """Get the distances from the robot's position to the environment's origin."""
     return torch.exp(
         -(torch.linalg.vector_norm(base_pos_b(env)[:, :2], dim=-1) ** 2) / (2 * std**2)
     )
 
 
-def spinning_velocity(env: ManagerBasedEnv):
-    """Get the spinning velocity (z-axis) of the robot."""
-    return torch.clamp(torch.abs(base_vel_w(env)[:, 5]), max=0.5)
+def zero_velocity_reward(env: ManagerBasedEnv, std: float = 1.0):
+    """Get the penalty based on the robot's velocity."""
+    return torch.exp(
+        -(torch.linalg.vector_norm(base_vel_w(env), dim=-1) ** 2) / (2 * std**2)
+    )
 
 
 @configclass
@@ -129,9 +131,8 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
-    pos_reward = RewardTermCfg(func=position_reward, weight=3.0)
-
-    spin_penalty = RewardTermCfg(func=spinning_velocity, weight=-2.0)
+    origin_pos_reward = RewardTermCfg(func=origin_position_reward, weight=3.0)
+    zero_vel_reward = RewardTermCfg(func=zero_velocity_reward, weight=3.0)
 
 
 @configclass
