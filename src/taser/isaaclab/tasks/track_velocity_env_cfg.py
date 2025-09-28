@@ -45,14 +45,14 @@ class EventsCfg:
             "asset_cfg": SceneEntityCfg(
                 "robot",
                 joint_names=[
-                    "base_left_arm_1_joint",
+                    "base_left_arm_shoulder_joint",
                     "left_arm_1_left_arm_2_joint",
                     "left_arm_2_left_arm_3_joint",
-                    "base_right_arm_1_joint",
+                    "base_right_arm_shoulder_joint",
                     "right_arm_1_right_arm_2_joint",
                     "right_arm_2_right_arm_3_joint",
-                    "base_wheel_1_joint",
-                    "base_wheel_2_joint",
+                    "base_left_wheel_joint",
+                    "base_right_wheel_joint",
                 ],
             ),
             "position_range": (0.0, 0.0),

@@ -8,8 +8,32 @@
         <color rgba="0.5 0.5 1 1" />
     </material>
 
-    <xacro:macro name="arm" params="name y_offset">
-        <link name="${name}_arm_1">
+    <xacro:macro name="arm" params="side offset_sign">
+
+        <link name="${side}_arm_shoulder">
+            <visual>
+                <origin rpy="1.57 0.0 0.0" xyz="0.0 0.0 0.0" />
+                <geometry>
+                    <cylinder length="0.025" radius="0.075" />
+                </geometry>
+                <material name="light-blue" />
+            </visual>
+            <collision>
+                <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.15" />
+                <geometry>
+                    <cylinder length="0.025" radius="0.075" />
+                </geometry>
+            </collision>
+        </link>
+
+        <joint name="base_${side}_arm_shoulder_joint" type="continuous">
+            <parent link="base" />
+            <child link="${side}_arm_shoulder" />
+            <origin rpy="0.0 0.0 0.0" xyz="0.0 ${offset_sign}0.2625 0.4" />
+            <axis xyz="0 1 0" />
+        </joint>
+
+        <link name="${side}_arm_1">
             <visual>
                 <origin xyz="0.0 0.0 -0.15" rpy="0.0 0.0 0.0" />
                 <geometry>
@@ -25,14 +49,14 @@
             </collision>
         </link>
 
-        <joint name="base_${name}_arm_1_joint" type="continuous">
-            <parent link="base" />
-            <child link="${name}_arm_1" />
-            <origin xyz="0.0 ${y_offset} 0.5" rpy="0.0 0.0 0.0" />
+        <joint name="${side}_arm_shoulder_${side}_arm_1_joint" type="fixed">
+            <parent link="${side}_arm_shoulder" />
+            <child link="${side}_arm_1" />
+            <origin rpy="0.0 0.0 0.0" xyz="0.0 ${offset_sign}0.0625 0.1" />
             <axis xyz="0 1 0" />
         </joint>
 
-        <link name="${name}_arm_2">
+        <link name="${side}_arm_2">
             <visual>
                 <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0" />
                 <geometry>
@@ -48,14 +72,14 @@
             </collision>
         </link>
 
-        <joint name="${name}_arm_1_${name}_arm_2_joint" type="continuous">
-            <parent link="${name}_arm_1" />
-            <child link="${name}_arm_2" />
+        <joint name="${side}_arm_1_${side}_arm_2_joint" type="continuous">
+            <parent link="${side}_arm_1" />
+            <child link="${side}_arm_2" />
             <origin xyz="0.0 0 -0.3" rpy="0.0 0.0 0.0" />
             <axis xyz="0 0 1" />
         </joint>
 
-        <link name="${name}_arm_3">
+        <link name="${side}_arm_3">
             <visual>
                 <origin xyz="0.0 0.0 -0.15" rpy="0.0 0.0 0.0" />
                 <geometry>
@@ -71,19 +95,19 @@
             </collision>
         </link>
 
-        <joint name="${name}_arm_2_${name}_arm_3_joint" type="continuous">
-            <parent link="${name}_arm_2" />
-            <child link="${name}_arm_3" />
+        <joint name="${side}_arm_2_${side}_arm_3_joint" type="continuous">
+            <parent link="${side}_arm_2" />
+            <child link="${side}_arm_3" />
             <origin xyz="0.0 0 -0.2" rpy="0.0 0.0 0.0" />
             <axis xyz="0 1 0" />
         </joint>
 
-        <link name="${name}_arm_eef">
+        <link name="${side}_arm_eef">
         </link>
 
-        <joint name="${name}_arm_3_${name}_arm_eef_joint" type="fixed">
-            <parent link="${name}_arm_3" />
-            <child link="${name}_arm_eef" />
+        <joint name="${side}_arm_3_${side}_arm_eef_joint" type="fixed">
+            <parent link="${side}_arm_3" />
+            <child link="${side}_arm_eef" />
             <origin xyz="0.0 0 -0.3" rpy="0.0 0.0 0.0" />
         </joint>
 
