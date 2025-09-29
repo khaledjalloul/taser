@@ -5,7 +5,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-from taser.common.datatypes import Pose2D, VelocityCommand, Workspace
+from taser.common.datatypes import Polygon, Pose, VelocityCommand, Workspace
 from taser.navigation import PolygonNavigator
 
 L = 0.3
@@ -16,17 +16,17 @@ NUM_RRT_SAMPLES = 120
 MPC_HORIZON = 10
 
 WORKSPACE = Workspace(x_min=0, x_max=7, y_min=0, y_max=7)
-START = Pose2D(1, 1, 0)
-GOAL = Pose2D(6, 6, 0)
+START = Pose(x=1, y=1, rz=0)
+GOAL = Pose(x=6, y=6, rz=0)
 
 
 def plot_controller_step(
     ax: plt.Axes,
-    robot: Pose2D,
-    path: list[Pose2D],  # Path to follow
+    robot: Pose,
+    path: list[Pose],  # Path to follow
     trajectory: tuple[list[float], list[float]],  # Actual trajectory of the robot
-    polygons: np.ndarray,
-    inflated_polygons: np.ndarray,
+    polygons: list[Polygon],
+    inflated_polygons: list[Polygon],
 ) -> None:
     ax.clear()
     ax.set_facecolor("white")
@@ -69,8 +69,8 @@ def plot_controller_step(
     ax.quiver(
         robot.x,
         robot.y,
-        np.cos(robot.theta),
-        np.sin(robot.theta),
+        np.cos(robot.rz),
+        np.sin(robot.rz),
         color="purple",
         scale_units="xy",
         zorder=3,
@@ -84,8 +84,8 @@ def plot_controller_step(
 
 if __name__ == "__main__":
     polygons = [
-        [Pose2D(1, 3), Pose2D(1, 5), Pose2D(4, 5), Pose2D(4, 3), Pose2D(3, 2.5)],
-        [Pose2D(5, 2), Pose2D(5, 4), Pose2D(6, 4), Pose2D(6, 2)],
+        [Pose(1, 3), Pose(1, 5), Pose(4, 5), Pose(4, 3), Pose(3, 2.5)],
+        [Pose(5, 2), Pose(5, 4), Pose(6, 4), Pose(6, 2)],
     ]
 
     navigator = PolygonNavigator(
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     )
     path = navigator.plan_path(START, GOAL)
 
-    robot = Pose2D(x=START.x, y=START.y, theta=START.theta)
+    robot = Pose(x=START.x, y=START.y, rz=START.rz)
     cmd = VelocityCommand(0.0, 0.0)
 
     fig, plt_ax = plt.subplots(1, 1)
@@ -122,11 +122,11 @@ if __name__ == "__main__":
 
         cmd, reached = navigator.step(robot, cmd.v)
 
-        robot.x += cmd.v * math.cos(robot.theta) * DT
-        robot.y += cmd.v * math.sin(robot.theta) * DT
-        theta = robot.theta + cmd.w * DT
+        robot.x += cmd.v * math.cos(robot.rz) * DT
+        robot.y += cmd.v * math.sin(robot.rz) * DT
+        rz = robot.rz + cmd.w * DT
         # Wrap between -pi and pi
-        robot.theta = math.atan2(math.sin(theta), math.cos(theta))
+        robot.rz = math.atan2(math.sin(rz), math.cos(rz))
 
         traj_x.append(robot.x)
         traj_y.append(robot.y)

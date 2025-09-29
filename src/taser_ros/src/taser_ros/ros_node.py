@@ -12,7 +12,7 @@ from std_msgs.msg import Float64MultiArray
 from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 from visualization_msgs.msg import Marker
 
-from taser.common.datatypes import Pose2D, TaserJointState
+from taser.common.datatypes import Pose, TaserJointState
 
 
 class RosNode(Node):
@@ -61,28 +61,36 @@ class RosNode(Node):
         self._targets_pub = self.create_publisher(Marker, "/targets", qos)
         self._obstacles_pub = self.create_publisher(Marker, "/obstacles", qos)
 
-    def set_robot_pose_in_sim(self, pose: Pose2D) -> None:
+    def set_robot_pose_in_sim(self, pose: Pose) -> None:
         tf_stamped = TransformStamped()
         tf_stamped.header.stamp = self.get_clock().now().to_msg()
         tf_stamped.header.frame_id = "map"
-        tf_stamped.child_frame_id = "base_wrapper"
+        tf_stamped.child_frame_id = "base_link"
         tf_stamped.transform.translation.x = pose.x
         tf_stamped.transform.translation.y = pose.y
-        tf_stamped.transform.rotation.w = math.cos(pose.theta / 2.0)
-        tf_stamped.transform.rotation.z = math.sin(pose.theta / 2.0)
+        tf_stamped.transform.translation.z = pose.z
+        tf_stamped.transform.rotation.w = pose.qw
+        tf_stamped.transform.rotation.x = pose.qx
+        tf_stamped.transform.rotation.y = pose.qy
+        tf_stamped.transform.rotation.z = pose.qz
         self._tf_broadcaster.sendTransform(tf_stamped)
 
-    def get_robot_pose_from_sim(self) -> Pose2D:
+    def get_robot_pose_from_sim(self) -> Pose:
         tf = self._buffer.lookup_transform(
             target_frame="map",
-            source_frame="base_wrapper",
+            source_frame="base_link",
             time=Time(),
         )
 
-        return Pose2D(
-            tf.transform.translation.x,
-            tf.transform.translation.y,
-            2.0 * math.atan2(tf.transform.rotation.z, tf.transform.rotation.w),
+        return Pose(
+            x=tf.transform.translation.x,
+            y=tf.transform.translation.y,
+            z=tf.transform.translation.z,
+            qw=tf.transform.rotation.w,
+            qx=tf.transform.rotation.x,
+            qy=tf.transform.rotation.y,
+            qz=tf.transform.rotation.z,
+            rz=2 * math.atan2(tf.transform.rotation.z, tf.transform.rotation.w),
         )
 
     def spawn_polygons_in_sim(self, polygons: list[dict]) -> None:
@@ -119,7 +127,7 @@ class RosNode(Node):
 
             self._obstacles_pub.publish(marker)
 
-    def spawn_target_in_sim(self, pose: Pose2D) -> None:
+    def spawn_target_in_sim(self, pose: Pose) -> None:
         marker = Marker()
         marker.header.frame_id = "map"
         marker.header.stamp = self.get_clock().now().to_msg()

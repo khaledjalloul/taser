@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
-from taser.common.datatypes import Pose2D, Vec2, VelocityCommand
+from taser.common.datatypes import Pose, Vec2, VelocityCommand
 
 
 def wrap_angle(a: float) -> float:
@@ -43,13 +43,13 @@ class PurePursuitController:
         self.goal_yaw_tol = goal_yaw_tol
         self.turn_gain = turn_gain
 
-        self._path: List[Pose2D] = []
+        self._path: List[Pose] = []
         self._cum_s: List[float] = [0.0]
         self._total_s: float = 0.0
         self._goal_yaw: Optional[float] = None
 
     # ---------- public API ----------
-    def set_path(self, pts: List[Pose2D], goal_yaw: Optional[float] = None):
+    def set_path(self, pts: List[Pose], goal_yaw: Optional[float] = None):
         if len(pts) < 2:
             raise ValueError("Path must have at least 2 points.")
         self._path = pts
@@ -58,7 +58,7 @@ class PurePursuitController:
 
     def step(
         self,
-        pose: Pose2D,
+        pose: Pose,
         v_current: float = 0.0,
         obstacle_distance_ahead: Optional[float] = None,
         safety_radius: float = 0.25,
@@ -79,7 +79,7 @@ class PurePursuitController:
         if dist_goal <= self.goal_pos_tol:
             # Align heading if requested
             if self._goal_yaw is not None:
-                yaw_err = wrap_angle(self._goal_yaw - pose.theta)
+                yaw_err = wrap_angle(self._goal_yaw - pose.rz)
                 if abs(yaw_err) > self.goal_yaw_tol:
                     w = max(-self.w_max, min(self.w_max, self.turn_gain * yaw_err))
                     return (
@@ -98,7 +98,7 @@ class PurePursuitController:
         tx, ty = self._interpolate_at_s(s_target)
 
         # 3) Transform target to robot frame
-        ct, st = math.cos(pose.theta), math.sin(pose.theta)
+        ct, st = math.cos(pose.rz), math.sin(pose.rz)
         dx, dy = tx - pose.x, ty - pose.y
         xr = ct * dx + st * dy
         yr = -st * dx + ct * dy
@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
     pp.set_path(path, goal_yaw=None)
 
-    pose = Pose2D(x=0.0, y=-0.2, theta=math.radians(15))
+    pose = Pose(x=0.0, y=-0.2, rz=math.radians(15))
     v_curr = 0.0
     traj_x, traj_y = [pose.x], [pose.y]
 
@@ -231,9 +231,9 @@ if __name__ == "__main__":
         if reached and info.get("reason") == "goal_reached":
             break
         # simple first-order update (no accel limits for brevity)
-        pose.x += cmd.v * math.cos(pose.theta) * dt
-        pose.y += cmd.v * math.sin(pose.theta) * dt
-        pose.theta = wrap_angle(pose.theta + cmd.w * dt)
+        pose.x += cmd.v * math.cos(pose.rz) * dt
+        pose.y += cmd.v * math.sin(pose.rz) * dt
+        pose.rz = wrap_angle(pose.rz + cmd.w * dt)
         v_curr = cmd.v
         traj_x.append(pose.x)
         traj_y.append(pose.y)

@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-from taser.common.datatypes import Pose2D, VelocityCommand, Workspace
+from taser.common.datatypes import Pose, VelocityCommand, Workspace
 from taser.navigation import GridNavigator, OccupancyGrid
 
 L = 1
@@ -12,8 +12,8 @@ V_MAX = 3.0
 W_MAX = 2
 
 WORKSPACE = Workspace(x_min=-5, x_max=5, y_min=-5, y_max=5)
-START = Pose2D(-4, -4, 3 * np.pi / 4)
-GOAL = Pose2D(4, 4, 0)
+START = Pose(x=-4, y=-4, rz=3 * np.pi / 4)
+GOAL = Pose(x=4, y=4, rz=0)
 
 
 def set_up_occupancy_grid() -> OccupancyGrid:
@@ -26,8 +26,8 @@ def set_up_occupancy_grid() -> OccupancyGrid:
 
 def plot_controller_step(
     ax: plt.Axes,
-    robot: Pose2D,
-    path: list[Pose2D],  # Path to follow
+    robot: Pose,
+    path: list[Pose],  # Path to follow
     trajectory: tuple[list[float], list[float]],  # Actual trajectory of the robot
     occupancy_grid: np.ndarray,
     inflated_occupancy_grid: np.ndarray,
@@ -55,8 +55,8 @@ def plot_controller_step(
     ax.quiver(
         START.x,
         START.y,
-        np.cos(START.theta),
-        np.sin(START.theta),
+        np.cos(START.rz),
+        np.sin(START.rz),
         color="green",
         scale_units="xy",
         zorder=3,
@@ -67,8 +67,8 @@ def plot_controller_step(
     ax.quiver(
         GOAL.x,
         GOAL.y,
-        np.cos(GOAL.theta),
-        np.sin(GOAL.theta),
+        np.cos(GOAL.rz),
+        np.sin(GOAL.rz),
         color="orange",
         scale_units="xy",
         zorder=3,
@@ -95,8 +95,8 @@ def plot_controller_step(
     ax.quiver(
         robot.x,
         robot.y,
-        np.cos(robot.theta),
-        np.sin(robot.theta),
+        np.cos(robot.rz),
+        np.sin(robot.rz),
         color="purple",
         scale_units="xy",
         zorder=3,
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     )
     path = navigator.plan_path(START, GOAL)
 
-    robot = Pose2D(x=START.x, y=START.y, theta=START.theta)
+    robot = Pose(x=START.x, y=START.y, rz=START.rz)
     cmd = VelocityCommand(0.0, 0.0)
     reached = False
 
@@ -143,11 +143,11 @@ if __name__ == "__main__":
 
         cmd, reached = navigator.step(robot, cmd.v)
 
-        robot.x += cmd.v * math.cos(robot.theta) * DT
-        robot.y += cmd.v * math.sin(robot.theta) * DT
-        theta = robot.theta + cmd.w * DT
+        robot.x += cmd.v * math.cos(robot.rz) * DT
+        robot.y += cmd.v * math.sin(robot.rz) * DT
+        rz = robot.rz + cmd.w * DT
         # Wrap between -pi and pi
-        robot.theta = math.atan2(math.sin(theta), math.cos(theta))
+        robot.rz = math.atan2(math.sin(rz), math.cos(rz))
 
         traj_x.append(robot.x)
         traj_y.append(robot.y)

@@ -26,8 +26,8 @@
             </collision>
         </link>
 
-        <joint name="base_${side}_arm_shoulder_joint" type="continuous">
-            <parent link="base" />
+        <joint name="base_link_${side}_arm_shoulder_joint" type="continuous">
+            <parent link="base_link" />
             <child link="${side}_arm_shoulder" />
             <origin rpy="0.0 0.0 0.0" xyz="0.0 ${offset_sign}0.2625 0.4" />
             <axis xyz="0 1 0" />

@@ -1,4 +1,4 @@
-from taser.common.datatypes import Pose2D, VelocityCommand, Workspace
+from taser.common.datatypes import Polygon, Pose, VelocityCommand, Workspace
 from taser.navigation import PurePursuitController, RRTStarPathPlanner
 
 
@@ -6,7 +6,7 @@ class PolygonNavigator:
     def __init__(
         self,
         workspace: Workspace,
-        polygons: list[list[Pose2D]],
+        polygons: list[Polygon],
         v_max: float,
         w_max: float,
         wheel_base: float,
@@ -45,24 +45,21 @@ class PolygonNavigator:
         )
 
     def plan_path(
-        self,
-        start: Pose2D,
-        goal: Pose2D,
-        polygons: list[list[Pose2D]] = None,
-    ) -> list[Pose2D]:
+        self, start: Pose, goal: Pose, polygons: list[Polygon] = None
+    ) -> list[Pose]:
         if polygons is not None:
-            self._set_polygons(polygons)
+            self._planner.set_polygons(polygons)
 
         path, path_vel = self._planner.plan(start, goal)
         self._controller.set_path(path)
 
         return path
 
-    def step(self, current_pose: Pose2D, v_current: float = None) -> VelocityCommand:
+    def step(self, current_pose: Pose, v_current: float = None) -> VelocityCommand:
         cmd, reached, info = self._controller.step(current_pose, v_current)
         return cmd, reached
 
-    # def step(self, current_pose: Pose2D, v_current: float = None) -> VelocityCommand:
+    # def step(self, current_pose: Pose, v_current: float = None) -> VelocityCommand:
     #     if self._path is None:
     #         raise ValueError("Path not set. Call plan_path() first.")
 
@@ -87,5 +84,5 @@ class PolygonNavigator:
     #     return cmd
 
     @property
-    def inflated_polygons(self) -> list[list[Pose2D]]:
+    def inflated_polygons(self) -> list[Polygon]:
         return self._planner.inflated_polygons

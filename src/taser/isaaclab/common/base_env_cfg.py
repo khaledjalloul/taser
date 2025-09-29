@@ -1,3 +1,5 @@
+import math
+
 import isaaclab.sim as sim_utils
 from isaaclab.assets import AssetBaseCfg
 from isaaclab.envs import ManagerBasedRLEnvCfg, mdp
@@ -14,27 +16,30 @@ class ActionsCfg:
     left_arm_efforts = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=[
-            "base_left_arm_shoulder_joint",
+            "base_link_left_arm_shoulder_joint",
             "left_arm_1_left_arm_2_joint",
             "left_arm_2_left_arm_3_joint",
         ],
+        scale=45.0 / math.pi,
     )
 
     right_arm_efforts = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=[
-            "base_right_arm_shoulder_joint",
+            "base_link_right_arm_shoulder_joint",
             "right_arm_1_right_arm_2_joint",
             "right_arm_2_right_arm_3_joint",
         ],
+        scale=45.0 / math.pi,
     )
 
     wheel_efforts = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=[
-            "base_left_wheel_joint",
-            "base_right_wheel_joint",
+            "base_link_left_wheel_joint",
+            "base_link_right_wheel_joint",
         ],
+        scale=180.0 / math.pi,
     )
 
 

@@ -1,6 +1,14 @@
+import argparse
+
+parser = argparse.ArgumentParser(description="Isaac Sim Taser Simulation")
+parser.add_argument(
+    "--headless", action="store_true", help="Run simulation in headless mode"
+)
+args = parser.parse_args()
+
 from isaacsim.simulation_app import SimulationApp
 
-simulation_app = SimulationApp({"headless": False})
+simulation_app = SimulationApp({"headless": args.headless})
 
 from isaacsim.core.api import World
 
@@ -22,13 +30,17 @@ def main():
 
     # Create robot instance
     robot = TaserIsaacSimRobot(
-        position=(0.0, 0.0, 0.0),
+        position=(0.0, 0.0, 0.65),
         orientation=(1.0, 0.0, 0.0, 0.0),
     )
 
-    world = World(stage_units_in_meters=1.0, physics_dt=0.01)
-    set_up_scene(world=world, robot=robot)
+    world = World(
+        stage_units_in_meters=1.0,
+        physics_dt=0.01,
+        rendering_dt=0.05,
+    )
 
+    set_up_scene(world=world, robot=robot)
     world.reset()
 
     step = 0

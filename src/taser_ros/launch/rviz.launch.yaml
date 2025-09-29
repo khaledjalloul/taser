@@ -30,7 +30,7 @@ launch:
   - node:
       pkg: tf2_ros
       exec: static_transform_publisher
-      name: map_to_base_wrapper
+      name: map_to_base_link
       output: screen
-      args: 0 0 0 0 0 0 map base_wrapper
+      args: 0 0 0.65 0 0 0 map base_link
       if: $(var use_joint_state_publisher_gui)

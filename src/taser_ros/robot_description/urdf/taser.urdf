@@ -21,7 +21,7 @@
       <plugin>mock_components/GenericSystem</plugin>
       <param name="calculate_dynamics">true</param>
     </hardware>
-    <joint name="base_left_arm_shoulder_joint">
+    <joint name="base_link_left_arm_shoulder_joint">
       <command_interface name="velocity"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>
@@ -36,7 +36,7 @@
       <state_interface name="position"/>
       <state_interface name="velocity"/>
     </joint>
-    <joint name="base_right_arm_shoulder_joint">
+    <joint name="base_link_right_arm_shoulder_joint">
       <command_interface name="velocity"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>
@@ -51,20 +51,18 @@
       <state_interface name="position"/>
       <state_interface name="velocity"/>
     </joint>
-    <joint name="base_left_wheel_joint">
+    <joint name="base_link_left_wheel_joint">
       <command_interface name="velocity"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>
     </joint>
-    <joint name="base_right_wheel_joint">
+    <joint name="base_link_right_wheel_joint">
       <command_interface name="velocity"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>
     </joint>
   </ros2_control>
-  <!-- Base wrapper link to get a frame with z=0 -->
-  <link name="base_wrapper"/>
-  <link name="base">
+  <link name="base_link">
     <visual>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
@@ -79,11 +77,6 @@
       </geometry>
     </collision>
   </link>
-  <joint name="base_wrapper_base_joint" type="fixed">
-    <origin rpy="0.0 0.0 0" xyz="0.0 0.0 0.65"/>
-    <parent link="base_wrapper"/>
-    <child link="base"/>
-  </joint>
   <link name="left_arm_shoulder">
     <visual>
       <origin rpy="1.57 0.0 0.0" xyz="0.0 0.0 0.0"/>
@@ -99,8 +92,8 @@
       </geometry>
     </collision>
   </link>
-  <joint name="base_left_arm_shoulder_joint" type="continuous">
-    <parent link="base"/>
+  <joint name="base_link_left_arm_shoulder_joint" type="continuous">
+    <parent link="base_link"/>
     <child link="left_arm_shoulder"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 +0.2625 0.4"/>
     <axis xyz="0 1 0"/>
@@ -190,8 +183,8 @@
       </geometry>
     </collision>
   </link>
-  <joint name="base_right_arm_shoulder_joint" type="continuous">
-    <parent link="base"/>
+  <joint name="base_link_right_arm_shoulder_joint" type="continuous">
+    <parent link="base_link"/>
     <child link="right_arm_shoulder"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.2625 0.4"/>
     <axis xyz="0 1 0"/>
@@ -281,8 +274,8 @@
       </geometry>
     </collision>
   </link>
-  <joint name="base_left_wheel_joint" type="continuous">
-    <parent link="base"/>
+  <joint name="base_link_left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
     <child link="left_wheel"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 +0.3 -0.5"/>
     <axis xyz="0 1 0"/>
@@ -302,8 +295,8 @@
       </geometry>
     </collision>
   </link>
-  <joint name="base_right_wheel_joint" type="continuous">
-    <parent link="base"/>
+  <joint name="base_link_right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
     <child link="right_wheel"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.3 -0.5"/>
     <axis xyz="0 1 0"/>

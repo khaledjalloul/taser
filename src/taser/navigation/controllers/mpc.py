@@ -4,7 +4,7 @@ import cvxpy as cp
 import numpy as np
 from taser_cpp.navigation import Controller
 
-from taser.common.datatypes import Pose2D, VelocityCommand
+from taser.common.datatypes import Pose, VelocityCommand
 from taser_cpp import BaseVelocity
 from taser_cpp import Pose2D as Pose2DCpp
 
@@ -25,7 +25,7 @@ class MPCController:
         self.R = np.diag([0.5, 0.1])
 
     def step(
-        self, x0: Pose2D, x_ref: list[Pose2D], u_ref: list[VelocityCommand]
+        self, x0: Pose, x_ref: list[Pose], u_ref: list[VelocityCommand]
     ) -> VelocityCommand:
         if len(x_ref) < self.N:
             logging.warning(
@@ -68,15 +68,15 @@ class MPCController:
         return VelocityCommand(u_opt[0], u_opt[1])
 
     def get_linearized_model(
-        self, x0: Pose2D, u0: VelocityCommand
+        self, x0: Pose, u0: VelocityCommand
     ) -> tuple[np.ndarray, np.ndarray]:
         A = np.eye(self.nx)
-        A[0, 2] = -np.sin(x0.theta) * u0.v * self.dt
-        A[1, 2] = np.cos(x0.theta) * u0.v * self.dt
+        A[0, 2] = -np.sin(x0.rz) * u0.v * self.dt
+        A[1, 2] = np.cos(x0.rz) * u0.v * self.dt
 
         B = np.zeros((self.nx, self.nu))
-        B[0, 0] = np.cos(x0.theta) * self.dt
-        B[1, 0] = np.sin(x0.theta) * self.dt
+        B[0, 0] = np.cos(x0.rz) * self.dt
+        B[1, 0] = np.sin(x0.rz) * self.dt
         B[2, 1] = self.dt
 
         return A, B
@@ -87,18 +87,18 @@ class MPCControllerCpp:
         self._controller = Controller(dt, N, v_max, omega_max)
 
     def step(
-        self, x0: Pose2D, x_ref: list[Pose2D], u_ref: list[VelocityCommand]
+        self, x0: Pose, x_ref: list[Pose], u_ref: list[VelocityCommand]
     ) -> VelocityCommand:
-        x0_cpp = Pose2DCpp(x0.x, x0.y, x0.theta)
-        x_ref_cpp = [Pose2DCpp(p.x, p.y, p.theta) for p in x_ref]
+        x0_cpp = Pose2DCpp(x0.x, x0.y, x0.rz)
+        x_ref_cpp = [Pose2DCpp(p.x, p.y, p.rz) for p in x_ref]
         u_ref_cpp = [BaseVelocity(v.v, v.w) for v in u_ref]
         cmd_cpp = self._controller.step(x0_cpp, x_ref_cpp, u_ref_cpp)
         return VelocityCommand(cmd_cpp.v, cmd_cpp.omega)
 
     def get_linearized_model(
-        self, x0: Pose2D, u0: VelocityCommand
+        self, x0: Pose, u0: VelocityCommand
     ) -> tuple[np.ndarray, np.ndarray]:
-        x0_cpp = Pose2DCpp(x0.x, x0.y, x0.theta)
+        x0_cpp = Pose2DCpp(x0.x, x0.y, x0.rz)
         u0_cpp = BaseVelocity(u0.v, u0.w)
         A_cpp, B_cpp = self._controller.get_linearized_model(x0_cpp, u0_cpp)
         return np.array(A_cpp), np.array(B_cpp)

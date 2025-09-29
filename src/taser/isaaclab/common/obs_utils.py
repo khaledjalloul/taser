@@ -1,5 +1,4 @@
 import torch
-
 from isaaclab.envs import ManagerBasedEnv
 
 
@@ -9,7 +8,7 @@ def _get_body_index(env: ManagerBasedEnv, body_name: str) -> int:
 
 def base_pos_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body position in the world frame."""
-    return env.scene["robot"].data.body_pos_w[:, _get_body_index(env, "base")]
+    return env.scene["robot"].data.body_pos_w[:, _get_body_index(env, "base_link")]
 
 
 def base_pos_b(env: ManagerBasedEnv) -> torch.Tensor:
@@ -19,9 +18,9 @@ def base_pos_b(env: ManagerBasedEnv) -> torch.Tensor:
 
 def base_quat_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body quaternion in the world frame."""
-    return env.scene["robot"].data.body_quat_w[:, _get_body_index(env, "base")]
+    return env.scene["robot"].data.body_quat_w[:, _get_body_index(env, "base_link")]
 
 
 def base_vel_w(env: ManagerBasedEnv) -> torch.Tensor:
     """Get the base body velocity in the world frame."""
-    return env.scene["robot"].data.body_vel_w[:, _get_body_index(env, "base")]
+    return env.scene["robot"].data.body_vel_w[:, _get_body_index(env, "base_link")]

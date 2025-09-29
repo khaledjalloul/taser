@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # Requires: PyQt6, rclpy, geometry_msgs, tf2_ros
 
-import math
 import sys
 import threading
 import time
@@ -19,7 +18,7 @@ from tf2_ros import (
     TransformListener,
 )
 
-from taser.common.datatypes import Workspace
+from taser.common.datatypes import Polygon, Workspace
 from taser_ros.parameters import load_sim_parameters
 
 # ---------------- Parameters & Mapping ----------------
@@ -36,7 +35,7 @@ def load_gui_parameters(node: node.Node) -> dict:
         "right_width": 300,
         "height": 600,
         "workspace": sim_params.navigation.workspace,
-        "polygons": sim_params.navigation.polygons,  # list[list[(x,y)]]
+        "polygons": sim_params.navigation.polygons,
     }
 
 
@@ -119,7 +118,7 @@ class CanvasWidget(QtWidgets.QWidget):
 
     # -------- Background (polygons) --------
     def set_polygons_world(
-        self, polygons: list[list], color_fill="#E8F0FE", color_edge="#5F6368"
+        self, polygons: list[Polygon], color_fill="#E8F0FE", color_edge="#5F6368"
     ):
         self._bg_pixmap.fill(QtGui.QColor("white"))
         painter = QtGui.QPainter(self._bg_pixmap)
@@ -426,14 +425,14 @@ class TaserGUI(QtWidgets.QMainWindow):
 
     # --------- TF -> robot overlay ---------
     def _update_robot_overlay(self):
-        """Look up base_wrapper in map and update the robot circle on the left canvas."""
+        """Look up base_link in map and update the robot circle on the left canvas."""
         try:
             tf = self._tf_buffer.lookup_transform(
                 target_frame="map",
-                source_frame="base_wrapper",
+                source_frame="base_link",
                 time=Time(),  # latest
             )
-        except (LookupException, ConnectivityException, ExtrapolationException) as e:
+        except (LookupException, ConnectivityException, ExtrapolationException):
             # No pose yet; skip quietly or log at low rate if desired
             # self.node.get_logger().debug(f"TF lookup failed: {e}")
             return

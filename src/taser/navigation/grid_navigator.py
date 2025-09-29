@@ -1,6 +1,6 @@
 import numpy as np
 
-from taser.common.datatypes import Pose2D, VelocityCommand, Workspace
+from taser.common.datatypes import Pose, VelocityCommand, Workspace
 from taser.navigation import (
     DistanceTransformPathPlanner,
     OccupancyGrid,
@@ -33,20 +33,20 @@ class GridNavigator:
 
     def plan_path(
         self,
-        start: Pose2D,
-        goal: Pose2D,
+        start: Pose,
+        goal: Pose,
         occupancy_grid: OccupancyGrid | np.ndarray = None,
-    ) -> list[Pose2D]:
+    ) -> list[Pose]:
         if occupancy_grid is not None:
             self._planner.set_occupancy_grid(occupancy_grid)
 
         path = self._planner.plan(start, goal)
-        self._controller.set_path(path, goal_yaw=goal.theta)
+        self._controller.set_path(path, goal_yaw=goal.rz)
 
         return path
 
     def step(
-        self, current_pose: Pose2D, v_current: float
+        self, current_pose: Pose, v_current: float
     ) -> tuple[VelocityCommand, bool]:
         cmd, reached, info = self._controller.step(current_pose, v_current)
         return cmd, reached

@@ -28,3 +28,4 @@ echo "alias play_rsl='omni_python ${WORKSPACE}/src/taser/isaaclab/rl/rsl_rl/play
 
 # Other aliases
 echo "alias update_urdf='xacro ${WORKSPACE}/src/taser_ros/robot_description/urdf/xacro/robot.urdf.xacro -o ${WORKSPACE}/src/taser_ros/robot_description/urdf/taser.urdf'" >> ~/.bashrc
+echo "alias update_usd='omni_python ${WORKSPACE}/src/taser/isaacsim/utils/urdf_to_usd.py'" >> ~/.bashrc

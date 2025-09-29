@@ -4,7 +4,7 @@ from typing import Any
 from rcl_interfaces.msg import ParameterValue
 from rclpy.node import Node
 
-from taser.common.datatypes import Pose2D, Workspace
+from taser.common.datatypes import Polygon, Pose, Workspace
 
 
 @dataclass
@@ -12,7 +12,7 @@ class TaserSimParameters:
     @dataclass
     class General:
         dt: float
-        initial_pose: Pose2D
+        initial_pose: Pose
 
     @dataclass
     class Locomotion:
@@ -31,7 +31,7 @@ class TaserSimParameters:
         num_rrt_samples: int
         mpc_horizon: int
         polygons_sim: list[dict]
-        polygons: list[list[Pose2D]]
+        polygons: list[Polygon]
 
     general: General
     locomotion: Locomotion
@@ -54,10 +54,14 @@ def load_sim_parameters(node: Node) -> TaserSimParameters:
     params = TaserSimParameters(
         general=TaserSimParameters.General(
             dt=load_parameter(node, "dt", 0.0).double_value,
-            initial_pose=Pose2D(
-                load_parameter(node, "initial_pose.x", 0.0).double_value,
-                load_parameter(node, "initial_pose.y", 0.0).double_value,
-                load_parameter(node, "initial_pose.theta", 0.0).double_value,
+            initial_pose=Pose(
+                x=load_parameter(node, "initial_pose.x", 0.0).double_value,
+                y=load_parameter(node, "initial_pose.y", 0.0).double_value,
+                z=load_parameter(node, "initial_pose.z", 0.0).double_value,
+                qw=load_parameter(node, "initial_pose.qw", 1.0).double_value,
+                qx=load_parameter(node, "initial_pose.qx", 0.0).double_value,
+                qy=load_parameter(node, "initial_pose.qy", 0.0).double_value,
+                qz=load_parameter(node, "initial_pose.qz", 0.0).double_value,
             ),
         ),
         locomotion=TaserSimParameters.Locomotion(
@@ -112,7 +116,7 @@ def load_sim_parameters(node: Node) -> TaserSimParameters:
         back_left = position[0] - size[0] / 2, position[1] - size[1] / 2
         back_right = position[0] - size[0] / 2, position[1] + size[1] / 2
         polygon_corners = (back_left, back_right, front_right, front_left)
-        polygon = [Pose2D(*p) for p in polygon_corners]
+        polygon = [Pose(*p) for p in polygon_corners]
 
         params.navigation.polygons_sim.append({"position": position, "size": size})
         params.navigation.polygons.append(polygon)

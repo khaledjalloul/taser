@@ -15,13 +15,18 @@ class Workspace:
 
 
 @dataclass
-class Pose2D:
-    x: float
-    y: float
-    theta: float = 0.0  # yaw (rad)
-
-    def tuple(self) -> tuple[float, float, float]:
-        return (self.x, self.y, self.theta)
+class Pose:
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    qw: float = 1.0
+    qx: float = 0.0
+    qy: float = 0.0
+    qz: float = 0.0
+    # TODO: Add converter methods
+    rx: float = 0.0
+    ry: float = 0.0
+    rz: float = 0.0
 
 
 @dataclass
@@ -31,6 +36,9 @@ class VelocityCommand:
 
     def tuple(self) -> tuple[float, float]:
         return (self.v, self.w)
+
+
+Polygon = list[Pose]
 
 
 @dataclass

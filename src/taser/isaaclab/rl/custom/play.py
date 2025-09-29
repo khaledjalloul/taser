@@ -5,9 +5,7 @@ parser.add_argument("--task", type=str, required=True, help="Task to play.")
 parser.add_argument(
     "--num_envs", type=int, default=1, help="Number of environments to spawn."
 )
-parser.add_argument(
-    "--model_path", type=str, required=True, help="Path to the trained model."
-)
+parser.add_argument("--model_path", type=str, help="Path to the trained model.")
 
 ############################################################
 

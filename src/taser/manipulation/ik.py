@@ -33,7 +33,7 @@ class IKManipulator:
         else:
             robot = self._left_arm
 
-        J = robot.jacob0(q_current, start="base")
+        J = robot.jacob0(q_current, start="base_link")
         J_pos = J[0:3, :]
         dq = np.linalg.pinv(J_pos) @ v_desired
         return dq

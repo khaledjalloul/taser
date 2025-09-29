@@ -7,10 +7,7 @@
 
     <xacro:macro name="base">
 
-        <!-- Base wrapper link to get a frame with z=0 -->
-        <link name="base_wrapper" />
-
-        <link name="base">
+        <link name="base_link">
             <visual>
                 <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
                 <geometry>
@@ -25,13 +22,6 @@
                 </geometry>
             </collision>
         </link>
-
-
-        <joint name="base_wrapper_base_joint" type="fixed">
-            <origin xyz="0.0 0.0 0.65" rpy="0.0 0.0 0" />
-            <parent link="base_wrapper" />
-            <child link="base" />
-        </joint>
 
     </xacro:macro>
 
