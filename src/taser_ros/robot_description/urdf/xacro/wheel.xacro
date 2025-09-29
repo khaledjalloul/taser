@@ -27,6 +27,7 @@
             <child link="${side}_wheel" />
             <origin xyz="0.0 ${offset_sign}0.3 -0.5" rpy="0.0 0.0 0.0" />
             <axis xyz="0 1 0" />
+            <dynamics damping="0.01" friction="0.0" />
         </joint>
     </xacro:macro>
 

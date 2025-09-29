@@ -9,40 +9,6 @@ from isaaclab.utils import configclass
 from taser.isaaclab.common.articulation import TASER_CONFIG_USD
 
 
-@configclass
-class ActionsCfg:
-    """Action specifications for the environment."""
-
-    left_arm_efforts = mdp.JointVelocityActionCfg(
-        asset_name="robot",
-        joint_names=[
-            "base_link_left_arm_shoulder_joint",
-            "left_arm_1_left_arm_2_joint",
-            "left_arm_2_left_arm_3_joint",
-        ],
-        scale=45.0 / math.pi,
-    )
-
-    right_arm_efforts = mdp.JointVelocityActionCfg(
-        asset_name="robot",
-        joint_names=[
-            "base_link_right_arm_shoulder_joint",
-            "right_arm_1_right_arm_2_joint",
-            "right_arm_2_right_arm_3_joint",
-        ],
-        scale=45.0 / math.pi,
-    )
-
-    wheel_efforts = mdp.JointVelocityActionCfg(
-        asset_name="robot",
-        joint_names=[
-            "base_link_left_wheel_joint",
-            "base_link_right_wheel_joint",
-        ],
-        scale=180.0 / math.pi,
-    )
-
-
 class SceneCfg(InteractiveSceneCfg):
     """Designs the scene."""
 
@@ -66,7 +32,6 @@ class TaserBaseEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the TASER robot environment."""
 
     scene = SceneCfg(num_envs=1, env_spacing=3)
-    actions = ActionsCfg()
 
     def __post_init__(self):
         """Post initialization."""

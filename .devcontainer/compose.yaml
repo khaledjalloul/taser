@@ -11,6 +11,7 @@ services:
         ISAAC_SIM_VERSION: 4.5.0
     container_name: taser
     hostname: taser
+    network_mode: host
     environment:
       - DISPLAY=${DISPLAY}
       - NVIDIA_VISIBLE_DEVICES=all

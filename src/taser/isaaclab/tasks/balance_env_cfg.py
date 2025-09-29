@@ -18,6 +18,20 @@ from taser.isaaclab.common.obs_utils import base_pos_b, base_quat_w, base_vel_w
 
 
 @configclass
+class ActionsCfg:
+    """Action specifications for the environment."""
+
+    wheel_velocities = mdp.JointVelocityActionCfg(
+        asset_name="robot",
+        joint_names=[
+            "base_link_left_wheel_joint",
+            "base_link_right_wheel_joint",
+        ],
+        scale=180.0 / math.pi,
+    )
+
+
+@configclass
 class EventsCfg:
     """Configuration for events."""
 
@@ -152,6 +166,7 @@ class TerminationsCfg:
 class TaserBalanceEnvCfg(TaserBaseEnvCfg):
     """TASER environment configuration for the balance task."""
 
+    actions = ActionsCfg()
     events = EventsCfg()
     observations = ObservationsCfg()
     rewards = RewardsCfg()

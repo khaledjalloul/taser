@@ -97,6 +97,7 @@
     <child link="left_arm_shoulder"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 +0.2625 0.4"/>
     <axis xyz="0 1 0"/>
+    <dynamics damping="0.1" friction="0.1"/>
   </joint>
   <link name="left_arm_1">
     <visual>
@@ -139,6 +140,7 @@
     <child link="left_arm_2"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0 -0.3"/>
     <axis xyz="0 0 1"/>
+    <dynamics damping="0.1" friction="0.1"/>
   </joint>
   <link name="left_arm_3">
     <visual>
@@ -160,6 +162,7 @@
     <child link="left_arm_3"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0 -0.2"/>
     <axis xyz="0 1 0"/>
+    <dynamics damping="0.1" friction="0.1"/>
   </joint>
   <link name="left_arm_eef">
         </link>
@@ -188,6 +191,7 @@
     <child link="right_arm_shoulder"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.2625 0.4"/>
     <axis xyz="0 1 0"/>
+    <dynamics damping="0.1" friction="0.1"/>
   </joint>
   <link name="right_arm_1">
     <visual>
@@ -230,6 +234,7 @@
     <child link="right_arm_2"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0 -0.3"/>
     <axis xyz="0 0 1"/>
+    <dynamics damping="0.1" friction="0.1"/>
   </joint>
   <link name="right_arm_3">
     <visual>
@@ -251,6 +256,7 @@
     <child link="right_arm_3"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0 -0.2"/>
     <axis xyz="0 1 0"/>
+    <dynamics damping="0.1" friction="0.1"/>
   </joint>
   <link name="right_arm_eef">
         </link>
@@ -279,6 +285,7 @@
     <child link="left_wheel"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 +0.3 -0.5"/>
     <axis xyz="0 1 0"/>
+    <dynamics damping="0.01" friction="0.0"/>
   </joint>
   <link name="right_wheel">
     <visual>
@@ -300,5 +307,6 @@
     <child link="right_wheel"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.3 -0.5"/>
     <axis xyz="0 1 0"/>
+    <dynamics damping="0.01" friction="0.0"/>
   </joint>
 </robot>
