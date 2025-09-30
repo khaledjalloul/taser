@@ -36,8 +36,8 @@ def main():
 
     world = World(
         stage_units_in_meters=1.0,
-        physics_dt=0.01,
-        rendering_dt=0.05,
+        # physics_dt=0.01,
+        # rendering_dt=0.05,
     )
 
     set_up_scene(world=world, robot=robot)

@@ -27,7 +27,7 @@ class ActionsCfg:
             "base_link_left_wheel_joint",
             "base_link_right_wheel_joint",
         ],
-        scale=180.0 / math.pi,
+        scale=10.0,
     )
 
 
