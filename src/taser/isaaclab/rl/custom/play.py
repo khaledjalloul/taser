@@ -6,6 +6,9 @@ parser.add_argument(
     "--num_envs", type=int, default=1, help="Number of environments to spawn."
 )
 parser.add_argument("--model_path", type=str, help="Path to the trained model.")
+parser.add_argument(
+    "--export_onnx_path", type=str, help="Path to export the ONNX model."
+)
 
 ############################################################
 
@@ -39,15 +42,20 @@ from taser.isaaclab.rl.custom import ActorCritic
 
 
 def play(env: gym.Env):
-    obs_dim = sum([o.shape[1] for o in env.unwrapped.observation_space.values()])
+    obs_dict_dims = {k: v.shape[1] for k, v in env.unwrapped.observation_space.items()}
     act_dim = env.unwrapped.action_space.shape[1]
 
-    model = ActorCritic(obs_dim=obs_dim, act_dim=act_dim).to(env.unwrapped.device)
+    model = ActorCritic(obs_dict_dims, act_dim).to(env.unwrapped.device)
 
     model.load(args.model_path)
     model.eval()
 
     obs_dict, _ = env.reset()
+
+    if args.export_onnx_path:
+        model.export_onnx(args.export_onnx_path)
+        print(f"Exported ONNX model to {args.export_onnx_path}")
+        return
 
     while simulation_app.is_running():
         with torch.inference_mode():

@@ -8,6 +8,7 @@ dependencies = [
     "cvxpy==1.4.2",
     "matplotlib",
     "numpy==1.26.0",
+    "onnxruntime",
     "open3d",
     "pybind11",
     "pyqt6",

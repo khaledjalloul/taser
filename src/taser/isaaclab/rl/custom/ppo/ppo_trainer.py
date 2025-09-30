@@ -12,11 +12,13 @@ class PPOTrainer:
         self.env = env
         self.cfg = cfg
 
-        obs_dim = sum([o.shape[1] for o in env.unwrapped.observation_space.values()])
+        obs_dict_dims = {
+            k: v.shape[1] for k, v in env.unwrapped.observation_space.items()
+        }
         act_dim = env.unwrapped.action_space.shape[1]
 
         # Initialize policy network
-        self.policy = ActorCritic(obs_dim, act_dim).to(cfg.device)
+        self.policy = ActorCritic(obs_dict_dims, act_dim).to(cfg.device)
         self.policy.train()
 
         self.optimizer = torch.optim.Adam(

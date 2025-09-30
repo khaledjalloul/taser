@@ -36,13 +36,16 @@ class RunningNorm:
 class ActorCritic(nn.Module):
     """Actor-Critic model."""
 
-    def __init__(self, obs_dim: int, act_dim: int):
+    def __init__(self, obs_dict_dims: int, act_dim: int):
         super().__init__()
 
-        self.obs_norm = RunningNorm(obs_dim)
+        self.obs_dict_dims = obs_dict_dims
+        self.obs_dim = sum(obs_dict_dims.values())
+
+        self.obs_norm = RunningNorm(self.obs_dim)
 
         self.actor = nn.Sequential(
-            nn.Linear(obs_dim, 64),
+            nn.Linear(self.obs_dim, 64),
             nn.LayerNorm(64),
             nn.ReLU(),
             nn.Linear(64, 64),
@@ -52,7 +55,7 @@ class ActorCritic(nn.Module):
         )
 
         self.critic = nn.Sequential(
-            nn.Linear(obs_dim, 64),
+            nn.Linear(self.obs_dim, 64),
             nn.LayerNorm(64),
             nn.ReLU(),
             nn.Linear(64, 64),
@@ -107,3 +110,31 @@ class ActorCritic(nn.Module):
         self.obs_norm.mean = self.obs_norm.mean.to(device)
         self.obs_norm.var = self.obs_norm.var.to(device)
         return super().to(device, **kwargs)
+
+    def export_onnx(self, path: str):
+        class OnnxWrapper(nn.Module):
+            def __init__(self_wrapper):
+                super().__init__()
+                self_wrapper.model = self.to("cpu")
+
+            def forward(self_wrapper, obs: torch.Tensor):
+                obs_split = torch.split(
+                    obs, tuple(self_wrapper.model.obs_dict_dims.values()), dim=-1
+                )
+                obs_dict = {
+                    k: obs_split[i]
+                    for i, k in enumerate(self_wrapper.model.obs_dict_dims.keys())
+                }
+                action_dist, _ = self_wrapper.model(obs_dict)
+                return action_dist.mean
+
+        onnx_model = OnnxWrapper()
+        dummy = torch.randn(1, self.obs_dim)
+
+        torch.onnx.export(
+            onnx_model,
+            dummy,
+            path,
+            input_names=["obs"],
+            output_names=["action"],
+        )
