@@ -53,17 +53,6 @@ def robot_to_frame(xr: float, yr: float, fw: int, fh: int, ws: Workspace):
     return x_px, y_px
 
 
-def pixel_velocity_to_robot(
-    dx: float, dy: float, dt: float, fw: int, fh: int, ws: Workspace
-):
-    """Convert pixel velocity to robot velocity (m/s)."""
-    if dt <= 0.0:
-        return 0.0, 0.0
-    vx = (dx / fw) * (ws.x_max - ws.x_min) / dt
-    vy = (-(dy) / fh) * (ws.y_max - ws.y_min) / dt
-    return vx, vy
-
-
 # ---------------- Canvas ----------------
 
 
@@ -262,9 +251,11 @@ class CanvasWidget(QtWidgets.QWidget):
             dx = float(p.x() - self._last_pos.x())
             dy = float(p.y() - self._last_pos.y())
             dt = now - self._last_time
-            vx, vy = pixel_velocity_to_robot(
-                dx, dy, dt, self.width(), self.height(), self.ws
-            )
+
+            if dt <= 0.0:
+                vx, vy = 0.0, 0.0
+            vx = dx / dt
+            vy = -dy / dt
             if dt > 0 and callable(self.on_velocity):
                 self.on_velocity(vx, vy)
         self._last_pos = p
@@ -404,23 +395,15 @@ class TaserGUI(QtWidgets.QMainWindow):
         )
 
     def _publish_arm1_vel(self, vx: float, vy: float):
-        ws = self.ws
-        fw = self.mid_canvas.width()
-        scale_x = (ws.x_max - ws.x_min) / (fw)  # m per pixel in x
-        vx = vx * scale_x
-        fh = self.mid_canvas.height()
-        scale_y = (ws.y_max - ws.y_min) / (fh)  # m per pixel in y
-        vy = vy * scale_y
+        vx = vx * 0.5 / self.mid_canvas.width()  # m per pixel in x
+        vy = vy * 1.0 / self.mid_canvas.height()  # m per pixel in y
+        print("arm 1", vy, self.mid_canvas.height())
         self.arm1_pub.publish(Vector3(x=float(vx), y=0.0, z=float(vy)))
 
     def _publish_arm2_vel(self, vx: float, vy: float):
-        ws = self.ws
-        fw = self.right_canvas.width()
-        scale_x = (ws.x_max - ws.x_min) / (fw)  # m per pixel in x
-        vx = vx * scale_x
-        fh = self.right_canvas.height()
-        scale_y = (ws.y_max - ws.y_min) / (fh)  # m per pixel in y
-        vy = vy * scale_y
+        vx = vx * 0.5 / self.right_canvas.width()  # m per pixel in x
+        vy = vy * 1.0 / self.right_canvas.height()  # m per pixel in y
+        print("arm 2", vy, self.right_canvas.height())
         self.arm2_pub.publish(Vector3(x=float(vx), y=0.0, z=float(vy)))
 
     # --------- TF -> robot overlay ---------

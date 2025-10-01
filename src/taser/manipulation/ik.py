@@ -12,15 +12,8 @@ class IKManipulator:
             Path(taser_ros_share_dir) / "robot_description" / "urdf" / "taser.urdf"
         )
 
-        self._right_arm = Robot.URDF(
-            file_path=str(urdf_path),
-            gripper="right_arm_eef",
-        )
-
-        self._left_arm = Robot.URDF(
-            file_path=str(urdf_path),
-            gripper="left_arm_eef",
-        )
+        self._right_arm = Robot.URDF(file_path=str(urdf_path))
+        self._left_arm = Robot.URDF(file_path=str(urdf_path))
 
     def get_dq_from_linear_v(
         self,
@@ -30,10 +23,12 @@ class IKManipulator:
     ) -> np.ndarray:
         if arm == "right":
             robot = self._right_arm
+            end = "right_arm_eef"
         else:
             robot = self._left_arm
+            end = "left_arm_eef"
 
-        J = robot.jacob0(q_current, start="base_link")
+        J = robot.jacob0(q_current, start="base_link", end=end)
         J_pos = J[0:3, :]
         dq = np.linalg.pinv(J_pos) @ v_desired
         return dq

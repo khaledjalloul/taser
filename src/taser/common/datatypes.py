@@ -50,9 +50,9 @@ class TaserJointState:
 
     @classmethod
     def from_ros(cls, ros_state: list[float]) -> "TaserJointState":
-        left_arm = [ros_state[0], ros_state[4], ros_state[5]]
-        right_arm = [ros_state[1], ros_state[6], ros_state[7]]
-        wheels = ros_state[2:4]
+        left_arm = [ros_state[0], ros_state[1], ros_state[3]]
+        right_arm = [ros_state[2], ros_state[4], ros_state[5]]
+        wheels = ros_state[6:8]
         ordered = [*left_arm, *right_arm, *wheels]
         return TaserJointState(
             ordered=ordered,
