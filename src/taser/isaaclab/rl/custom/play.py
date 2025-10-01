@@ -7,7 +7,9 @@ parser.add_argument(
 )
 parser.add_argument("--model_path", type=str, help="Path to the trained model.")
 parser.add_argument(
-    "--export_onnx_path", type=str, help="Path to export the ONNX model."
+    "--export_path",
+    type=str,
+    help="Directory path to export the torch and ONNX models.",
 )
 
 ############################################################
@@ -18,12 +20,12 @@ from isaaclab.app import AppLauncher
 
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
-args.task = f"TASER-{args.task}"
+task = f"TASER-{args.task}"
 
 if not args.model_path:
     outputs_dir = Path("/workspaces/taser/outputs")
     subdirs = sorted(
-        [outputs_dir / d for d in outputs_dir.glob(f"*{args.task}*") if d.is_dir()]
+        [outputs_dir / d for d in outputs_dir.glob(f"*{task}*") if d.is_dir()]
     )
     args.model_path = subdirs[-1] / "best_model.pth"
     print(f"No model path provided. Using the latest model at {args.model_path}")
@@ -52,9 +54,12 @@ def play(env: gym.Env):
 
     obs_dict, _ = env.reset()
 
-    if args.export_onnx_path:
-        model.export_onnx(args.export_onnx_path)
-        print(f"Exported ONNX model to {args.export_onnx_path}")
+    if args.export_path:
+        export_path = Path(args.export_path)
+        export_path.mkdir(parents=True, exist_ok=True)
+        model.save(export_path / f"{args.task}.pth")
+        model.export_onnx(export_path / f"{args.task}.onnx")
+        print(f"Exported torch and ONNX models to {args.export_path}")
         return
 
     while simulation_app.is_running():
@@ -68,10 +73,10 @@ def play(env: gym.Env):
 
 if __name__ == "__main__":
     env_cfg = parse_env_cfg(
-        task_name=args.task,
+        task_name=task,
         num_envs=args.num_envs,
     )
-    env = gym.make(args.task, cfg=env_cfg)
+    env = gym.make(task, cfg=env_cfg)
 
     play(env)
 

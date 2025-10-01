@@ -36,6 +36,6 @@ class BalancePolicy:
         )
 
         action = self.policy.run(input_feed={"obs": obs}, output_names=["action"])[0]
-        action = action * 20.0 / np.pi
+        action = action * 3.0
 
         return action

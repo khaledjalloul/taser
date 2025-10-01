@@ -27,7 +27,7 @@ class ActionsCfg:
             "base_link_left_wheel_joint",
             "base_link_right_wheel_joint",
         ],
-        scale=10.0,
+        scale=3.0,
     )
 
 
@@ -124,6 +124,15 @@ def origin_position_reward(env: ManagerBasedEnv, std: float = 1.0):
     )
 
 
+def zero_orientation_reward(env: ManagerBasedEnv, std: float = 1.0) -> torch.Tensor:
+    """Get the distance of a quaternion from the identity quaternion."""
+    q_identity = torch.tensor([1.0, 0.0, 0.0, 0.0], device=env.device)
+    return torch.exp(
+        -(torch.linalg.vector_norm(base_quat_w(env) - q_identity, dim=-1) ** 2)
+        / (2 * std**2)
+    )
+
+
 def zero_velocity_reward(env: ManagerBasedEnv, std: float = 1.0):
     """Get the penalty based on the robot's velocity."""
     return torch.exp(
@@ -146,6 +155,7 @@ class RewardsCfg:
     )
 
     origin_pos_reward = RewardTermCfg(func=origin_position_reward, weight=3.0)
+    zero_orien_reward = RewardTermCfg(func=zero_orientation_reward, weight=3.0)
     zero_vel_reward = RewardTermCfg(func=zero_velocity_reward, weight=3.0)
 
 
