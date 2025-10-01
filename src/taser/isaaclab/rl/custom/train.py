@@ -110,7 +110,9 @@ def train(env: gym.Env):
                     action = dist.mean  # Use mean action for evaluation
                     obs_dict, reward, _, _, _ = env.step(action)
 
-                    obs_dict = {k: torch.nan_to_num(v, nan=0.0) for k, v in obs_dict.items()}
+                    obs_dict = {
+                        k: torch.nan_to_num(v, nan=0.0) for k, v in obs_dict.items()
+                    }
                     reward = torch.nan_to_num(reward, nan=0.0)
 
                     eval_rewards += reward

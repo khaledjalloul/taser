@@ -14,7 +14,7 @@ from isaaclab.managers import (
 from isaaclab.utils import configclass
 
 from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg
-from taser.isaaclab.common.obs_utils import base_pos_b, base_quat_w, base_vel_w
+from taser.isaaclab.common.obs_utils import base_pos_b, base_quat_w
 
 
 @configclass
@@ -100,10 +100,11 @@ class ObservationsCfg:
         # Base orientation useful for balancing
         base_quat_w = ObservationTermCfg(func=base_quat_w)
 
-        # Base velocity useful for balancing
+        # Base velocity
         # NOTE: Using world frame instead of body frame since the former is more stable
         # and leads to better performance
-        base_vel_w = ObservationTermCfg(func=base_vel_w)
+        base_lin_vel = ObservationTermCfg(func=mdp.base_lin_vel)
+        base_ang_vel = ObservationTermCfg(func=mdp.base_ang_vel)
 
     @configclass
     class PolicyCfg(ObservationGroupCfg):
@@ -134,10 +135,9 @@ def zero_orientation_reward(env: ManagerBasedEnv, std: float = 1.0) -> torch.Ten
 
 
 def zero_velocity_reward(env: ManagerBasedEnv, std: float = 1.0):
-    """Get the penalty based on the robot's velocity."""
-    return torch.exp(
-        -(torch.linalg.vector_norm(base_vel_w(env), dim=-1) ** 2) / (2 * std**2)
-    )
+    """Get the reward based on the robot's velocity."""
+    base_vel = torch.cat([mdp.base_lin_vel(env), mdp.base_ang_vel(env)], dim=-1)
+    return torch.exp(-(torch.linalg.vector_norm(base_vel, dim=-1) ** 2) / (2 * std**2))
 
 
 @configclass

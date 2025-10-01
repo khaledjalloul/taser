@@ -21,6 +21,7 @@ from isaaclab.app import AppLauncher
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 task = f"TASER-{args.task}"
+args.headless = True if args.export_path else args.headless
 
 if not args.model_path:
     outputs_dir = Path("/workspaces/taser/outputs")
@@ -59,7 +60,9 @@ def play(env: gym.Env):
         export_path.mkdir(parents=True, exist_ok=True)
         model.save(export_path / f"{args.task}.pth")
         model.export_onnx(export_path / f"{args.task}.onnx")
-        print(f"Exported torch and ONNX models to {args.export_path}")
+        print(
+            f"Exported torch model to {export_path / f'{args.task}.pth'} and ONNX model to {export_path / f'{args.task}.onnx'}"
+        )
         return
 
     while simulation_app.is_running():

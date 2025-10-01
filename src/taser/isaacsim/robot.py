@@ -8,7 +8,7 @@ from isaacsim.core.utils.types import ArticulationActions
 
 from taser.isaacsim.utils.occupancy_grid import OccupancyGrid
 from taser.isaacsim.utils.ros2_tf_publisher import add_tf_publisher
-from taser.locomotion import BalancePolicy
+from taser.locomotion import LocomotionPolicy
 from taser.manipulation import IKManipulator
 
 NAME = "taser"
@@ -50,26 +50,22 @@ class TaserIsaacSimRobot(Articulation):
         )
 
         self._manipulator = IKManipulator()
-        self._balance_policy = BalancePolicy()
+        self._locomotion_policy = LocomotionPolicy()
 
     def step(self, dt: float, occupancy_grid: OccupancyGrid) -> None:
         # base_link = f"{PRIM_PATH}/base_link"
         # base_link_idx = self._physics_view.link_paths[0].index(base_link)
 
-        wheel_velocities = self._balance_policy.step(
+        cmd_vel = np.array([[0, 0, 0]], dtype=np.float16)  # x, y, yaw
+
+        wheel_velocities = self._locomotion_policy.step(
             joint_positions=self.get_joint_positions(),
             joint_velocities=self.get_joint_velocities(),
             base_position=self.get_world_poses()[0],
-            # base_position=self._physics_view.get_link_transforms()[:, base_link_idx][
-            #     :, :3
-            # ],
             base_quaternion=self.get_world_poses()[1],
-            # base_quaternion=np.roll(
-            #     self._physics_view.get_link_transforms()[:, base_link_idx][:, 3:],
-            #     1,
-            #     axis=-1,
-            # ),  # w, x, y, z
-            base_velocity=self.get_velocities(),
+            base_linear_velocity=self.get_linear_velocities(),
+            base_angular_velocity=self.get_angular_velocities(),
+            base_target_planar_velocity=cmd_vel,
         )
 
         action = ArticulationActions(
