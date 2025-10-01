@@ -20,3 +20,13 @@ gym.register(
         "rsl_rl_cfg_entry_point": "taser.isaaclab.rl.rsl_rl.ppo_cfg:TaserPPORunnerCfg",
     },
 )
+
+gym.register(
+    id="TASER-pick",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.pick_env_cfg:TaserPickEnvCfg",
+        "rsl_rl_cfg_entry_point": "taser.isaaclab.rl.rsl_rl.ppo_cfg:TaserPPORunnerCfg",
+    },
+)

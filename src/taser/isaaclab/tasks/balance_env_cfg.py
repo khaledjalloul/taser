@@ -13,8 +13,9 @@ from isaaclab.managers import (
 )
 from isaaclab.utils import configclass
 
-from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg
-from taser.isaaclab.common.obs_utils import base_pos_b, base_quat_w
+from taser.isaaclab.common.articulation import TASER_CONFIG_USD
+from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg, TaserBaseSceneCfg
+from taser.isaaclab.common.obs_utils import base_quat_w
 
 
 @configclass
@@ -97,12 +98,7 @@ class ObservationsCfg:
         joint_pos = ObservationTermCfg(func=mdp.joint_pos)
         joint_vel = ObservationTermCfg(func=mdp.joint_vel)
 
-        # Base orientation useful for balancing
-        base_quat_w = ObservationTermCfg(func=base_quat_w)
-
         # Base velocity
-        # NOTE: Using world frame instead of body frame since the former is more stable
-        # and leads to better performance
         base_lin_vel = ObservationTermCfg(func=mdp.base_lin_vel)
         base_ang_vel = ObservationTermCfg(func=mdp.base_ang_vel)
 
@@ -110,28 +106,12 @@ class ObservationsCfg:
     class PolicyCfg(ObservationGroupCfg):
         """Observations for policy group."""
 
-        # Base position in environment frame to stay close to the origin
-        base_pos_b = ObservationTermCfg(func=base_pos_b)
+        # Base orientation useful for balancing
+        base_quat_w = ObservationTermCfg(func=base_quat_w)
 
     # Observation groups
     proprio: ProprioCfg = ProprioCfg()
     policy: PolicyCfg = PolicyCfg()
-
-
-def origin_position_reward(env: ManagerBasedEnv, std: float = 1.0):
-    """Get the distances from the robot's position to the environment's origin."""
-    return torch.exp(
-        -(torch.linalg.vector_norm(base_pos_b(env)[:, :2], dim=-1) ** 2) / (2 * std**2)
-    )
-
-
-def zero_orientation_reward(env: ManagerBasedEnv, std: float = 1.0) -> torch.Tensor:
-    """Get the distance of a quaternion from the identity quaternion."""
-    q_identity = torch.tensor([1.0, 0.0, 0.0, 0.0], device=env.device)
-    return torch.exp(
-        -(torch.linalg.vector_norm(base_quat_w(env) - q_identity, dim=-1) ** 2)
-        / (2 * std**2)
-    )
 
 
 def zero_velocity_reward(env: ManagerBasedEnv, std: float = 1.0):
@@ -154,9 +134,14 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
-    origin_pos_reward = RewardTermCfg(func=origin_position_reward, weight=3.0)
-    zero_orien_reward = RewardTermCfg(func=zero_orientation_reward, weight=3.0)
     zero_vel_reward = RewardTermCfg(func=zero_velocity_reward, weight=3.0)
+
+
+@configclass
+class SceneCfg(TaserBaseSceneCfg):
+    """Scene for the balance task."""
+
+    robot = TASER_CONFIG_USD.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
 
 @configclass
@@ -180,4 +165,5 @@ class TaserBalanceEnvCfg(TaserBaseEnvCfg):
     events = EventsCfg()
     observations = ObservationsCfg()
     rewards = RewardsCfg()
+    scene = SceneCfg()
     terminations = TerminationsCfg()

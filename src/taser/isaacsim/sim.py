@@ -22,45 +22,62 @@ from taser.isaacsim.utils.occupancy_grid import (
 from taser.isaacsim.utils.ros2_tf_publisher import set_up_omni_graph
 
 
+class TaserIsaacSim:
+    def __init__(self):
+        enable_extensions()
+
+        # Set up ROS 2 bridge omni graph
+        set_up_omni_graph()
+
+        self.world = World(
+            stage_units_in_meters=1.0,
+            # physics_dt=0.01,
+            # rendering_dt=0.05,
+        )
+
+        self.robot = TaserIsaacSimRobot(
+            position=(0.0, 0.0, 0.65),
+            orientation=(1.0, 0.0, 0.0, 0.0),
+        )
+
+        set_up_scene(world=self.world, robot=self.robot)
+
+        self.needs_reset = False
+        self.first_step = True
+
+    def setup(self) -> None:
+        self.world.add_physics_callback("taser_step", callback_fn=self.on_physics_step)
+
+    def on_physics_step(self, step_size: float) -> None:
+        if self.first_step:
+            self.robot.initialize()
+            self.occupancy_grid_generator = set_up_occupancy_grid_generator()
+            self.first_step = False
+        elif self.needs_reset:
+            self.world.reset(True)
+            self.needs_reset = False
+            self.first_step = True
+        else:
+            occupancy_grid = get_occupancy_grid(
+                self.occupancy_grid_generator, plot=False
+            )
+            self.robot.step(dt=step_size, occupancy_grid=occupancy_grid)
+
+    def run(self) -> None:
+        while simulation_app.is_running():
+            self.world.step(render=True)
+            if self.world.is_stopped():
+                self.needs_reset = True
+
+
 def main():
-    enable_extensions()
-
-    # Set up ROS 2 bridge omni graph
-    set_up_omni_graph()
-
-    # Create robot instance
-    robot = TaserIsaacSimRobot(
-        position=(0.0, 0.0, 0.65),
-        orientation=(1.0, 0.0, 0.0, 0.0),
-    )
-
-    world = World(
-        stage_units_in_meters=1.0,
-        # physics_dt=0.01,
-        # rendering_dt=0.05,
-    )
-
-    set_up_scene(world=world, robot=robot)
-    world.reset()
-
-    step = 0
-    occupancy_grid = None
-
-    while simulation_app.is_running():
-        if world.is_playing():
-            if step == 0:
-                generator = set_up_occupancy_grid_generator()
-
-            occupancy_grid = get_occupancy_grid(generator, plot=False)
-            robot.step(dt=world.get_physics_dt(), occupancy_grid=occupancy_grid)
-
-            step += 1
-
-        if world.is_stopped():
-            step = 0
-
-        world.step(render=True)
-
+    sim = TaserIsaacSim()
+    simulation_app.update()
+    sim.world.reset()
+    simulation_app.update()
+    sim.setup()
+    simulation_app.update()
+    sim.run()
     simulation_app.close()
 
 

@@ -13,7 +13,8 @@ from isaaclab.managers import (
 )
 from isaaclab.utils import configclass
 
-from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg
+from taser.isaaclab.common.articulation import TASER_CONFIG_USD
+from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg, TaserBaseSceneCfg
 from taser.isaaclab.common.obs_utils import base_quat_w
 
 
@@ -160,18 +161,11 @@ class RewardsCfg:
     )
 
 
-# def lin_vel_error_too_large(env: ManagerBasedEnv):
-#     return (
-#         torch.abs(env.target_vel_b[:, 0] - root_planar_vel_b(env)[:, 0])
-#         > env._max_lin_vel * 1.2
-#     )
+@configclass
+class SceneCfg(TaserBaseSceneCfg):
+    """Scene for the track velocity task."""
 
-
-# def ang_vel_error_too_large(env: ManagerBasedEnv):
-#     return (
-#         torch.abs(env.target_vel_b[:, 1] - root_planar_vel_b(env)[:, 1])
-#         > env._max_ang_vel * 1.2
-#     )
+    robot = TASER_CONFIG_USD.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
 
 @configclass
@@ -188,14 +182,6 @@ class TerminationsCfg:
         },
     )
 
-    # lin_vel_error_too_large = TerminationTermCfg(
-    #     func=lin_vel_error_too_large,
-    # )
-
-    # ang_vel_error_too_large = TerminationTermCfg(
-    #     func=ang_vel_error_too_large,
-    # )
-
 
 @configclass
 class TaserTrackVelocityEnvCfg(TaserBaseEnvCfg):
@@ -206,4 +192,5 @@ class TaserTrackVelocityEnvCfg(TaserBaseEnvCfg):
     events = EventsCfg()
     observations = ObservationsCfg()
     rewards = RewardsCfg()
+    scene = SceneCfg()
     terminations = TerminationsCfg()

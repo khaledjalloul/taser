@@ -20,6 +20,49 @@ USD_PATH = (
     / "taser.usd"
 )
 
+INIT_STATE = ArticulationCfg.InitialStateCfg(
+    joint_pos={
+        "base_link_left_arm_shoulder_joint": 0.0,
+        "left_arm_1_left_arm_2_joint": 0.0,
+        "left_arm_2_left_arm_3_joint": 0.0,
+        "base_link_right_arm_shoulder_joint": 0.0,
+        "right_arm_1_right_arm_2_joint": 0.0,
+        "right_arm_2_right_arm_3_joint": 0.0,
+        "base_link_left_wheel_joint": 0.0,
+        "base_link_right_wheel_joint": 0.0,
+    },
+    pos=(0.0, 0.0, 0.65),
+)
+
+ACTUATORS = {
+    "left_arm_joints": ImplicitActuatorCfg(
+        joint_names_expr=[
+            "base_link_left_arm_shoulder_joint",
+            "left_arm_1_left_arm_2_joint",
+            "left_arm_2_left_arm_3_joint",
+        ],
+        stiffness=None,
+        damping=None,
+    ),
+    "right_arm_joints": ImplicitActuatorCfg(
+        joint_names_expr=[
+            "base_link_right_arm_shoulder_joint",
+            "right_arm_1_right_arm_2_joint",
+            "right_arm_2_right_arm_3_joint",
+        ],
+        stiffness=None,
+        damping=None,
+    ),
+    "wheel_joints": ImplicitActuatorCfg(
+        joint_names_expr=[
+            "base_link_left_wheel_joint",
+            "base_link_right_wheel_joint",
+        ],
+        stiffness=None,
+        damping=None,
+    ),
+}
+
 TASER_CONFIG_URDF = ArticulationCfg(
     spawn=sim_utils.UrdfFileCfg(
         asset_path=str(URDF_PATH.resolve()),
@@ -32,51 +75,23 @@ TASER_CONFIG_URDF = ArticulationCfg(
             target_type="velocity",
         ),
     ),
-    init_state=ArticulationCfg.InitialStateCfg(
-        joint_pos={
-            "base_link_left_arm_shoulder_joint": 0.0,
-            "left_arm_1_left_arm_2_joint": 0.0,
-            "left_arm_2_left_arm_3_joint": 0.0,
-            "base_link_right_arm_shoulder_joint": 0.0,
-            "right_arm_1_right_arm_2_joint": 0.0,
-            "right_arm_2_right_arm_3_joint": 0.0,
-            "base_link_left_wheel_joint": 0.0,
-            "base_link_right_wheel_joint": 0.0,
-        },
-        pos=(0.0, 0.0, 0.65),
-    ),
-    actuators={
-        "left_arm_joints": ImplicitActuatorCfg(
-            joint_names_expr=[
-                "base_link_left_arm_shoulder_joint",
-                "left_arm_1_left_arm_2_joint",
-                "left_arm_2_left_arm_3_joint",
-            ],
-            stiffness=None,
-            damping=None,
-        ),
-        "right_arm_joints": ImplicitActuatorCfg(
-            joint_names_expr=[
-                "base_link_right_arm_shoulder_joint",
-                "right_arm_1_right_arm_2_joint",
-                "right_arm_2_right_arm_3_joint",
-            ],
-            stiffness=None,
-            damping=None,
-        ),
-        "wheel_joints": ImplicitActuatorCfg(
-            joint_names_expr=[
-                "base_link_left_wheel_joint",
-                "base_link_right_wheel_joint",
-            ],
-            stiffness=None,
-            damping=None,
-        ),
-    },
+    init_state=INIT_STATE,
+    actuators=ACTUATORS,
 )
 
-TASER_CONFIG_USD = TASER_CONFIG_URDF.replace(
+TASER_CONFIG_USD = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
         usd_path=str(USD_PATH.resolve()),
+    ),
+    init_state=INIT_STATE,
+    actuators=ACTUATORS,
+)
+
+TASER_CONFIG_FIXED_BASE_USD = TASER_CONFIG_USD.replace(
+    spawn=sim_utils.UsdFileCfg(
+        usd_path=str(USD_PATH.resolve()),
+        articulation_props=sim_utils.ArticulationRootPropertiesCfg(
+            fix_root_link=True,
+        ),
     ),
 )

@@ -55,8 +55,6 @@ class LocomotionPolicy:
                     base_linear_velocity,
                     base_angular_velocity,
                     # Policy
-                    base_linear_velocity,
-                    base_angular_velocity,
                     base_target_planar_velocity,
                 ),
                 axis=-1,
