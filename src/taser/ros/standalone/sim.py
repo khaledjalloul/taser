@@ -10,13 +10,13 @@ from taser.common.datatypes import Pose, VelocityCommand
 from taser.locomotion import DifferentialDriveKinematics
 from taser.manipulation import IKManipulator
 from taser.navigation import PolygonNavigator
-from taser_ros.parameters import load_sim_parameters
-from taser_ros.ros_node import RosNode
+from taser.ros.standalone.parameters import load_sim_parameters
+from taser.ros.standalone.ros_node import TaserStandaloneRosNode
 
 
-class RvizSim:
+class TaserRvizSim:
     def __init__(self):
-        self.node = RosNode(
+        self.node = TaserStandaloneRosNode(
             navigation_target_pose_cb=self.navigation_target_pose_cb,
             left_arm_velocity_cb=self.left_arm_velocity_cb,
             right_arm_velocity_cb=self.right_arm_velocity_cb,
@@ -137,7 +137,7 @@ class RvizSim:
 
 def main(args=None):
     rclpy.init(args=args)
-    RvizSim()
+    TaserRvizSim()
     rclpy.shutdown()
 
 

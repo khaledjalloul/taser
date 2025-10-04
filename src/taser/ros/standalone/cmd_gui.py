@@ -19,7 +19,7 @@ from tf2_ros import (
 )
 
 from taser.common.datatypes import Polygon, Workspace
-from taser_ros.parameters import load_sim_parameters
+from taser.ros.standalone.parameters import load_sim_parameters
 
 # ---------------- Parameters & Mapping ----------------
 
@@ -397,13 +397,11 @@ class TaserGUI(QtWidgets.QMainWindow):
     def _publish_arm1_vel(self, vx: float, vy: float):
         vx = vx * 0.5 / self.mid_canvas.width()  # m per pixel in x
         vy = vy * 1.0 / self.mid_canvas.height()  # m per pixel in y
-        print("arm 1", vy, self.mid_canvas.height())
         self.arm1_pub.publish(Vector3(x=float(vx), y=0.0, z=float(vy)))
 
     def _publish_arm2_vel(self, vx: float, vy: float):
         vx = vx * 0.5 / self.right_canvas.width()  # m per pixel in x
         vy = vy * 1.0 / self.right_canvas.height()  # m per pixel in y
-        print("arm 2", vy, self.right_canvas.height())
         self.arm2_pub.publish(Vector3(x=float(vx), y=0.0, z=float(vy)))
 
     # --------- TF -> robot overlay ---------

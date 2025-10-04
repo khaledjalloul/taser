@@ -15,7 +15,7 @@ from visualization_msgs.msg import Marker
 from taser.common.datatypes import Pose, TaserJointState
 
 
-class RosNode(Node):
+class TaserStandaloneRosNode(Node):
     def __init__(
         self,
         navigation_target_pose_cb: callable,
