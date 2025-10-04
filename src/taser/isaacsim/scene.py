@@ -1,13 +1,44 @@
-from isaacsim.core.api import World
+import numpy as np
+import omni.isaac.core.utils.prims as prim_utils
 from isaacsim.core.api.scenes import Scene
+from isaacsim.core.utils.stage import add_reference_to_stage
+from isaacsim.storage.native import get_assets_root_path
+from omni.isaac.core.prims import XFormPrim
 
-from taser.isaacsim.robot import TaserIsaacSimRobot
 
-
-def set_up_scene(world: World, robot: TaserIsaacSimRobot) -> Scene:
-    scene: Scene = world.scene
+def set_up_scene(scene: Scene):
     scene.add_default_ground_plane()
 
-    scene.add(robot)
+    prim_utils.create_prim(
+        "/World/Light",
+        "DomeLight",
+        # position=np.array([1.0, 1.0, 1.0]),
+        attributes={
+            # "inputs:radius": 0.01,
+            "inputs:intensity": 1e3,
+            "inputs:color": (1.0, 1.0, 1.0),
+        },
+    )
 
-    return scene
+    nucleus_root_path = get_assets_root_path()
+    environment_prim_path = "/World/Environment"
+
+    num_pallets = 4
+    offset = 3.0
+
+    count = 0
+    for x in range(-num_pallets // 2, num_pallets // 2 + 1):
+        for y in range(-num_pallets // 2, num_pallets // 2 + 1):
+            if x == 0 and y == 0:
+                continue  # Skip the origin
+            count += 1
+            pallet_prim_path = f"{environment_prim_path}/Pallet_{count}"
+            add_reference_to_stage(
+                usd_path=nucleus_root_path + "/Isaac/Props/Pallet/o3dyn_pallet.usd",
+                prim_path=pallet_prim_path,
+            )
+            XFormPrim(
+                prim_path=pallet_prim_path,
+                name=f"Pallet_{count}",
+                position=(x * offset, y * offset, 0.0),
+            )

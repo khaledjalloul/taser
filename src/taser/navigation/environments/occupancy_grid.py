@@ -32,6 +32,11 @@ class OccupancyGrid:
             self._grid = np.zeros((y_shape, x_shape))
 
     def set(self, region: tuple[int, int, int, int], value: float) -> None:
+        """Set the value of a region in the occupancy grid.
+        Args:
+            region (tuple[int, int, int, int]): The region to set in the format (x_min, x_max, y_min, y_max).
+            value (float): The value to set the region to (0 for free, 1 for occupied).
+        """
         x_min, x_max, y_min, y_max = region
 
         start_g = self.w2g((x_min, y_min))
@@ -72,6 +77,10 @@ class OccupancyGrid:
     @property
     def cellsize(self) -> float:
         return self._cellsize
+
+    @property
+    def workspace(self) -> Workspace:
+        return self._workspace
 
 
 if __name__ == "__main__":

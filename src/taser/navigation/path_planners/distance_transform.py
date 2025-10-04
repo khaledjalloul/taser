@@ -23,7 +23,7 @@ class DistanceTransformPathPlanner:
 
         self.set_occupancy_grid(occupancy_grid)
 
-    def set_occupancy_grid(self, occupancy_grid: OccupancyGrid):
+    def set_occupancy_grid(self, occupancy_grid: OccupancyGrid | np.ndarray) -> None:
         if isinstance(occupancy_grid, np.ndarray):
             self._occupancy_grid = OccupancyGrid(
                 workspace=self._workspace,
@@ -34,10 +34,10 @@ class DistanceTransformPathPlanner:
             self._occupancy_grid = occupancy_grid
 
         self._planner = DistanceTransformPlanner(
-            occgrid=occupancy_grid.grid,
+            occgrid=self._occupancy_grid.grid,
             # Inflate by half the robot's length + a safety margin
             # Converted to grid cell coordinates
-            inflate=((self._wheel_base / occupancy_grid.cellsize) / 2) * 1.5,
+            inflate=((self._wheel_base / self._occupancy_grid.cellsize) / 2) * 1.5,
         )
 
     def plan(self, start: Pose, goal: Pose) -> list[Pose]:

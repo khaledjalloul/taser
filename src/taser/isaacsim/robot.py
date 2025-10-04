@@ -2,15 +2,20 @@ from pathlib import Path
 
 import numpy as np
 from ament_index_python.packages import get_package_share_directory
-from isaacsim.core.prims import Articulation
+from geometry_msgs.msg import Pose2D as Pose2DRos
+from isaacsim.core.prims import SingleArticulation
+from isaacsim.core.utils.rotations import quat_to_euler_angles, quat_to_rot_matrix
 from isaacsim.core.utils.stage import add_reference_to_stage
-from isaacsim.core.utils.types import ArticulationActions
+from isaacsim.core.utils.types import ArticulationAction
 
+from taser.common.datatypes import Pose, Workspace
 from taser.isaacsim.utils.occupancy_grid import OccupancyGrid
 from taser.isaacsim.utils.ros2_tf_publisher import add_tf_publisher
 from taser.isaacsim.utils.teleop import Teleop
 from taser.locomotion import LocomotionPolicy
 from taser.manipulation import IKManipulator
+from taser.navigation import GridNavigator
+from taser.ros.isaac.sim_node import TaserIsaacSimRosNode
 
 NAME = "taser"
 PRIM_PATH = "/World/Taser"
@@ -22,11 +27,12 @@ USD_PATH = str(
 )
 
 
-class TaserIsaacSimRobot(Articulation):
+class TaserIsaacSimRobot(SingleArticulation):
     def __init__(
         self,
         position: tuple[float, float, float],
         orientation: tuple[float, float, float],
+        ros_enabled: bool = True,
     ) -> None:
         """
         Initialize the robot.
@@ -39,9 +45,9 @@ class TaserIsaacSimRobot(Articulation):
 
         super().__init__(
             name=NAME,
-            prim_paths_expr=PRIM_PATH,
-            translations=np.array(position).reshape(1, -1),
-            orientations=np.array(orientation).reshape(1, -1),
+            prim_path=PRIM_PATH,
+            position=position,
+            orientation=orientation,
         )
 
         add_tf_publisher(
@@ -54,24 +60,108 @@ class TaserIsaacSimRobot(Articulation):
         self._locomotion_policy = LocomotionPolicy()
         self._teleop = Teleop()
 
-    def step(self, dt: float, occupancy_grid: OccupancyGrid) -> None:
-        # base_link = f"{PRIM_PATH}/base_link"
-        # base_link_idx = self._physics_view.link_paths[0].index(base_link)
+        self._path_plan: list[Pose] = []
 
-        vel_cmd = self._teleop.get_command()
+        self._ros_enabled = ros_enabled
+        if self._ros_enabled:
+            self._ros_node = TaserIsaacSimRosNode(
+                navigation_target_pose_cb=self._navigation_target_pose_cb,
+                left_arm_velocity_cb=self._left_arm_velocity_cb,
+                right_arm_velocity_cb=self._right_arm_velocity_cb,
+            )
+
+    def initialize(self, workspace: Workspace) -> None:
+        super().initialize()
+        self._occupancy_grid = OccupancyGrid(workspace=workspace, cellsize=0.1)
+        self._navigator = GridNavigator(
+            workspace=workspace,
+            occupancy_grid=self._occupancy_grid,
+            v_max=1.0,
+            w_max=1.0,
+            wheel_base=0.6,
+        )
+
+    def step(self, dt: float, occupancy_grid: OccupancyGrid) -> None:
+        self._occupancy_grid = occupancy_grid
+        self._hide_robot_from_occupancy_grid()
+
+        position_w, quaternion_w = self.get_world_pose()
+        root_linear_velocity = self.get_linear_velocity()
+
+        base_pose = Pose(
+            x=position_w[0], y=position_w[1], rz=quat_to_euler_angles(quaternion_w)[2]
+        )
+
+        vel_cmd = (0.0, 0.0, 0.0)
+        if np.any(self._teleop.get_command() != 0):
+            vel_cmd = self._teleop.get_command() * 1.5
+        else:
+            if self._path_plan:
+                base_vel_cmd, reached = self._navigator.step(
+                    base_pose, root_linear_velocity[0]
+                )
+                vel_cmd = (base_vel_cmd.v, 0.0, base_vel_cmd.w)
+                if reached:
+                    self._path_plan = []
+
+        R_IB = quat_to_rot_matrix(quaternion_w)
+        R_BI = R_IB.transpose()
 
         wheel_velocities = self._locomotion_policy.step(
             joint_positions=self.get_joint_positions(),
             joint_velocities=self.get_joint_velocities(),
-            base_position=self.get_world_poses()[0],
-            base_quaternion=self.get_world_poses()[1],
-            base_linear_velocity=self.get_linear_velocities(),
-            base_angular_velocity=self.get_angular_velocities(),
-            base_target_planar_velocity=vel_cmd,
+            base_position_w=position_w,
+            base_quaternion_w=quaternion_w,
+            base_linear_velocity_b=np.matmul(R_BI, root_linear_velocity),
+            base_angular_velocity_b=np.matmul(R_BI, self.get_angular_velocity()),
+            base_target_planar_velocity_b=vel_cmd,
         )
 
-        action = ArticulationActions(
-            joint_velocities=wheel_velocities,
-            joint_names=["base_link_left_wheel_joint", "base_link_right_wheel_joint"],
+        left_arm_joint_velocities = np.zeros(3)
+        right_arm_joint_velocities = np.zeros(3)
+
+        action = ArticulationAction(
+            joint_velocities=[
+                left_arm_joint_velocities[0],
+                wheel_velocities[0],
+                right_arm_joint_velocities[0],
+                wheel_velocities[1],
+                left_arm_joint_velocities[1],
+                right_arm_joint_velocities[1],
+                left_arm_joint_velocities[2],
+                right_arm_joint_velocities[2],
+            ]
         )
         self.apply_action(action)
+
+    def _hide_robot_from_occupancy_grid(self) -> None:
+        """Hide the robot from the occupancy grid to avoid self-collisions."""
+        position_w, _ = self.get_world_pose()
+        x_min = np.floor(position_w[0] - 0.3)
+        x_max = np.ceil(position_w[0] + 0.3)
+        y_min = np.floor(position_w[1] - 0.3)
+        y_max = np.ceil(position_w[1] + 0.3)
+
+        self._occupancy_grid.set((x_min, x_max, y_min, y_max), 0)
+
+        if self._ros_enabled:
+            self._ros_node.publish_occupancy_grid(self._occupancy_grid)
+
+    def _navigation_target_pose_cb(self, target: Pose2DRos):
+        position_w, quaternion_w = self.get_world_pose()
+        theta = quat_to_euler_angles(quaternion_w)[2]
+
+        current_pose = Pose(x=position_w[0], y=position_w[1], rz=theta)
+        target_pose = Pose(x=target.x, y=target.y, rz=theta)
+
+        self._path_plan = self._navigator.plan_path(
+            start=current_pose,
+            goal=target_pose,
+            occupancy_grid=self._occupancy_grid,
+        )
+
+    def _left_arm_velocity_cb(self, velocity) -> None:
+        pass
+
+    def _right_arm_velocity_cb(self, velocity) -> None:
+        pass

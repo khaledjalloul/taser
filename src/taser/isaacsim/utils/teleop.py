@@ -28,7 +28,7 @@ class Teleop:
             self._keyboard, self._sub_keyboard_event
         )
 
-        self._command = np.array([[0.0, 0.0, 0.0]], dtype=np.float16)  # x, y, yaw
+        self._command = np.array([0.0, 0.0, 0.0])  # x, y, yaw
 
     def _sub_keyboard_event(self, event, *args, **kwargs) -> bool:
         """
