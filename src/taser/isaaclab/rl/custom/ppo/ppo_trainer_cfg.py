@@ -5,11 +5,11 @@ from dataclasses import dataclass
 class PPOTrainerCfg:
     """Configuration for the PPO trainer."""
 
+    num_iters: int
+    """Number of training iterations"""
+
     num_rollout_steps: int
     """Number of timesteps for each training step rollout"""
-
-    total_num_steps: int
-    """Total number of timesteps for all envs to train for"""
 
     num_epochs: int
     """Number of PPO epochs per update"""
