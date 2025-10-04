@@ -15,7 +15,6 @@ from isaaclab.utils import configclass
 
 from taser.isaaclab.common.articulation import TASER_CONFIG_USD
 from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg, TaserBaseSceneCfg
-from taser.isaaclab.common.obs_utils import base_quat_w
 
 
 @configclass
@@ -98,16 +97,17 @@ class ObservationsCfg:
         joint_pos = ObservationTermCfg(func=mdp.joint_pos)
         joint_vel = ObservationTermCfg(func=mdp.joint_vel)
 
-        # Base velocity
-        base_lin_vel = ObservationTermCfg(func=mdp.base_lin_vel)
-        base_ang_vel = ObservationTermCfg(func=mdp.base_ang_vel)
+        # Base link velocity in base frame
+        base_lin_vel_b = ObservationTermCfg(func=mdp.base_lin_vel)
+        base_ang_vel_b = ObservationTermCfg(func=mdp.base_ang_vel)
 
     @configclass
     class PolicyCfg(ObservationGroupCfg):
         """Observations for policy group."""
 
         # Base orientation useful for balancing
-        base_quat_w = ObservationTermCfg(func=base_quat_w)
+        # NOTE: Should be in proprio group but keeping here to get a policy observation
+        base_quat_w = ObservationTermCfg(func=mdp.root_quat_w)
 
     # Observation groups
     proprio: ProprioCfg = ProprioCfg()

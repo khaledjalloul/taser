@@ -23,26 +23,24 @@ class LocomotionPolicy:
         self,
         joint_positions: np.ndarray,
         joint_velocities: np.ndarray,
-        base_position: np.ndarray,
-        base_quaternion: np.ndarray,
-        base_linear_velocity: np.ndarray,
-        base_angular_velocity: np.ndarray,
-        base_target_planar_velocity: np.ndarray,
+        base_position_w: np.ndarray,
+        base_quaternion_w: np.ndarray,
+        base_linear_velocity_b: np.ndarray,
+        base_angular_velocity_b: np.ndarray,
+        base_target_planar_velocity_b: np.ndarray,
     ) -> np.ndarray:
-        if np.all(base_target_planar_velocity == 0):
+        if False:
             policy = self._balance_policy
             obs = np.concatenate(
                 (
                     # Proprio
                     joint_positions,
                     joint_velocities,
-                    base_quaternion,
-                    base_linear_velocity,
-                    base_angular_velocity,
-                    # Policy
-                    base_position,
+                    base_linear_velocity_b,
+                    base_angular_velocity_b,
+                    base_quaternion_w,
                 ),
-                axis=-1,
+                dtype=np.float32,
             )
         else:
             policy = self._track_velocity_policy
@@ -51,16 +49,19 @@ class LocomotionPolicy:
                     # Proprio
                     joint_positions,
                     joint_velocities,
-                    base_quaternion,
-                    base_linear_velocity,
-                    base_angular_velocity,
+                    base_linear_velocity_b,
+                    base_angular_velocity_b,
+                    base_quaternion_w,
                     # Policy
-                    base_target_planar_velocity,
+                    base_target_planar_velocity_b,
                 ),
-                axis=-1,
+                dtype=np.float32,
             )
 
-        action = policy.run(input_feed={"obs": obs}, output_names=["action"])[0]
-        action = action * 3.0
+        action = policy.run(
+            input_feed={"obs": obs.reshape(1, -1)},
+            output_names=["action"],
+        )[0][0]  # First action, first batch element
+        action = action * 10.0
 
         return action

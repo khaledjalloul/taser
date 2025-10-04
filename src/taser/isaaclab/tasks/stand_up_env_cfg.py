@@ -1,8 +1,7 @@
 import math
 
-import numpy as np
 import torch
-from isaaclab.envs import mdp
+from isaaclab.envs import ManagerBasedEnv, mdp
 from isaaclab.managers import (
     EventTermCfg,
     ObservationGroupCfg,
@@ -21,30 +20,26 @@ from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg, TaserBaseSceneCf
 class ActionsCfg:
     """Action specifications for the environment."""
 
+    arm_velocities = mdp.JointVelocityActionCfg(
+        asset_name="robot",
+        joint_names=[
+            "base_link_left_arm_shoulder_joint",
+            "left_arm_1_left_arm_2_joint",
+            "left_arm_2_left_arm_3_joint",
+            "base_link_right_arm_shoulder_joint",
+            "right_arm_1_right_arm_2_joint",
+            "right_arm_2_right_arm_3_joint",
+        ],
+        scale=5.0,
+    )
+
     wheel_velocities = mdp.JointVelocityActionCfg(
         asset_name="robot",
         joint_names=[
             "base_link_left_wheel_joint",
             "base_link_right_wheel_joint",
         ],
-        scale=10.0,
-    )
-
-
-@configclass
-class CommandsCfg:
-    """Command specifications for the MDP."""
-
-    base_velocity = mdp.UniformVelocityCommandCfg(
-        asset_name="robot",
-        resampling_time_range=(5.0, 5.0),
-        debug_vis=True,
-        ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-3.0, 3.0),
-            lin_vel_y=(0.0, 0.0),
-            ang_vel_z=(-2.0, 2.0),
-            heading=(-math.pi, math.pi),
-        ),
+        scale=3.0,
     )
 
 
@@ -69,8 +64,8 @@ class EventsCfg:
                     "base_link_right_wheel_joint",
                 ],
             ),
-            "position_range": (0.0, 0.0),
-            "velocity_range": (0.0, 0.0),
+            "position_range": (-0.3, 0.3),
+            "velocity_range": (-0.6, 0.6),
         },
     )
 
@@ -84,9 +79,10 @@ class EventsCfg:
                 "y": (0.0, 0.0),
                 "z": (0.0, 0.0),
                 "roll": (0.0, 0.0),
-                "pitch": (-0.3, 0.3),
+                # Randomized starting pitch to start fallen down
+                "pitch": (-math.pi / 2, math.pi / 2),
                 # "pitch": (0.0, 0.0),
-                "yaw": (-torch.pi, torch.pi),
+                "yaw": (-math.pi, math.pi),
                 # "yaw": (0.0, 0.0),
             },
             "velocity_range": {
@@ -117,21 +113,41 @@ class ObservationsCfg:
         base_lin_vel_b = ObservationTermCfg(func=mdp.base_lin_vel)
         base_ang_vel_b = ObservationTermCfg(func=mdp.base_ang_vel)
 
-        # Base orientation useful for balancing
-        base_quat_w = ObservationTermCfg(func=mdp.root_quat_w)
-
     @configclass
     class PolicyCfg(ObservationGroupCfg):
         """Observations for policy group."""
 
-        # Target planar velocity
-        target_vel_b = ObservationTermCfg(
-            func=mdp.generated_commands, params={"command_name": "base_velocity"}
-        )
+        # Base orientation useful for balancing
+        # NOTE: Should be in proprio group but keeping here to get a policy observation
+        base_quat_w = ObservationTermCfg(func=mdp.root_quat_w)
 
     # Observation groups
     proprio: ProprioCfg = ProprioCfg()
     policy: PolicyCfg = PolicyCfg()
+
+
+def zero_linear_velocity_reward(env: ManagerBasedEnv, std: float = 1.0):
+    """Get the reward based on the robot's linear velocity in world frame."""
+    root_lin_vel_b = mdp.base_lin_vel(env)
+    return torch.exp(
+        -(torch.linalg.vector_norm(root_lin_vel_b, dim=-1) ** 2) / (2 * std**2)
+    )
+
+
+def zero_roll_and_yaw_velocity_reward(env: ManagerBasedEnv, std: float = 1.0):
+    """Get the reward based on the robot's angular velocity in base frame."""
+    root_ang_vel_b = mdp.base_ang_vel(env)
+    roll_yaw_ang_vel = torch.cat((root_ang_vel_b[:, 0], root_ang_vel_b[:, 2]), dim=-1)
+    return torch.exp(
+        -(torch.linalg.vector_norm(roll_yaw_ang_vel, dim=-1) ** 2) / (2 * std**2)
+    )
+
+
+def straighten_up_reward(env: ManagerBasedEnv):
+    """Get the reward based on how straight the robot is."""
+    base_quat = mdp.root_quat_w(env)
+    # Reward is 1 when base_quat is (1, 0, 0, 0) and decreases as it deviates
+    return base_quat[:, 0]  # Assuming base_quat is normalized
 
 
 @configclass
@@ -140,29 +156,30 @@ class RewardsCfg:
 
     alive_reward = RewardTermCfg(func=mdp.is_alive, weight=1.0)
 
-    termination_penalty = RewardTermCfg(func=mdp.is_terminated, weight=-10.0)
-
     tilt_penalty = RewardTermCfg(
         func=mdp.flat_orientation_l2,
-        weight=-5.0,
+        weight=-10.0,
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
-    track_lin_vel_xy_exp = RewardTermCfg(
-        func=mdp.track_lin_vel_xy_exp,
-        weight=10.0,
-        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+    zero_linear_velocity_reward = RewardTermCfg(
+        func=zero_linear_velocity_reward, weight=3.0
     )
-    track_ang_vel_z_exp = RewardTermCfg(
-        func=mdp.track_ang_vel_z_exp,
-        weight=7.0,
-        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+
+    zero_roll_and_yaw_velocity_reward = RewardTermCfg(
+        func=zero_roll_and_yaw_velocity_reward, weight=3.0
     )
+
+    # joint_vel_penalty = RewardTermCfg(
+    #     func=mdp.joint_vel_l2,
+    #     weight=-0.2,
+    #     params={"asset_cfg": SceneEntityCfg("robot")},
+    # )
 
 
 @configclass
 class SceneCfg(TaserBaseSceneCfg):
-    """Scene for the track velocity task."""
+    """Scene for the stand up task."""
 
     robot = TASER_CONFIG_USD.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
@@ -173,21 +190,12 @@ class TerminationsCfg:
 
     time_out = TerminationTermCfg(func=mdp.time_out, time_out=True)
 
-    robot_falling = TerminationTermCfg(
-        func=mdp.bad_orientation,
-        params={
-            "asset_cfg": SceneEntityCfg("robot"),
-            "limit_angle": float(np.deg2rad(70.0)),
-        },
-    )
-
 
 @configclass
-class TaserTrackVelocityEnvCfg(TaserBaseEnvCfg):
-    """TASER environment configuration for the track velocity task."""
+class TaserStandUpEnvCfg(TaserBaseEnvCfg):
+    """TASER environment configuration for the stand up task."""
 
     actions = ActionsCfg()
-    commands = CommandsCfg()
     events = EventsCfg()
     observations = ObservationsCfg()
     rewards = RewardsCfg()

@@ -77,6 +77,8 @@ class ActorCritic(nn.Module):
         obs_norm = self.obs_norm.normalize(obs)
 
         mu = self.actor(obs_norm)
+        mu = torch.tanh(mu)  # Apply tanh to constrain output between -1 and 1
+
         # Clamp log_std for numerical stability
         log_std = torch.clamp(self.log_std, min=-20, max=2)
         std = log_std.exp()

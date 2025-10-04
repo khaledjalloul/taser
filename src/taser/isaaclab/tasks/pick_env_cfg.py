@@ -16,7 +16,6 @@ from isaaclab.utils import configclass
 
 from taser.isaaclab.common.articulation import TASER_CONFIG_FIXED_BASE_USD
 from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg, TaserBaseSceneCfg
-from taser.isaaclab.common.obs_utils import base_quat_w
 
 
 @configclass
@@ -142,7 +141,7 @@ class ObservationsCfg:
         joint_vel = ObservationTermCfg(func=mdp.joint_vel)
 
         # Base orientation
-        base_quat_w = ObservationTermCfg(func=base_quat_w)
+        base_quat_w = ObservationTermCfg(func=mdp.root_quat_w)
 
     @configclass
     class PolicyCfg(ObservationGroupCfg):

@@ -68,6 +68,12 @@ def play(env: gym.Env):
     while simulation_app.is_running():
         with torch.inference_mode():
             action_dist, _ = model(obs_dict)
+            print(
+                "obs",
+                obs_dict["proprio"][:, 16:18],
+                obs_dict["proprio"][:, 21],
+                obs_dict["policy"],
+            )
             action = action_dist.mean
             obs_dict, rewards, terminated, truncated, info = env.step(action)
 
