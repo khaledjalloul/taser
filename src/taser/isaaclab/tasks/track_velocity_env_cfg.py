@@ -2,8 +2,9 @@ import math
 
 import numpy as np
 import torch
-from isaaclab.envs import mdp
+from isaaclab.envs import ManagerBasedRLEnv, mdp
 from isaaclab.managers import (
+    CurriculumTermCfg,
     EventTermCfg,
     ObservationGroupCfg,
     ObservationTermCfg,
@@ -15,6 +16,8 @@ from isaaclab.utils import configclass
 
 from taser.isaaclab.common.articulation import TASER_CONFIG_USD
 from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg, TaserBaseSceneCfg
+
+CURRICULUM_TIME_STEP = 100_000
 
 
 @configclass
@@ -40,11 +43,46 @@ class CommandsCfg:
         resampling_time_range=(5.0, 5.0),
         debug_vis=True,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-3.0, 3.0),
+            lin_vel_x=(0.0, 0.0),
             lin_vel_y=(0.0, 0.0),
-            ang_vel_z=(-2.0, 2.0),
+            ang_vel_z=(0.0, 0.0),
             heading=(-math.pi, math.pi),
         ),
+    )
+
+
+def update_target_lin_velocity(env: ManagerBasedRLEnv, *args, **kwargs):
+    """Update the target velocity command."""
+    range = (env.common_step_counter // CURRICULUM_TIME_STEP) * 0.5
+    range = min(range, 2.0)
+    return (-range, range)
+
+
+def update_target_ang_velocity(env: ManagerBasedRLEnv, *args, **kwargs):
+    """Update the target velocity command."""
+    range = (env.common_step_counter // CURRICULUM_TIME_STEP) * 0.5
+    range = min(range, 2.0)
+    return (-range, range)
+
+
+@configclass
+class CurriculumCfg:
+    """Curriculum specifications for the MDP."""
+
+    update_target_lin_velocity = CurriculumTermCfg(
+        func=mdp.modify_term_cfg,
+        params={
+            "address": "commands.base_velocity.ranges.lin_vel_x",
+            "modify_fn": update_target_lin_velocity,
+        },
+    )
+
+    update_target_ang_velocity = CurriculumTermCfg(
+        func=mdp.modify_term_cfg,
+        params={
+            "address": "commands.base_velocity.ranges.ang_vel_z",
+            "modify_fn": update_target_ang_velocity,
+        },
     )
 
 
@@ -150,7 +188,7 @@ class RewardsCfg:
 
     track_lin_vel_xy_exp = RewardTermCfg(
         func=mdp.track_lin_vel_xy_exp,
-        weight=10.0,
+        weight=15.0,
         params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
     track_ang_vel_z_exp = RewardTermCfg(
@@ -188,6 +226,7 @@ class TaserTrackVelocityEnvCfg(TaserBaseEnvCfg):
 
     actions = ActionsCfg()
     commands = CommandsCfg()
+    curriculum = CurriculumCfg()
     events = EventsCfg()
     observations = ObservationsCfg()
     rewards = RewardsCfg()

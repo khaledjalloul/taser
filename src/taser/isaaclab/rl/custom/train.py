@@ -8,7 +8,7 @@ parser.add_argument(
 parser.add_argument(
     "--num_iters",
     type=int,
-    default=200,
+    default=400,
     help="Number of iterations (rollout + training).",
 )
 parser.add_argument("--resume", type=str, help="Path to checkpoint to resume from.")
@@ -48,8 +48,8 @@ def train(env: gym.Env):
     progress_path.mkdir(parents=True, exist_ok=True)
 
     trainer_cfg = PPOTrainerCfg(
+        num_iters=args.num_iters,
         num_rollout_steps=2048,
-        total_num_steps=int(args.num_envs * 2048 * args.num_iters),
         num_epochs=10,
         learning_rate=3e-4,
         gamma=0.99,
@@ -79,13 +79,10 @@ def train(env: gym.Env):
         trainer.policy.load(args.resume)
 
     # Training loop
-    num_updates = trainer_cfg.total_num_steps // (
-        args.num_envs * trainer_cfg.num_rollout_steps
-    )
     best_reward = float("-inf")
 
     for update in tqdm(
-        range(num_updates), desc="Training", dynamic_ncols=True, leave=True
+        range(trainer_cfg.num_iters), desc="Training", dynamic_ncols=True, leave=True
     ):
         # Training update
         train_info = trainer.train_step()
@@ -119,18 +116,29 @@ def train(env: gym.Env):
 
             eval_reward = eval_rewards.mean()
 
+            active_terms = env.unwrapped.reward_manager.active_terms
+            term_weights = [
+                env.unwrapped.reward_manager.get_term_cfg(term).weight
+                for term in active_terms
+            ]
+            sum_term_weights = sum([w for w in term_weights if w > 0])
+
+            normalized_reward = eval_reward / trainer_cfg.num_eval_steps
+            normalized_reward = normalized_reward / env.unwrapped.physics_dt
+            normalized_reward = normalized_reward / sum_term_weights
+
             # Save best model
-            if eval_reward.mean() > best_reward:
-                best_reward = eval_reward.mean()
+            if normalized_reward.mean() > best_reward:
+                best_reward = normalized_reward.mean()
                 best_model_path = output_path / "best_model.pth"
                 trainer.policy.save(best_model_path)
 
             # Log evaluation metrics
-            logger.log_evaluation(eval_reward.item(), best_reward, update)
+            logger.log_evaluation(normalized_reward.item(), best_reward, update)
 
             # Update tqdm with evaluation stats
             tqdm.write(
-                f"Eval {update}: eval_reward={eval_reward.item():.4f}, best_reward={best_reward:.4f}"
+                f"Eval {update}: eval_reward={normalized_reward.item():.4f}, best_reward={best_reward:.4f}"
             )
 
         # Regular checkpointing

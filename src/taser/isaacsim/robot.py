@@ -76,8 +76,8 @@ class TaserIsaacSimRobot(SingleArticulation):
         self._navigator = GridNavigator(
             workspace=workspace,
             occupancy_grid=self._occupancy_grid,
-            v_max=1.0,
-            w_max=1.0,
+            v_max=1.5,
+            w_max=1.5,
             wheel_base=0.6,
         )
 
@@ -86,7 +86,10 @@ class TaserIsaacSimRobot(SingleArticulation):
         self._hide_robot_from_occupancy_grid()
 
         position_w, quaternion_w = self.get_world_pose()
-        root_linear_velocity = self.get_linear_velocity()
+        R_IB = quat_to_rot_matrix(quaternion_w)
+        R_BI = R_IB.transpose()
+        root_linear_velocity_b = np.matmul(R_BI, self.get_linear_velocity())
+        root_angular_velocity_b = np.matmul(R_BI, self.get_angular_velocity())
 
         base_pose = Pose(
             x=position_w[0], y=position_w[1], rz=quat_to_euler_angles(quaternion_w)[2]
@@ -95,25 +98,21 @@ class TaserIsaacSimRobot(SingleArticulation):
         vel_cmd = (0.0, 0.0, 0.0)
         if np.any(self._teleop.get_command() != 0):
             vel_cmd = self._teleop.get_command() * 1.5
-        else:
-            if self._path_plan:
-                base_vel_cmd, reached = self._navigator.step(
-                    base_pose, root_linear_velocity[0]
-                )
-                vel_cmd = (base_vel_cmd.v, 0.0, base_vel_cmd.w)
-                if reached:
-                    self._path_plan = []
-
-        R_IB = quat_to_rot_matrix(quaternion_w)
-        R_BI = R_IB.transpose()
+        elif self._path_plan:
+            base_vel_cmd, reached = self._navigator.step(
+                base_pose, root_linear_velocity_b[0]
+            )
+            vel_cmd = (base_vel_cmd.v, 0.0, base_vel_cmd.w)
+            if reached:
+                self._path_plan = []
 
         wheel_velocities = self._locomotion_policy.step(
             joint_positions=self.get_joint_positions(),
             joint_velocities=self.get_joint_velocities(),
             base_position_w=position_w,
             base_quaternion_w=quaternion_w,
-            base_linear_velocity_b=np.matmul(R_BI, root_linear_velocity),
-            base_angular_velocity_b=np.matmul(R_BI, self.get_angular_velocity()),
+            base_linear_velocity_b=root_linear_velocity_b,
+            base_angular_velocity_b=root_angular_velocity_b,
             base_target_planar_velocity_b=vel_cmd,
         )
 
