@@ -33,7 +33,7 @@ def main():
     import_config = _urdf.ImportConfig()
     import_config.set_convex_decomp(False)
     import_config.set_fix_base(False)
-    import_config.set_merge_fixed_joints(True)
+    import_config.set_merge_fixed_joints(False)
     import_config.set_make_default_prim(True)
     import_config.set_self_collision(True)
     import_config.set_distance_scale(1)

@@ -51,14 +51,14 @@ class CommandsCfg:
     )
 
 
-def update_target_lin_velocity(env: ManagerBasedRLEnv, *args, **kwargs):
+def update_target_lin_velocity(env: ManagerBasedRLEnv, env_ids, old_value):
     """Update the target velocity command."""
     range = (env.common_step_counter // CURRICULUM_TIME_STEP) * 0.5
     range = min(range, 2.0)
     return (-range, range)
 
 
-def update_target_ang_velocity(env: ManagerBasedRLEnv, *args, **kwargs):
+def update_target_ang_velocity(env: ManagerBasedRLEnv, env_ids, old_value):
     """Update the target velocity command."""
     range = (env.common_step_counter // CURRICULUM_TIME_STEP) * 0.5
     range = min(range, 2.0)
@@ -127,14 +127,7 @@ class EventsCfg:
                 "yaw": (-torch.pi, torch.pi),
                 # "yaw": (0.0, 0.0),
             },
-            "velocity_range": {
-                "x": (0.0, 0.0),
-                "y": (0.0, 0.0),
-                "z": (0.0, 0.0),
-                "roll": (0.0, 0.0),
-                "pitch": (0.0, 0.0),
-                "yaw": (0.0, 0.0),
-            },
+            "velocity_range": {},
         },
     )
 
