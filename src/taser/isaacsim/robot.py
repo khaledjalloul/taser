@@ -26,6 +26,9 @@ USD_PATH = str(
     / "taser.usd"
 )
 
+V_MAX = 2.0
+W_MAX = 2.0
+
 
 class TaserIsaacSimRobot(SingleArticulation):
     def __init__(
@@ -58,7 +61,7 @@ class TaserIsaacSimRobot(SingleArticulation):
 
         self._manipulator = IKManipulator()
         self._locomotion_policy = LocomotionPolicy()
-        self._teleop = Teleop()
+        self._teleop = Teleop(v_max=V_MAX, w_max=W_MAX)
 
         self._path_plan: list[Pose] = []
 
@@ -76,8 +79,8 @@ class TaserIsaacSimRobot(SingleArticulation):
         self._navigator = GridNavigator(
             workspace=workspace,
             occupancy_grid=self._occupancy_grid,
-            v_max=1.5,
-            w_max=1.5,
+            v_max=V_MAX,
+            w_max=W_MAX,
             wheel_base=0.6,
         )
 
@@ -97,7 +100,7 @@ class TaserIsaacSimRobot(SingleArticulation):
 
         vel_cmd = (0.0, 0.0, 0.0)
         if np.any(self._teleop.get_command() != 0):
-            vel_cmd = self._teleop.get_command() * 1.5
+            vel_cmd = self._teleop.get_command()
         elif self._path_plan:
             base_vel_cmd, reached = self._navigator.step(
                 base_pose, root_linear_velocity_b[0]

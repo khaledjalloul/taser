@@ -62,6 +62,6 @@ class LocomotionPolicy:
             input_feed={"obs": obs.reshape(1, -1)},
             output_names=["action"],
         )[0][0]  # First action, first batch element
-        action = action * 10.0
+        action = action * 20.0
 
         return action

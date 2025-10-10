@@ -4,21 +4,21 @@ import omni.appwindow
 
 
 class Teleop:
-    def __init__(self):
+    def __init__(self, v_max: float, w_max: float) -> None:
         # bindings for keyboard to command
         self._input_keyboard_mapping = {
             # forward command
-            "NUMPAD_8": [1.0, 0.0, 0.0],
-            "UP": [1.0, 0.0, 0.0],
+            "NUMPAD_8": [v_max, 0.0, 0.0],
+            "UP": [v_max, 0.0, 0.0],
             # back command
-            "NUMPAD_2": [-1.0, 0.0, 0.0],
-            "DOWN": [-1.0, 0.0, 0.0],
+            "NUMPAD_2": [-v_max, 0.0, 0.0],
+            "DOWN": [-v_max, 0.0, 0.0],
             # yaw command (negative)
-            "NUMPAD_6": [0.0, 0.0, -1.0],
-            "RIGHT": [0.0, 0.0, -1.0],
+            "NUMPAD_6": [0.0, 0.0, -w_max],
+            "RIGHT": [0.0, 0.0, -w_max],
             # yaw command (positive)
-            "NUMPAD_4": [0.0, 0.0, 1.0],
-            "LEFT": [0.0, 0.0, 1.0],
+            "NUMPAD_4": [0.0, 0.0, w_max],
+            "LEFT": [0.0, 0.0, w_max],
         }
 
         self._appwindow = omni.appwindow.get_default_app_window()

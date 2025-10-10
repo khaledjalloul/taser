@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 import torch
 from isaaclab.envs import ManagerBasedRLEnv, mdp
@@ -17,7 +15,8 @@ from isaaclab.utils import configclass
 from taser.isaaclab.common.articulation import TASER_CONFIG_USD
 from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg, TaserBaseSceneCfg
 
-CURRICULUM_TIME_STEP = 100_000
+V_MAX = 3.0
+W_MAX = 2.0
 
 
 @configclass
@@ -30,7 +29,9 @@ class ActionsCfg:
             "base_link_left_wheel_joint",
             "base_link_right_wheel_joint",
         ],
-        scale=10.0,
+        # max wheel vel = max lin vel / wheel radius = 3m/s / 0.15rad = 20 rad/s
+        # action scale = max wheel vel / model action space = 20 rad/s / 1.0 = 20.0
+        scale=20.0,
     )
 
 
@@ -43,25 +44,24 @@ class CommandsCfg:
         resampling_time_range=(5.0, 5.0),
         debug_vis=True,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(0.0, 0.0),
+            lin_vel_x=(-V_MAX, V_MAX),
             lin_vel_y=(0.0, 0.0),
-            ang_vel_z=(0.0, 0.0),
-            heading=(-math.pi, math.pi),
+            ang_vel_z=(-W_MAX, W_MAX),
         ),
     )
 
 
-def update_target_lin_velocity(env: ManagerBasedRLEnv, env_ids, old_value):
+def update_target_velocity_command(
+    env: ManagerBasedRLEnv,
+    env_ids,
+    old_value,
+    step: float,
+    increment: float,
+    max_value: float,
+):
     """Update the target velocity command."""
-    range = (env.common_step_counter // CURRICULUM_TIME_STEP) * 0.5
-    range = min(range, 2.0)
-    return (-range, range)
-
-
-def update_target_ang_velocity(env: ManagerBasedRLEnv, env_ids, old_value):
-    """Update the target velocity command."""
-    range = (env.common_step_counter // CURRICULUM_TIME_STEP) * 0.5
-    range = min(range, 2.0)
+    range = (env.common_step_counter // step) * increment
+    range = min(range, max_value)
     return (-range, range)
 
 
@@ -73,7 +73,8 @@ class CurriculumCfg:
         func=mdp.modify_term_cfg,
         params={
             "address": "commands.base_velocity.ranges.lin_vel_x",
-            "modify_fn": update_target_lin_velocity,
+            "modify_fn": update_target_velocity_command,
+            "modify_params": {"step": 15_000, "increment": 0.1, "max_value": V_MAX},
         },
     )
 
@@ -81,7 +82,8 @@ class CurriculumCfg:
         func=mdp.modify_term_cfg,
         params={
             "address": "commands.base_velocity.ranges.ang_vel_z",
-            "modify_fn": update_target_ang_velocity,
+            "modify_fn": update_target_velocity_command,
+            "modify_params": {"step": 10_000, "increment": 0.1, "max_value": W_MAX},
         },
     )
 
@@ -179,15 +181,16 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
-    track_lin_vel_xy_exp = RewardTermCfg(
+    track_lin_vel_xy = RewardTermCfg(
         func=mdp.track_lin_vel_xy_exp,
         weight=15.0,
-        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+        params={"command_name": "base_velocity", "std": 0.25},
     )
-    track_ang_vel_z_exp = RewardTermCfg(
+
+    track_ang_vel_z = RewardTermCfg(
         func=mdp.track_ang_vel_z_exp,
-        weight=7.0,
-        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+        weight=15.0,
+        params={"command_name": "base_velocity", "std": 0.25},
     )
 
 
