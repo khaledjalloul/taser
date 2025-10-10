@@ -119,7 +119,7 @@ class ObservationsCfg:
     policy: PolicyCfg = PolicyCfg()
 
 
-def zero_linear_velocity_reward(env: ManagerBasedEnv, std: float = 1.0):
+def zero_linear_velocity_reward(env: ManagerBasedEnv, std: float):
     """Get the reward based on the robot's linear velocity in world frame."""
     root_lin_vel_b = mdp.base_lin_vel(env)
     return torch.exp(
@@ -127,7 +127,7 @@ def zero_linear_velocity_reward(env: ManagerBasedEnv, std: float = 1.0):
     )
 
 
-def zero_roll_and_yaw_velocity_reward(env: ManagerBasedEnv, std: float = 1.0):
+def zero_roll_and_yaw_velocity_reward(env: ManagerBasedEnv, std: float):
     """Get the reward based on the robot's angular velocity in base frame."""
     root_ang_vel_b = mdp.base_ang_vel(env)
     roll_yaw_ang_vel = torch.cat((root_ang_vel_b[:, 0], root_ang_vel_b[:, 2]), dim=-1)

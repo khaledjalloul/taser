@@ -86,6 +86,7 @@ class PPOTrainer:
             "value_loss": total_value_loss / num_epochs,
             "entropy": total_entropy / num_epochs,
             "kl": total_kl / num_epochs,
+            "common_step_counter": self.env.unwrapped.common_step_counter,
         }
 
     def rollout(self):

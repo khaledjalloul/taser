@@ -4,7 +4,7 @@ import isaaclab.sim as sim_utils
 import isaaclab.utils.math as math_utils
 import torch
 from isaaclab.assets import RigidObject, RigidObjectCfg
-from isaaclab.envs import ManagerBasedEnv, mdp
+from isaaclab.envs import ManagerBasedRLEnv, mdp
 from isaaclab.managers import (
     CurriculumTermCfg,
     EventTermCfg,
@@ -38,26 +38,85 @@ class ActionsCfg:
         scale=10.0,
     )
 
+    # left_arm_eef_vel = mdp.DifferentialInverseKinematicsActionCfg(
+    #     asset_name="robot",
+    #     body_name="left_arm_eef",
+    #     controller=mdp.DifferentialIKControllerCfg(
+    #         command_type="position", ik_method="pinv", ik_params={"k_val": 10}
+    #     ),
+    #     joint_names=[
+    #         "base_link_left_arm_shoulder_joint",
+    #         "left_arm_1_left_arm_2_joint",
+    #         "left_arm_2_left_arm_3_joint",
+    #     ],
+    #     # scale=10.0,
+    # )
+
+    # right_arm_eef_vel = mdp.DifferentialInverseKinematicsActionCfg(
+    #     asset_name="robot",
+    #     body_name="right_arm_eef",
+    #     controller=mdp.DifferentialIKControllerCfg(
+    #         command_type="position", ik_method="pinv"
+    #     ),
+    #     joint_names=[
+    #         "base_link_right_arm_shoulder_joint",
+    #         "right_arm_1_right_arm_2_joint",
+    #         "right_arm_2_right_arm_3_joint",
+    #     ],
+    #     scale=10.0,
+    # )
+
+
+def update_reward_weight(
+    env: ManagerBasedRLEnv,
+    env_ids,
+    old_value,
+    step: float,
+    increment: float,
+    max_value: float,
+):
+    """Update the reward weight."""
+    weight = (env.common_step_counter // step) * increment
+    return min(weight, max_value)
+
 
 @configclass
 class CurriculumCfg:
     """Curriculum specifications for the MDP."""
 
-    enable_arms_near_target_reward_y = CurriculumTermCfg(
-        func=mdp.modify_reward_weight,
+    enable_eefs_near_target_z_reward = CurriculumTermCfg(
+        func=mdp.modify_term_cfg,
         params={
-            "term_name": "arms_near_target_reward_y",
-            "weight": 10,
-            "num_steps": 100_000,
+            "address": "rewards.eefs_near_target_z_reward.weight",
+            "modify_fn": update_reward_weight,
+            "modify_params": {"step": 5_000, "increment": 1, "max_value": 10},
+        },
+    )
+
+    # enable_eefs_near_target_y_reward = CurriculumTermCfg(
+    #     func=mdp.modify_term_cfg,
+    #     params={
+    #         "address": "rewards.eefs_near_target_y_reward.weight",
+    #         "modify_fn": update_reward_weight,
+    #         "modify_params": {"step": 10_000, "increment": 1, "max_value": 10},
+    #     },
+    # )
+
+    enable_track_eef_velocity_y_reward = CurriculumTermCfg(
+        func=mdp.modify_term_cfg,
+        params={
+            "address": "rewards.track_eef_velocity_y_reward.weight",
+            "modify_fn": update_reward_weight,
+            "modify_params": {"step": 10_000, "increment": 1, "max_value": 10},
         },
     )
 
     enable_target_picked_reward = CurriculumTermCfg(
-        func=mdp.modify_reward_weight,
+        func=mdp.modify_term_cfg,
         params={
-            "term_name": "target_picked_reward",
-            "weight": 10,
-            "num_steps": 200_000,
+            "address": "rewards.target_picked_reward.weight",
+            "modify_fn": update_reward_weight,
+            "modify_params": {"step": 20_000, "increment": 1, "max_value": 10},
         },
     )
 
@@ -147,32 +206,24 @@ class EventsCfg:
     )
 
 
-def target_pos_b(env: ManagerBasedEnv) -> torch.Tensor:
+def target_pos_b(env: ManagerBasedRLEnv) -> torch.Tensor:
     return math_utils.transform_points(
-        points=mdp.root_pos_w(env, asset_cfg=SceneEntityCfg("target")).unsqueeze(1),
-        pos=-mdp.root_pos_w(env),
+        points=env.scene["target"].data.root_pos_w.unsqueeze(1),  # (N, 1, 3)
+        pos=-env.scene["robot"].data.root_pos_w,
         quat=math_utils.quat_inv(mdp.root_quat_w(env)),
     )[:, 0, :]
 
 
-def left_arm_eef_pos_b(env: ManagerBasedEnv) -> torch.Tensor:
+def arm_eef_state_b(env: ManagerBasedRLEnv, side: str, state: str) -> torch.Tensor:
     robot: RigidObject = env.scene["robot"]
-    left_arm_eef_idx = robot.data.body_names.index("left_arm_eef")
-    left_arm_eef_pos_w = robot.data.body_link_pos_w[:, left_arm_eef_idx]
+    arm_eef_idx = robot.data.body_names.index(f"{side}_arm_eef")
+    if state == "pos":
+        arm_eef_state_w = robot.data.body_link_pos_w[:, arm_eef_idx]
+    elif state == "vel":
+        arm_eef_state_w = robot.data.body_link_lin_vel_w[:, arm_eef_idx]
     return math_utils.transform_points(
-        points=left_arm_eef_pos_w.unsqueeze(1),  # (N, 1, 3)
-        pos=-mdp.root_pos_w(env),
-        quat=math_utils.quat_inv(mdp.root_quat_w(env)),
-    )[:, 0, :]
-
-
-def right_arm_eef_pos_b(env: ManagerBasedEnv) -> torch.Tensor:
-    robot: RigidObject = env.scene["robot"]
-    right_arm_eef_idx = robot.data.body_names.index("right_arm_eef")
-    right_arm_eef_pos_w = robot.data.body_link_pos_w[:, right_arm_eef_idx]
-    return math_utils.transform_points(
-        points=right_arm_eef_pos_w.unsqueeze(1),  # (N, 1, 3)
-        pos=-mdp.root_pos_w(env),
+        points=arm_eef_state_w.unsqueeze(1),  # (N, 1, 3)
+        pos=-robot.data.root_pos_w,
         quat=math_utils.quat_inv(mdp.root_quat_w(env)),
     )[:, 0, :]
 
@@ -197,41 +248,61 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         target_pos_b = ObservationTermCfg(func=target_pos_b)
-        left_arm_eef_pos_b = ObservationTermCfg(func=left_arm_eef_pos_b)
-        right_arm_eef_pos_b = ObservationTermCfg(func=right_arm_eef_pos_b)
+        left_arm_eef_pos_b = ObservationTermCfg(
+            func=arm_eef_state_b, params={"side": "left", "state": "pos"}
+        )
+        right_arm_eef_pos_b = ObservationTermCfg(
+            func=arm_eef_state_b, params={"side": "right", "state": "pos"}
+        )
 
     # Observation groups
     proprio: ProprioCfg = ProprioCfg()
     policy: PolicyCfg = PolicyCfg()
 
 
-def arms_near_target_reward_in_axis(env: ManagerBasedEnv, axis: int, std: float = 0.25):
-    """Reward for having both arms near the target in the specified axis."""
-    left_arm_eef_pos_b_val = left_arm_eef_pos_b(env)
-    right_arm_eef_pos_b_val = right_arm_eef_pos_b(env)
+def eefs_near_target_reward_in_axis(env: ManagerBasedRLEnv, axis: int, std: float):
+    """Reward for having both eefs near the target in the specified axis."""
+    left_arm_eef_pos_b = arm_eef_state_b(env, "left", "pos")
+    right_arm_eef_pos_b = arm_eef_state_b(env, "right", "pos")
     target_pos_b_val = target_pos_b(env)
 
     reward_left = torch.exp(
-        -torch.square(left_arm_eef_pos_b_val[:, axis] - target_pos_b_val[:, axis])
-        / std**2
+        -torch.square(left_arm_eef_pos_b[:, axis] - target_pos_b_val[:, axis]) / std**2
     )
     reward_right = torch.exp(
-        -torch.square(right_arm_eef_pos_b_val[:, axis] - target_pos_b_val[:, axis])
-        / std**2
+        -torch.square(right_arm_eef_pos_b[:, axis] - target_pos_b_val[:, axis]) / std**2
     )
     return 0.6 * (reward_left + reward_right) / 2 + 0.4 * torch.minimum(
         reward_left, reward_right
     )
 
 
-def target_picked_reward(
-    env: ManagerBasedEnv, height_b: float = 0.4, std: float = 0.25
+def track_eef_velocity_y_reward_in_axis(
+    env: ManagerBasedRLEnv,
+    velocity: float,
+    std: float,
 ):
+    """Reward for having both arms near the target in the y-axis."""
+    left_arm_eef_vel_b = arm_eef_state_b(env, "left", "vel")
+    right_arm_eef_vel_b = arm_eef_state_b(env, "right", "vel")
+
+    reward_left = torch.exp(
+        -torch.square(left_arm_eef_vel_b[:, 1] - (-velocity)) / std**2
+    )
+    reward_right = torch.exp(
+        -torch.square(right_arm_eef_vel_b[:, 1] - velocity) / std**2
+    )
+    return 0.6 * (reward_left + reward_right) / 2 + 0.4 * torch.minimum(
+        reward_left, reward_right
+    )
+
+
+def target_picked_reward(env: ManagerBasedRLEnv, height_b: float, std: float):
     """Reward for picking the object at a certain height."""
     return torch.exp(-torch.square(target_pos_b(env)[:, 2] - height_b) / std**2)
 
 
-def target_near_robot_reward(env: ManagerBasedEnv, std: float = 0.25):
+def target_near_robot_reward(env: ManagerBasedRLEnv, std: float):
     """Reward for having the target near the robot base."""
     return torch.exp(-torch.square(target_pos_b(env)[:, 0]) / std**2)
 
@@ -240,24 +311,41 @@ def target_near_robot_reward(env: ManagerBasedEnv, std: float = 0.25):
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    arms_near_target_reward_x = RewardTermCfg(
-        func=arms_near_target_reward_in_axis, params={"axis": 0}, weight=10.0
+    eefs_near_target_x_reward = RewardTermCfg(
+        func=eefs_near_target_reward_in_axis,
+        params={"axis": 0, "std": 0.25},
+        weight=10.0,
     )
-    arms_near_target_reward_y = RewardTermCfg(
-        func=arms_near_target_reward_in_axis,
-        params={"axis": 1},
+
+    eefs_near_target_z_reward = RewardTermCfg(
+        func=eefs_near_target_reward_in_axis,
+        params={"axis": 2, "std": 0.25},
         weight=0.0,  # Enabled in curriculum
     )
-    arms_near_target_reward_z = RewardTermCfg(
-        func=arms_near_target_reward_in_axis, params={"axis": 2}, weight=10.0
+
+    # eefs_near_target_y_reward = RewardTermCfg(
+    #     func=eefs_near_target_reward_in_axis,
+    #     params={"axis": 1, "std": 1},
+    #     weight=0.0,  # Enabled in curriculum
+    # )
+
+    track_eef_velocity_y_reward = RewardTermCfg(
+        func=track_eef_velocity_y_reward_in_axis,
+        params={"velocity": 0.2, "std": 0.25},
+        weight=0.0,  # Enabled in curriculum
     )
 
     target_picked_reward = RewardTermCfg(
         func=target_picked_reward,
+        params={"height_b": 0.4, "std": 0.25},
         weight=0.0,  # Enabled in curriculum
     )
 
-    target_near_robot_reward = RewardTermCfg(func=target_near_robot_reward, weight=5.0)
+    target_near_robot_reward = RewardTermCfg(
+        func=target_near_robot_reward,
+        params={"std": 0.25},
+        weight=5.0,
+    )
 
 
 @configclass

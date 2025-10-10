@@ -29,6 +29,7 @@ class GridNavigator:
             v_max=v_max,
             w_max=w_max,
             curve_slowdown=1.0,
+            goal_pos_tol=0.2
         )
 
     def plan_path(

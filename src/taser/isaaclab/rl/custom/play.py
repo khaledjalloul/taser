@@ -7,9 +7,7 @@ parser.add_argument(
 )
 parser.add_argument("--model_path", type=str, help="Path to the trained model.")
 parser.add_argument(
-    "--export_path",
-    type=str,
-    help="Directory path to export the torch and ONNX models.",
+    "--export", type=str, help="Directory path to export the torch and ONNX models."
 )
 
 ############################################################
@@ -21,7 +19,7 @@ from isaaclab.app import AppLauncher
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 task = f"TASER-{args.task}"
-args.headless = True if args.export_path else args.headless
+args.headless = True if args.export else args.headless
 
 if not args.model_path:
     outputs_dir = Path("/workspaces/taser/outputs")
@@ -55,8 +53,8 @@ def play(env: gym.Env):
 
     obs_dict, _ = env.reset()
 
-    if args.export_path:
-        export_path = Path(args.export_path)
+    if args.export:
+        export_path = Path(args.export)
         export_path.mkdir(parents=True, exist_ok=True)
         model.save(export_path / f"{args.task}.pth")
         model.export_onnx(export_path / f"{args.task}.onnx")
@@ -79,6 +77,7 @@ if __name__ == "__main__":
         task_name=task,
         num_envs=args.num_envs,
     )
+    env_cfg.curriculum = None  # Disable curriculum for evaluation
     env = gym.make(task, cfg=env_cfg)
 
     play(env)
