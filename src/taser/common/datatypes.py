@@ -1,4 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+import numpy as np
 
 Vec2 = tuple[float, float]
 
@@ -43,20 +45,21 @@ Polygon = list[Pose]
 
 @dataclass
 class TaserJointState:
-    ordered: list[float]
-    left_arm: list[float]
-    right_arm: list[float]
-    wheels: list[float]
+    left_arm: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    right_arm: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    wheels: np.ndarray = field(default_factory=lambda: np.zeros(2))
 
     @classmethod
     def from_ros(cls, ros_state: list[float]) -> "TaserJointState":
         left_arm = [ros_state[0], ros_state[1], ros_state[3]]
         right_arm = [ros_state[2], ros_state[4], ros_state[5]]
         wheels = ros_state[6:8]
-        ordered = [*left_arm, *right_arm, *wheels]
         return TaserJointState(
-            ordered=ordered,
-            left_arm=left_arm,
-            right_arm=right_arm,
-            wheels=wheels,
+            left_arm=np.array(left_arm),
+            right_arm=np.array(right_arm),
+            wheels=np.array(wheels),
         )
+
+    @property
+    def ordered(self) -> np.ndarray:
+        return np.concatenate([self.left_arm, self.right_arm, self.wheels])

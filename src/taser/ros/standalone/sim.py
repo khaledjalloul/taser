@@ -8,7 +8,7 @@ from std_msgs.msg import Float64MultiArray
 
 from taser.common.datatypes import Pose, VelocityCommand
 from taser.locomotion import DifferentialDriveKinematics
-from taser.manipulation import IKManipulator
+from taser.manipulation import ManipulationKinematics
 from taser.navigation import PolygonNavigator
 from taser.ros.standalone.parameters import load_sim_parameters
 from taser.ros.standalone.ros_node import TaserStandaloneRosNode
@@ -31,7 +31,8 @@ class TaserRvizSim:
         self._right_arm_desired_velocity: Vector3 = Vector3()
         self._polygons = params.navigation.polygons
 
-        self._manipulator = IKManipulator()
+        self._ik_left = ManipulationKinematics(arm="left")
+        self._ik_right = ManipulationKinematics(arm="right")
 
         self._navigator = PolygonNavigator(
             workspace=params.navigation.workspace,
@@ -86,29 +87,27 @@ class TaserRvizSim:
         wheel_velocities = self.diff_drive_kinematics.step(base_vel_cmd)
 
         # Get left arm joint commands
-        left_joint_velocities = self._manipulator.get_dq_from_linear_v(
-            v_desired=np.array(
+        left_joint_velocities = self._ik_left.get_dq(
+            v_lin=np.array(
                 [
                     self._left_arm_desired_velocity.x,
                     self._left_arm_desired_velocity.y,
                     self._left_arm_desired_velocity.z,
                 ]
             ),
-            q_current=self.node.joint_positions.ordered,
-            arm="left",
+            q=self.node.joint_positions,
         )
 
         # Get right arm joint commands
-        right_joint_velocities = self._manipulator.get_dq_from_linear_v(
-            v_desired=np.array(
+        right_joint_velocities = self._ik_right.get_dq(
+            v_lin=np.array(
                 [
                     self._right_arm_desired_velocity.x,
                     self._right_arm_desired_velocity.y,
                     self._right_arm_desired_velocity.z,
                 ]
             ),
-            q_current=self.node.joint_positions.ordered,
-            arm="right",
+            q=self.node.joint_positions,
         )
 
         # Publish all commands

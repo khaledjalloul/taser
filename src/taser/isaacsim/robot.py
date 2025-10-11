@@ -13,7 +13,7 @@ from taser.isaacsim.utils.occupancy_grid import OccupancyGrid
 from taser.isaacsim.utils.ros2_tf_publisher import add_tf_publisher
 from taser.isaacsim.utils.teleop import Teleop
 from taser.locomotion import LocomotionPolicy
-from taser.manipulation import IKManipulator
+from taser.manipulation import GraspController
 from taser.navigation import GridNavigator
 from taser.ros.isaac.sim_node import TaserIsaacSimRosNode
 
@@ -59,7 +59,7 @@ class TaserIsaacSimRobot(SingleArticulation):
             tf_publisher_topic="/tf",
         )
 
-        self._manipulator = IKManipulator()
+        self._grasp_controller = GraspController()
         self._locomotion_policy = LocomotionPolicy()
         self._teleop = Teleop(v_max=V_MAX, w_max=W_MAX)
 
