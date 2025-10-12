@@ -1,0 +1,38 @@
+FROM nvcr.io/nvidia/isaac-lab:2.2.0
+
+###############################################
+# Initial Setup
+
+# Set required environment variables and shell
+ENV PLATFORM=amd64
+ENV SHELL=/bin/bash
+SHELL ["/bin/bash", "-c"]
+
+# Install apt packages
+RUN apt update
+RUN apt install -y \
+    # Essentials
+    curl \
+    # nano \
+    # Python
+    # python3-pip \
+    # python3-venv \
+    # Cmake
+    build-essential \
+    cmake \
+    # C++
+    gdb \
+    # Git
+    git \
+    git-lfs
+# GUI support
+# libxrandr2 \
+# libxcb-cursor0
+
+###############################################
+# Finalization
+
+ENV WORKSPACE=/workspace/taser
+WORKDIR ${WORKSPACE}
+
+ENTRYPOINT [ ]

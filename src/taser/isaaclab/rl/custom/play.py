@@ -22,7 +22,7 @@ task = f"TASER-{args.task}"
 args.headless = True if args.export else args.headless
 
 if not args.model_path:
-    outputs_dir = Path("/workspaces/taser/outputs")
+    outputs_dir = Path("/workspace/taser/outputs")
     subdirs = sorted(
         [outputs_dir / d for d in outputs_dir.glob(f"*{task}*") if d.is_dir()]
     )

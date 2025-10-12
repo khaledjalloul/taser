@@ -20,7 +20,7 @@ URDF_IN_PATH = str(
     / "taser.urdf"
 )
 
-USD_OUT_PATH = "/workspaces/taser/src/taser_ros/robot_description/usd/taser.usd"
+USD_OUT_PATH = "/workspace/taser/src/taser_ros/robot_description/usd/taser.usd"
 
 DRIVE_DAMPING = 50
 

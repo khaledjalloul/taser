@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "python": "/workspaces/isaacsim/python.sh"
+            "python": "/workspace/isaaclab/_isaac_sim/python.sh"
         }
     ]
 }

@@ -1,20 +1,12 @@
-ARG BASE_IMAGE=${BASE_IMAGE:-12.8.1-cudnn-runtime-ubuntu24.04}
-ARG ISAAC_SIM_VERSION=${ISAAC_SIM_VERSION:-5.0.0}
+FROM nvcr.io/nvidia/isaac-sim:4.5.0 AS isaac-sim
 
-FROM nvcr.io/nvidia/isaac-sim:${ISAAC_SIM_VERSION} AS isaac-sim
-
-FROM ${BASE_IMAGE}
+FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
 
 ###############################################
 # Initial Setup
 
 ARG USERNAME
 ENV USERNAME=${USERNAME}
-
-ARG ROS_DISTRO=${ROS_DISTRO:-jazzy}
-ENV ROS_DISTRO=${ROS_DISTRO}
-
-ENV ISAAC_SIM_VERSION=${ISAAC_SIM_VERSION}
 
 # Set required environment variables and shell
 ENV PLATFORM=amd64
@@ -50,6 +42,7 @@ RUN apt install -y \
     # Essentials
     curl \
     nano \
+    bash-completion \
     # Python
     python3-pip \
     python3-venv \
@@ -86,7 +79,7 @@ RUN add-apt-repository -y universe
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt install -y \
     ros-dev-tools \
-    ros-${ROS_DISTRO}-desktop \
+    ros-humble-desktop \
     python3-colcon-clean
 
 # Set up rosdep
@@ -95,7 +88,7 @@ RUN rosdep init
 USER ${USERNAME:-root}
 
 # Add ROS sourcing to bashrc
-RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ${HOME}/.bashrc
+RUN echo "source /opt/ros/humble/setup.bash" >> ${HOME}/.bashrc
 
 # Fix Rviz GUI 
 ENV LIBGL_DRI3_DISABLE=1
@@ -103,32 +96,32 @@ ENV LIBGL_DRI3_DISABLE=1
 ###############################################
 # Isaac Sim
 
-# Create the workspaces folder with proper permissions
-RUN sudo mkdir /workspaces
-RUN if [ -n "$USERNAME" ]; then sudo chown -R ${USERNAME} /workspaces; fi
+# Create the workspace folder with proper permissions
+RUN sudo mkdir /workspace
+RUN if [ -n "$USERNAME" ]; then sudo chown -R ${USERNAME} /workspace; fi
 
 # Copy Isaac Sim folder from its image because downloading and unzipping manually fails in docker due to large file size
-COPY --chown=${USERNAME:-root} --from=isaac-sim /isaac-sim /workspaces/isaacsim
+COPY --chown=${USERNAME:-root} --from=isaac-sim /isaac-sim /workspace/isaacsim
 
 # Create aliases for python and pip to use those of Isaac Sim
 RUN printf ' \
-    alias omni_python="/workspaces/isaacsim/python.sh" \n \
-    alias isaacsim="/workspaces/isaacsim/isaac-sim.sh" \n \
+    alias omni_python="/workspace/isaacsim/python.sh" \n \
+    alias isaacsim="/workspace/isaacsim/isaac-sim.sh" \n \
     ' >> ${HOME}/.bashrc
 
 ###############################################
 # Isaac Lab
 
 ENV TERM=xterm
-RUN git clone https://github.com/isaac-sim/IsaacLab.git /workspaces/isaaclab
-RUN ln -s /workspaces/isaacsim /workspaces/isaaclab/_isaac_sim
-RUN /workspaces/isaaclab/isaaclab.sh --install
+RUN git clone https://github.com/isaac-sim/IsaacLab.git /workspace/isaaclab
+RUN ln -s /workspace/isaacsim /workspace/isaaclab/_isaac_sim
+RUN /workspace/isaaclab/isaaclab.sh --install
 
 ###############################################
 # Python Environment
 
 # Upgrade omni_python pip
-RUN sudo /workspaces/isaacsim/python.sh -m pip install --root-user-action=ignore --upgrade pip
+RUN sudo /workspace/isaacsim/python.sh -m pip install --root-user-action=ignore --upgrade pip
 
 # Upgrade install dependencies
 RUN python3 -m pip install -U pip setuptools wheel build packaging scikit-build-core pyproject-metadata
@@ -158,15 +151,15 @@ ENV OsqpEigen_DIR=/usr
 
 # Install rosdep dependencies to cache them in the image
 RUN apt install -y \
-    ros-${ROS_DISTRO}-controller-manager \
-    ros-${ROS_DISTRO}-ros2-control \
-    ros-${ROS_DISTRO}-ros2-controllers \
-    ros-${ROS_DISTRO}-velocity-controllers \
-    ros-${ROS_DISTRO}-joint-state-broadcaster \
-    ros-${ROS_DISTRO}-joint-state-publisher-gui \
-    ros-${ROS_DISTRO}-robot-state-publisher \
-    ros-${ROS_DISTRO}-rviz2 \
-    ros-${ROS_DISTRO}-xacro
+    ros-humble-controller-manager \
+    ros-humble-ros2-control \
+    ros-humble-ros2-controllers \
+    ros-humble-velocity-controllers \
+    ros-humble-joint-state-broadcaster \
+    ros-humble-joint-state-publisher-gui \
+    ros-humble-robot-state-publisher \
+    ros-humble-rviz2 \
+    ros-humble-xacro
 
 # Install personal CLI
 RUN echo "deb [trusted=yes] https://khaledjalloul.github.io/debian-repository unstable main" | tee /etc/apt/sources.list.d/khaledjalloul.list
@@ -177,7 +170,7 @@ RUN apt install -y khaled-cli
 # Finalization
 
 USER ${USERNAME:-root}
-ENV WORKSPACE=/workspaces/taser
+ENV WORKSPACE=/workspace/taser
 WORKDIR ${WORKSPACE}
 
 # Remove OS conflicting dependencies
@@ -193,8 +186,5 @@ RUN python3 -m pip install --verbose -e .
 
 # Update environment variables for the Python bindings
 ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages/lib:/usr/local/lib/python3.10/dist-packages/lib
-ENV PYTHONPATH=${PYTHONPATH}:/workspaces/taser/src:/usr/local/lib/python3.10/dist-packages
+ENV PYTHONPATH=${PYTHONPATH}:/workspace/taser/src:/usr/local/lib/python3.10/dist-packages
 ENV CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages
-
-# RUN git clone https://github.com/isaac-sim/IsaacSim-ros_workspaces.git /workspaces/IsaacSim-ros_workspaces
-# RUN cd /workspaces/IsaacSim-ros_workspaces/${ROS_DISTRO}_ws && . /opt/ros/${ROS_DISTRO}/setup.bash && rosdep install --from-paths src --ignore-src -ry 
