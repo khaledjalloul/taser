@@ -21,7 +21,7 @@ class ManipulationKinematics:
 
     def get_eef_position(self, q: TaserJointState) -> Pose:
         T = self._arm.fkine(
-            q=q.ordered,
+            q=q.ordered_rtb,
             start="base_link",
             end=f"{self._arm_side}_arm_eef",
         )
@@ -34,6 +34,15 @@ class ManipulationKinematics:
             ry=T.rpy()[1],
             rz=T.rpy()[2],
         )
+
+    def get_eef_velocity(self, q: TaserJointState, dq: TaserJointState) -> np.ndarray:
+        J = self._arm.jacob0(
+            q=q.ordered_rtb,
+            start="base_link",
+            end=f"{self._arm_side}_arm_eef",
+        )
+        v = J @ (dq.left_arm if self._arm_side == "left" else dq.right_arm)
+        return v[0:3]
 
     def get_q(self, pose: Pose) -> np.ndarray:
         T = SE3.Trans(pose.x, pose.y, pose.z)
@@ -48,15 +57,24 @@ class ManipulationKinematics:
             mask=[1, 1, 1, 0, 0, 0],
         ).q
 
-    def get_dq(self, v_lin: np.ndarray, q: TaserJointState) -> np.ndarray:
+    def get_dq(
+        self, v: np.ndarray, weights: np.ndarray, q: TaserJointState
+    ) -> np.ndarray:
         J = self._arm.jacob0(
-            q=q.ordered,
+            q=q.ordered_rtb,
             start="base_link",
             end=f"{self._arm_side}_arm_eef",
         )
-        J_pos = J[0:3, :]
 
-        return np.linalg.pinv(J_pos) @ v_lin
+        W = np.diag(weights)
+
+        # Joint-space damping/regularization
+        lam = 1e-2
+        H = np.eye(J.shape[1])
+
+        A = J.T @ W @ J + (lam**2) * H
+        b = J.T @ W @ v
+        return np.linalg.solve(A, b)
 
     def get_traj(
         self,

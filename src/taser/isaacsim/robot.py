@@ -8,12 +8,12 @@ from isaacsim.core.utils.rotations import quat_to_euler_angles, quat_to_rot_matr
 from isaacsim.core.utils.stage import add_reference_to_stage
 from isaacsim.core.utils.types import ArticulationAction
 
-from taser.common.datatypes import Pose, Workspace
+from taser.common.datatypes import Pose, TaserJointState, Workspace
 from taser.isaacsim.utils.occupancy_grid import OccupancyGrid
 from taser.isaacsim.utils.ros2_tf_publisher import add_tf_publisher
 from taser.isaacsim.utils.teleop import Teleop
 from taser.locomotion import LocomotionPolicy
-from taser.manipulation import GraspController
+from taser.manipulation import PickController
 from taser.navigation import GridNavigator
 from taser.ros.isaac.sim_node import TaserIsaacSimRosNode
 
@@ -59,7 +59,7 @@ class TaserIsaacSimRobot(SingleArticulation):
             tf_publisher_topic="/tf",
         )
 
-        self._grasp_controller = GraspController()
+        self._pick_controller = PickController()
         self._locomotion_policy = LocomotionPolicy()
         self._teleop = Teleop(v_max=V_MAX, w_max=W_MAX)
 
@@ -83,6 +83,9 @@ class TaserIsaacSimRobot(SingleArticulation):
             w_max=W_MAX,
             wheel_base=0.6,
         )
+
+        # self._grasp_controller.set_target(Pose(x=0.5, y=0.0, z=0.0))
+        self._grasp_controller.set_target(None)
 
     def step(self, dt: float, occupancy_grid: OccupancyGrid) -> None:
         self._occupancy_grid = occupancy_grid
@@ -109,7 +112,11 @@ class TaserIsaacSimRobot(SingleArticulation):
             if reached:
                 self._path_plan = []
 
-        wheel_velocities = self._locomotion_policy.step(
+        joint_velocities = self._pick_controller.step(
+            TaserJointState.from_isaac(self.get_joint_positions())
+        )
+
+        joint_velocities.wheels = self._locomotion_policy.step(
             joint_positions=self.get_joint_positions(),
             joint_velocities=self.get_joint_velocities(),
             base_position_w=position_w,
@@ -119,21 +126,7 @@ class TaserIsaacSimRobot(SingleArticulation):
             base_target_planar_velocity_b=vel_cmd,
         )
 
-        left_arm_joint_velocities = np.zeros(3)
-        right_arm_joint_velocities = np.zeros(3)
-
-        action = ArticulationAction(
-            joint_velocities=[
-                left_arm_joint_velocities[0],
-                wheel_velocities[0],
-                right_arm_joint_velocities[0],
-                wheel_velocities[1],
-                left_arm_joint_velocities[1],
-                right_arm_joint_velocities[1],
-                left_arm_joint_velocities[2],
-                right_arm_joint_velocities[2],
-            ]
-        )
+        action = ArticulationAction(joint_velocities=joint_velocities.ordered_isaac)
         self.apply_action(action)
 
     def _hide_robot_from_occupancy_grid(self) -> None:

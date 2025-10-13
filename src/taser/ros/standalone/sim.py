@@ -88,25 +88,33 @@ class TaserRvizSim:
 
         # Get left arm joint commands
         left_joint_velocities = self._ik_left.get_dq(
-            v_lin=np.array(
+            v=np.array(
                 [
                     self._left_arm_desired_velocity.x,
                     self._left_arm_desired_velocity.y,
                     self._left_arm_desired_velocity.z,
+                    0,
+                    0,
+                    0,
                 ]
             ),
+            weights=np.array([1, 1, 1, 0, 0, 0]),
             q=self.node.joint_positions,
         )
 
         # Get right arm joint commands
         right_joint_velocities = self._ik_right.get_dq(
-            v_lin=np.array(
+            v=np.array(
                 [
                     self._right_arm_desired_velocity.x,
                     self._right_arm_desired_velocity.y,
                     self._right_arm_desired_velocity.z,
+                    0,
+                    0,
+                    0,
                 ]
             ),
+            weights=np.array([1, 1, 1, 0, 0, 0]),
             q=self.node.joint_positions,
         )
 

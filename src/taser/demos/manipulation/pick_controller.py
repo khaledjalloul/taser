@@ -5,7 +5,7 @@ from ament_index_python.packages import get_package_share_directory
 from roboticstoolbox.robot import Robot
 
 from taser.common.datatypes import Pose, TaserJointState
-from taser.manipulation import GraspController
+from taser.manipulation import PickController
 
 DT = 0.05
 
@@ -15,13 +15,9 @@ if __name__ == "__main__":
 
     robot = Robot.URDF(str(urdf_path))
 
-    controller = GraspController()
+    controller = PickController()
     q = TaserJointState()
-    pose_start_left = controller._left_arm.get_eef_position(q)
-    pose_start_right = controller._right_arm.get_eef_position(q)
-
-    print("Start left:", pose_start_left)
-    print("Start right:", pose_start_right)
+    dq = TaserJointState()
 
     target = Pose(x=0.5, y=0.0, z=0.0)
     controller.set_target(target)
@@ -30,7 +26,7 @@ if __name__ == "__main__":
     ax: plt.Axes = fig.add_subplot(111, projection="3d")
 
     for _ in range(10000):
-        dq = controller.step(q)
+        dq = controller.step(q, dq)
         q.left_arm += dq.left_arm * DT
         q.right_arm += dq.right_arm * DT
 
@@ -48,27 +44,18 @@ if __name__ == "__main__":
                     i for i, l in enumerate(links) if l.name == link_to_plot
                 )
                 link = links[link_idx]
-
-                # print("Plotting link", link.name)
-                # print("q", q.left_arm if "left" in link_to_plot else q.right_arm)
-
                 link_pose = robot.fkine(
-                    q.ordered,
+                    q.ordered_rtb,
                     end=link.name,
                     start="base_link",
                 )
-                # print("Link pose:", link_pose.t)
 
                 parent_link = link.parent.name
-                # parent_link_idx = next(
-                #     i for i, l in enumerate(links) if l.name == parent_link.name
-                # )
                 parent_link_pose = robot.fkine(
-                    q.ordered,
+                    q.ordered_rtb,
                     end=parent_link,
                     start="base_link",
                 )
-                # print("Parent link pose:", parent_link_pose.t)
 
                 ax.plot(
                     [parent_link_pose.t[0], link_pose.t[0]],
@@ -81,9 +68,5 @@ if __name__ == "__main__":
                 link_to_plot = parent_link
 
         plt.pause(DT)
-
-        # left_pos = controller._left_arm.get_eef_position(q)
-        # right_pos = controller._right_arm.get_eef_position(q)
-        # print(left_pos, right_pos)
 
     plt.show()

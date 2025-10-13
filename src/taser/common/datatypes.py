@@ -60,6 +60,32 @@ class TaserJointState:
             wheels=np.array(wheels),
         )
 
+    @classmethod
+    def from_isaac(cls, isaac_state: np.ndarray) -> "TaserJointState":
+        left_arm = [isaac_state[0], isaac_state[4], isaac_state[6]]
+        right_arm = [isaac_state[2], isaac_state[5], isaac_state[7]]
+        wheels = [isaac_state[1], isaac_state[3]]
+        return TaserJointState(
+            left_arm=left_arm,
+            right_arm=right_arm,
+            wheels=wheels,
+        )
+
     @property
-    def ordered(self) -> np.ndarray:
+    def ordered_rtb(self) -> np.ndarray:
         return np.concatenate([self.left_arm, self.right_arm, self.wheels])
+
+    @property
+    def ordered_isaac(self) -> np.ndarray:
+        return np.array(
+            [
+                self.left_arm[0],
+                self.wheels[0],
+                self.right_arm[0],
+                self.wheels[1],
+                self.left_arm[1],
+                self.right_arm[1],
+                self.left_arm[2],
+                self.right_arm[2],
+            ]
+        )
