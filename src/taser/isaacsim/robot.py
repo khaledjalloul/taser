@@ -84,8 +84,8 @@ class TaserIsaacSimRobot(SingleArticulation):
             wheel_base=0.6,
         )
 
-        # self._grasp_controller.set_target(Pose(x=0.5, y=0.0, z=0.0))
-        self._grasp_controller.set_target(None)
+        # self._pick_controller.set_target(Pose(x=0.5, y=0.0, z=0.0))
+        self._pick_controller.set_target(None)
 
     def step(self, dt: float, occupancy_grid: OccupancyGrid) -> None:
         self._occupancy_grid = occupancy_grid
@@ -113,7 +113,8 @@ class TaserIsaacSimRobot(SingleArticulation):
                 self._path_plan = []
 
         joint_velocities = self._pick_controller.step(
-            TaserJointState.from_isaac(self.get_joint_positions())
+            q=TaserJointState.from_isaac(self.get_joint_positions()),
+            dq=TaserJointState.from_isaac(self.get_joint_velocities()),
         )
 
         joint_velocities.wheels = self._locomotion_policy.step(

@@ -109,7 +109,7 @@ class EventsCfg:
                     "base_link_right_wheel_joint",
                 ],
             ),
-            "position_range": (0.0, 0.0),
+            "position_range": (-torch.pi / 2, torch.pi / 2),
             "velocity_range": (0.0, 0.0),
         },
     )
@@ -124,10 +124,9 @@ class EventsCfg:
                 "y": (0.0, 0.0),
                 "z": (0.0, 0.0),
                 "roll": (0.0, 0.0),
+                # Randomized starting pitch to help explore scenarios where the robot is about to fall
                 "pitch": (-0.3, 0.3),
-                # "pitch": (0.0, 0.0),
                 "yaw": (-torch.pi, torch.pi),
-                # "yaw": (0.0, 0.0),
             },
             "velocity_range": {},
         },
@@ -186,11 +185,21 @@ class RewardsCfg:
         weight=15.0,
         params={"command_name": "base_velocity", "std": 0.25},
     )
+    track_lin_vel_xy_general = RewardTermCfg(
+        func=mdp.track_lin_vel_xy_exp,
+        weight=8.0,
+        params={"command_name": "base_velocity", "std": 1.0},
+    )
 
     track_ang_vel_z = RewardTermCfg(
         func=mdp.track_ang_vel_z_exp,
         weight=15.0,
         params={"command_name": "base_velocity", "std": 0.25},
+    )
+    track_ang_vel_z_general = RewardTermCfg(
+        func=mdp.track_ang_vel_z_exp,
+        weight=8.0,
+        params={"command_name": "base_velocity", "std": 1.0},
     )
 
 
