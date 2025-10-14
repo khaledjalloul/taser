@@ -44,7 +44,7 @@ class ManipulationKinematics:
         v = J @ (dq.left_arm if self._arm_side == "left" else dq.right_arm)
         return v[0:3]
 
-    def get_q(self, pose: Pose) -> np.ndarray:
+    def get_q(self, pose: Pose, q0: list[float] = None) -> np.ndarray:
         T = SE3.Trans(pose.x, pose.y, pose.z)
 
         # if pose.rx or pose.ry or pose.rz:
@@ -55,6 +55,7 @@ class ManipulationKinematics:
             start="base_link",
             end=f"{self._arm_side}_arm_eef",
             mask=[1, 1, 1, 0, 0, 0],
+            q0=q0,
         ).q
 
     def get_dq(

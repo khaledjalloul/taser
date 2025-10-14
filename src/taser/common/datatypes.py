@@ -66,9 +66,9 @@ class TaserJointState:
         right_arm = [isaac_state[2], isaac_state[5], isaac_state[7]]
         wheels = [isaac_state[1], isaac_state[3]]
         return TaserJointState(
-            left_arm=left_arm,
-            right_arm=right_arm,
-            wheels=wheels,
+            left_arm=np.array(left_arm),
+            right_arm=np.array(right_arm),
+            wheels=np.array(wheels),
         )
 
     @property

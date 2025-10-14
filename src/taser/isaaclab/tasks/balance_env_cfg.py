@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 import torch
 from isaaclab.envs import ManagerBasedEnv, mdp
@@ -27,7 +25,7 @@ class ActionsCfg:
             "base_link_left_wheel_joint",
             "base_link_right_wheel_joint",
         ],
-        scale=3.0,
+        scale=5.0,
     )
 
 
@@ -52,7 +50,7 @@ class EventsCfg:
                     "base_link_right_wheel_joint",
                 ],
             ),
-            "position_range": (0.0, 0.0),
+            "position_range": (-torch.pi / 2, torch.pi / 2),
             "velocity_range": (0.0, 0.0),
         },
     )
@@ -67,11 +65,9 @@ class EventsCfg:
                 "y": (0.0, 0.0),
                 "z": (0.0, 0.0),
                 "roll": (0.0, 0.0),
-                # Randomized starting pitch to help explore scenarios where the robot is about to fall
+                # Randomized starting orientation to help explore scenarios where the robot is about to fall
                 "pitch": (-0.3, 0.3),
-                # "pitch": (0.0, 0.0),
-                "yaw": (-math.pi, math.pi),
-                # "yaw": (0.0, 0.0),
+                "yaw": (-torch.pi, torch.pi),
             },
             "velocity_range": {},
         },
@@ -107,10 +103,10 @@ class ObservationsCfg:
     policy: PolicyCfg = PolicyCfg()
 
 
-def zero_velocity_reward(env: ManagerBasedEnv, std: float = 1.0):
+def zero_velocity_reward(env: ManagerBasedEnv, std: float) -> torch.Tensor:
     """Get the reward based on the robot's velocity."""
     base_vel = torch.cat([mdp.base_lin_vel(env), mdp.base_ang_vel(env)], dim=-1)
-    return torch.exp(-(torch.linalg.vector_norm(base_vel, dim=-1) ** 2) / (2 * std**2))
+    return torch.exp(-(torch.linalg.vector_norm(base_vel, dim=-1) ** 2) / std**2)
 
 
 @configclass
@@ -127,7 +123,11 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
-    zero_vel_reward = RewardTermCfg(func=zero_velocity_reward, weight=3.0)
+    zero_vel_reward = RewardTermCfg(
+        func=zero_velocity_reward,
+        weight=5.0,
+        params={"std": 0.25},
+    )
 
 
 @configclass

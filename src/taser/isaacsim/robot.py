@@ -7,6 +7,7 @@ from isaacsim.core.prims import SingleArticulation
 from isaacsim.core.utils.rotations import quat_to_euler_angles, quat_to_rot_matrix
 from isaacsim.core.utils.stage import add_reference_to_stage
 from isaacsim.core.utils.types import ArticulationAction
+from std_msgs.msg import Int32
 
 from taser.common.datatypes import Pose, TaserJointState, Workspace
 from taser.isaacsim.utils.occupancy_grid import OccupancyGrid
@@ -35,7 +36,6 @@ class TaserIsaacSimRobot(SingleArticulation):
         self,
         position: tuple[float, float, float],
         orientation: tuple[float, float, float],
-        ros_enabled: bool = True,
     ) -> None:
         """
         Initialize the robot.
@@ -65,13 +65,10 @@ class TaserIsaacSimRobot(SingleArticulation):
 
         self._path_plan: list[Pose] = []
 
-        self._ros_enabled = ros_enabled
-        if self._ros_enabled:
-            self._ros_node = TaserIsaacSimRosNode(
-                navigation_target_pose_cb=self._navigation_target_pose_cb,
-                left_arm_velocity_cb=self._left_arm_velocity_cb,
-                right_arm_velocity_cb=self._right_arm_velocity_cb,
-            )
+        self._ros_node = TaserIsaacSimRosNode(
+            navigation_target_pose_cb=self._navigation_target_pose_cb,
+            manipulation_task_cb=self._manipulation_task_cb,
+        )
 
     def initialize(self, workspace: Workspace) -> None:
         super().initialize()
@@ -84,12 +81,12 @@ class TaserIsaacSimRobot(SingleArticulation):
             wheel_base=0.6,
         )
 
-        # self._pick_controller.set_target(Pose(x=0.5, y=0.0, z=0.0))
-        self._pick_controller.set_target(None)
-
     def step(self, dt: float, occupancy_grid: OccupancyGrid) -> None:
         self._occupancy_grid = occupancy_grid
         self._hide_robot_from_occupancy_grid()
+
+        q = TaserJointState.from_isaac(self.get_joint_positions())
+        dq = TaserJointState.from_isaac(self.get_joint_velocities())
 
         position_w, quaternion_w = self.get_world_pose()
         R_IB = quat_to_rot_matrix(quaternion_w)
@@ -98,29 +95,28 @@ class TaserIsaacSimRobot(SingleArticulation):
         root_angular_velocity_b = np.matmul(R_BI, self.get_angular_velocity())
 
         base_pose = Pose(
-            x=position_w[0], y=position_w[1], rz=quat_to_euler_angles(quaternion_w)[2]
+            x=position_w[0],
+            y=position_w[1],
+            rz=quat_to_euler_angles(quaternion_w)[2],
         )
 
-        vel_cmd = (0.0, 0.0, 0.0)
         if np.any(self._teleop.get_command() != 0):
             vel_cmd = self._teleop.get_command()
         elif self._path_plan:
             base_vel_cmd, reached = self._navigator.step(
                 base_pose, root_linear_velocity_b[0]
             )
-            vel_cmd = (base_vel_cmd.v, 0.0, base_vel_cmd.w)
+            vel_cmd = np.array([base_vel_cmd.v, 0.0, base_vel_cmd.w])
             if reached:
                 self._path_plan = []
+        else:
+            vel_cmd = np.array([0.0, 0.0, 0.0])
 
-        joint_velocities = self._pick_controller.step(
-            q=TaserJointState.from_isaac(self.get_joint_positions()),
-            dq=TaserJointState.from_isaac(self.get_joint_velocities()),
-        )
+        joint_velocities, _ = self._pick_controller.step(q)
 
         joint_velocities.wheels = self._locomotion_policy.step(
-            joint_positions=self.get_joint_positions(),
-            joint_velocities=self.get_joint_velocities(),
-            base_position_w=position_w,
+            joint_positions=q,
+            joint_velocities=dq,
             base_quaternion_w=quaternion_w,
             base_linear_velocity_b=root_linear_velocity_b,
             base_angular_velocity_b=root_angular_velocity_b,
@@ -140,8 +136,7 @@ class TaserIsaacSimRobot(SingleArticulation):
 
         self._occupancy_grid.set((x_min, x_max, y_min, y_max), 0)
 
-        if self._ros_enabled:
-            self._ros_node.publish_occupancy_grid(self._occupancy_grid)
+        self._ros_node.publish_occupancy_grid(self._occupancy_grid)
 
     def _navigation_target_pose_cb(self, target: Pose2DRos):
         position_w, quaternion_w = self.get_world_pose()
@@ -156,8 +151,8 @@ class TaserIsaacSimRobot(SingleArticulation):
             occupancy_grid=self._occupancy_grid,
         )
 
-    def _left_arm_velocity_cb(self, velocity) -> None:
-        pass
-
-    def _right_arm_velocity_cb(self, velocity) -> None:
-        pass
+    def _manipulation_task_cb(self, task: Int32):
+        if task.data == 0:
+            self._pick_controller.reset()
+        elif task.data == 1:
+            self._pick_controller.set_target(Pose(x=0.5, y=0.0, z=0.0))

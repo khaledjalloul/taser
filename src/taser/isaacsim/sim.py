@@ -4,11 +4,6 @@ parser = argparse.ArgumentParser(description="Isaac Sim Taser Simulation")
 parser.add_argument(
     "--headless", action="store_true", help="Run simulation in headless mode"
 )
-parser.add_argument(
-    "--no_ros",
-    action="store_true",
-    help="Disable ROS 2 bridge and related functionality",
-)
 args = parser.parse_args()
 
 from isaacsim.simulation_app import SimulationApp
@@ -43,7 +38,6 @@ class TaserIsaacSim:
         self.robot = TaserIsaacSimRobot(
             position=(0.0, 0.0, 0.65),
             orientation=(1.0, 0.0, 0.0, 0.0),
-            ros_enabled=not args.no_ros,
         )
 
         self.occupancy_grid_generator = IsaacSimOccupancyGridGenerator()
@@ -75,8 +69,7 @@ class TaserIsaacSim:
 
 
 def main():
-    if not args.no_ros:
-        rclpy.init()
+    rclpy.init()
 
     sim = TaserIsaacSim()
     simulation_app.update()

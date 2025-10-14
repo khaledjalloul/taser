@@ -1,10 +1,10 @@
 import numpy as np
 from geometry_msgs.msg import Pose2D as Pose2DRos
-from geometry_msgs.msg import Vector3
 from nav_msgs.msg import OccupancyGrid as OccupancyGridRos
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
 from rclpy.time import Time
+from std_msgs.msg import Int32
 from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 
 from taser.navigation import OccupancyGrid
@@ -14,8 +14,7 @@ class TaserIsaacSimRosNode(Node):
     def __init__(
         self,
         navigation_target_pose_cb: callable,
-        left_arm_velocity_cb: callable,
-        right_arm_velocity_cb: callable,
+        manipulation_task_cb: callable,
     ):
         super().__init__("sim", namespace="taser")
         self._navigation_target_pose = None
@@ -30,16 +29,10 @@ class TaserIsaacSimRosNode(Node):
             Pose2DRos, "/taser/navigation/target_pose", navigation_target_pose_cb, 10
         )
 
-        self._left_arm_velocity_sub = self.create_subscription(
-            Vector3,
-            "/taser/manipulation/left_arm_target_velocity",
-            left_arm_velocity_cb,
-            10,
-        )
-        self._right_arm_velocity_sub = self.create_subscription(
-            Vector3,
-            "/taser/manipulation/right_arm_target_velocity",
-            right_arm_velocity_cb,
+        self._manipulation_task_sub = self.create_subscription(
+            Int32,
+            "/taser/manipulation/task",
+            manipulation_task_cb,
             10,
         )
 

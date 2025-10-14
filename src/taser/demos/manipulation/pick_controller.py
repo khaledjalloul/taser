@@ -25,8 +25,12 @@ if __name__ == "__main__":
     fig = plt.figure()
     ax: plt.Axes = fig.add_subplot(111, projection="3d")
 
-    for _ in range(10000):
-        dq = controller.step(q, dq)
+    while True:
+        dq, done = controller.step(q)
+
+        if done:
+            break
+
         q.left_arm += dq.left_arm * DT
         q.right_arm += dq.right_arm * DT
 

@@ -6,6 +6,7 @@ services:
       dockerfile: docker/Dockerfile.4.5.0-humble
       args:
         USERNAME: ${USERNAME} # Set as empty string to use root
+      network: host # Temporary fix for when using VPN
     container_name: taser-4.5.0-humble
     hostname: taser
     network_mode: host # Temporary fix for when using VPN

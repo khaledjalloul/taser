@@ -124,7 +124,7 @@ class EventsCfg:
                 "y": (0.0, 0.0),
                 "z": (0.0, 0.0),
                 "roll": (0.0, 0.0),
-                # Randomized starting pitch to help explore scenarios where the robot is about to fall
+                # Randomized starting orientation to help explore scenarios where the robot is about to fall
                 "pitch": (-0.3, 0.3),
                 "yaw": (-torch.pi, torch.pi),
             },

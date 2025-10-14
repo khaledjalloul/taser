@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 # Requires: PyQt6, rclpy, geometry_msgs, nav_msgs, tf2_ros
 
+import math
 import sys
 import threading
 import time
-import math
 
 import numpy as np
 import rclpy
-from geometry_msgs.msg import Pose2D, Vector3
+from geometry_msgs.msg import Pose2D
 from nav_msgs.msg import OccupancyGrid
 from PyQt6 import QtCore, QtGui, QtWidgets
 from rclpy import node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
+from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
+from std_msgs.msg import Int32
 from tf2_ros import (
     Buffer,
     ConnectivityException,
@@ -29,8 +30,7 @@ from taser.common.datatypes import Workspace
 sys.stdout.reconfigure(line_buffering=True)
 
 LEFT_PANEL_SIZE = 600
-MIDDLE_WIDTH = 300
-RIGHT_WIDTH = 300
+CONTROL_WIDTH = 300
 HEIGHT = 600
 
 MAP_TOPIC = "/taser/navigation/occupancy_grid"  # hardcoded
@@ -61,7 +61,7 @@ class CanvasWidget(QtWidgets.QWidget):
       - Foreground (interactive dot/path)
     Modes:
       - 'click' : single click -> pose
-      - 'drag'  : press-move-release -> velocities
+      - 'drag'  : press-move-release -> velocities (unused now)
     """
 
     def __init__(
@@ -91,14 +91,14 @@ class CanvasWidget(QtWidgets.QWidget):
         self.mode = mode
         self.ws = ws
         self.on_click = None
-        self.on_velocity = None
+        self.on_velocity = None  # kept for compatibility, unused now
 
         # Drag state
         self._pressed = False
         self._last_pos = None
         self._last_time = None
 
-        # Auto-zero velocity when idle
+        # Auto-zero velocity when idle (unused, harmless)
         self._zero_timer = QtCore.QTimer(self)
         self._zero_timer.setSingleShot(True)
         self._zero_timer.timeout.connect(self._emit_zero_velocity)
@@ -223,23 +223,13 @@ class CanvasWidget(QtWidgets.QWidget):
             self._restart_zero_timer()
 
     def _handle_move(self, event: QtGui.QMouseEvent):
+        # Drag mode no longer used; keep behavior harmlessly
         if self.mode != "drag" or not self._pressed:
             return
         p = event.position()
         now = time.monotonic()
         if self._last_pos is not None and self._last_time is not None:
             self._draw_line(self._last_pos, p, color="#0099FF")
-            dx = float(p.x() - self._last_pos.x())
-            dy = float(p.y() - self._last_pos.y())
-            dt = now - self._last_time
-
-            if dt <= 0.0:
-                vx, vy = 0.0, 0.0
-            else:
-                vx = dx / dt
-                vy = -dy / dt
-            if dt > 0 and callable(self.on_velocity):
-                self.on_velocity(vx, vy)
         self._last_pos = p
         self._last_time = now
         self._restart_zero_timer()
@@ -311,41 +301,36 @@ class TaserGUI(QtWidgets.QMainWindow):
             self.left_canvas, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter
         )
 
-        # Middle panel (unchanged)
-        mid_col = QtWidgets.QVBoxLayout()
-        mid_label = QtWidgets.QLabel("Arm 1 (press & move: path + velocity)")
-        mid_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
-        dummy_ws = Workspace(0.0, 1.0, 0.0, 1.0)
-        self.mid_canvas = CanvasWidget(MIDDLE_WIDTH, HEIGHT, dummy_ws, mode="drag")
-        mid_col.addWidget(mid_label)
-        mid_col.addWidget(
-            self.mid_canvas, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter
-        )
-
-        # Right panel (unchanged)
+        # Right control panel (Manipulation with two buttons)
         right_col = QtWidgets.QVBoxLayout()
-        right_label = QtWidgets.QLabel("Arm 2 (press & move: path + velocity)")
-        right_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
-        self.right_canvas = CanvasWidget(RIGHT_WIDTH, HEIGHT, dummy_ws, mode="drag")
-        right_col.addWidget(right_label)
-        right_col.addWidget(
-            self.right_canvas, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter
-        )
+        panel_title = QtWidgets.QLabel("Manipulation")
+        panel_title.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
+        panel_title.setStyleSheet("font-weight: 600; font-size: 16px;")
+        btn_pick = QtWidgets.QPushButton("Pick")
+        btn_reset = QtWidgets.QPushButton("Reset")
+
+        # Optional: make the panel a fixed width column
+        right_wrapper = QtWidgets.QWidget()
+        right_wrapper.setFixedWidth(CONTROL_WIDTH)
+        right_inner = QtWidgets.QVBoxLayout(right_wrapper)
+        right_inner.setSpacing(12)
+        right_inner.addWidget(panel_title)
+        right_inner.addWidget(btn_pick)
+        right_inner.addWidget(btn_reset)
+        right_inner.addStretch(1)
+
+        right_col.addWidget(right_wrapper)
 
         # Pack
         hbox.addLayout(left_col, stretch=0)
-        hbox.addLayout(mid_col, stretch=1)
-        hbox.addLayout(right_col, stretch=1)
+        hbox.addLayout(right_col, stretch=0)
 
         # Publishers
         self.nav_pub = self.node.create_publisher(
             Pose2D, "/taser/navigation/target_pose", 10
         )
-        self.arm1_pub = self.node.create_publisher(
-            Vector3, "/taser/manipulation/left_arm_target_velocity", 10
-        )
-        self.arm2_pub = self.node.create_publisher(
-            Vector3, "/taser/manipulation/right_arm_target_velocity", 10
+        self.task_pub = self.node.create_publisher(
+            Int32, "/taser/manipulation/task", 10
         )
 
         # Map subscriber (latched-like QoS)
@@ -370,13 +355,19 @@ class TaserGUI(QtWidgets.QMainWindow):
 
         # Hooks
         self.left_canvas.on_click = self._publish_navigation_pose
-        self.mid_canvas.on_velocity = self._publish_arm1_vel
-        self.right_canvas.on_velocity = self._publish_arm2_vel
+
+        # Button actions
+        btn_pick.clicked.connect(self._send_pick)
+        btn_reset.clicked.connect(self._send_reset)
 
         # TF overlay timer
         self._tf_timer = QtCore.QTimer(self)
         self._tf_timer.timeout.connect(self._update_robot_overlay)
         self._tf_timer.start(50)
+
+        # Size baseline
+        self.setMinimumWidth(self.left_canvas.width() + CONTROL_WIDTH + 12 * 2 + 16)
+        self.setFixedHeight(max(HEIGHT, self.left_canvas.height()) + 24)
 
     # --------- Map handling ---------
     def _on_map(self, msg: OccupancyGrid):
@@ -395,18 +386,17 @@ class TaserGUI(QtWidgets.QMainWindow):
         img = np.flipud(img)
 
         # ---- FIXED QImage CONSTRUCTION (PyQt6-friendly) ----
-        # Ensure C-contiguous bytes and give bytesPerLine explicitly.
         img = np.ascontiguousarray(img, dtype=np.uint8)
         h, w = img.shape
         bytes_per_line = w  # 1 byte per pixel in Grayscale8
 
         qimg = QtGui.QImage(
-            img.tobytes(),  # bytes buffer (not memoryview)
+            img.tobytes(),
             w,
             h,
             bytes_per_line,
             QtGui.QImage.Format.Format_Grayscale8,
-        ).copy()  # copy so QImage owns the memory
+        ).copy()
         qpix = QtGui.QPixmap.fromImage(qimg)
         # ----------------------------------------------------
 
@@ -434,7 +424,7 @@ class TaserGUI(QtWidgets.QMainWindow):
         self.left_canvas.set_waiting_text(None)
         self.left_canvas.set_bg_pixmap(qpix)
 
-    # --------- Publishers ---------
+    # --------- Publishers / Actions ---------
     def _publish_navigation_pose(self, x_px: float, y_px: float, fw: int, fh: int):
         if self.ws is None:
             return  # safeguard
@@ -448,15 +438,19 @@ class TaserGUI(QtWidgets.QMainWindow):
             f"Navigation target pose: ({msg.x:.3f}, {msg.y:.3f})"
         )
 
-    def _publish_arm1_vel(self, vx: float, vy: float):
-        vx = vx * 0.5 / self.mid_canvas.width()
-        vy = vy * 1.0 / self.mid_canvas.height()
-        self.arm1_pub.publish(Vector3(x=float(vx), y=0.0, z=float(vy)))
+    def _publish_task(self, value: int, label: str):
+        if self.task_pub is None:
+            return
+        msg = Int32()
+        msg.data = int(value)
+        self.task_pub.publish(msg)
+        self.node.get_logger().info(f"Manipulation task '{label}' -> {value}")
 
-    def _publish_arm2_vel(self, vx: float, vy: float):
-        vx = vx * 0.5 / self.right_canvas.width()
-        vy = vy * 1.0 / self.right_canvas.height()
-        self.arm2_pub.publish(Vector3(x=float(vx), y=0.0, z=float(vy)))
+    def _send_pick(self):
+        self._publish_task(1, "Pick")
+
+    def _send_reset(self):
+        self._publish_task(0, "Reset")
 
     # --------- TF -> robot overlay ---------
     def _update_robot_overlay(self):
@@ -489,8 +483,8 @@ class TaserGUI(QtWidgets.QMainWindow):
         except Exception:
             pass
         try:
-            if self._ros_thread.is_alive():
-                self._ros_thread.join(timeout=1.0)
+            # If spinning in a thread, join it
+            pass
         except Exception:
             pass
         super().closeEvent(event)
@@ -499,13 +493,6 @@ class TaserGUI(QtWidgets.QMainWindow):
 def main():
     app = QtWidgets.QApplication(sys.argv)
     win = TaserGUI()
-    win.setMinimumWidth(
-        win.left_canvas.width()
-        + win.mid_canvas.width()
-        + win.right_canvas.width()
-        + 16 * 2
-        + 60
-    )
     win.show()
     sys.exit(app.exec())
 
