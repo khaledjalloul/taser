@@ -48,14 +48,15 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.5.0.0
+      network: host # Temporary fix for when using VPN
     container_name: taser-5.0.0
     hostname: taser
-    network_mode: host
+    network_mode: host # Temporary fix for when using VPN
     environment:
       - DISPLAY=${DISPLAY}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
-      # - ALLOW_ROOT=1 # In case the user was root
+      - OMNI_KIT_ALLOW_ROOT=1 # In case the user was root
     runtime: nvidia
     deploy:
       resources:
@@ -64,6 +65,7 @@ services:
             - driver: nvidia
               count: all
               capabilities: [ gpu ]
+    entrypoint: bash docker/entrypoint.bash
     command: bash -c "while sleep 1000; do :; done"
     volumes:
       # Bind source code

@@ -12,11 +12,9 @@ SHELL ["/bin/bash", "-c"]
 RUN apt update
 RUN apt install -y \
     # Essentials
+    sudo \
     curl \
-    # nano \
-    # Python
-    # python3-pip \
-    # python3-venv \
+    bash-completion \
     # Cmake
     build-essential \
     cmake \
@@ -24,15 +22,112 @@ RUN apt install -y \
     gdb \
     # Git
     git \
-    git-lfs
+    git-lfs \
+    # C++ dependencies
+    libboost-all-dev \
+    libeigen3-dev \
+    # pybind11-dev \
+    libgtest-dev
 # GUI support
 # libxrandr2 \
 # libxcb-cursor0
 
 ###############################################
-# Finalization
+# Isaac Sim
 
+# Create Isaac Sim workspace folder
+RUN ln -s /isaac-sim /workspace/isaacsim
+
+# Create aliases for python and pip to use those of Isaac Sim
+RUN printf ' \
+    alias omni_python="/workspace/isaacsim/python.sh" \n \
+    alias isaacsim="/workspace/isaacsim/isaac-sim.sh" \n \
+    ' >> ${HOME}/.bashrc
+
+# Enable Isaac Sim internal rclpy library 
+ENV ROS_DISTRO=humble
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/isaac-sim/exts/isaacsim.ros2.bridge/humble/lib
+
+###############################################
+# ROS 2
+
+# Set UTF-8 locale
+RUN apt update && apt install locales
+RUN locale-gen en_US en_US.UTF-8
+RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+
+# Add ROS 2 repository
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+# Install ROS 2
+RUN apt update
+RUN apt install -y software-properties-common
+RUN add-apt-repository -y universe
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt install -y \
+    ros-dev-tools
+# ros-humble-desktop \
+# python3-colcon-clean
+
+# Set up rosdep
+ENV SSL_CERT_FILE=/usr/lib/ssl/certs/ca-certificates.crt
+RUN rosdep init
+
+# USER ${USERNAME:-root}
+
+# # Add ROS sourcing to bashrc
+# RUN echo "source /opt/ros/humble/setup.bash" >> ${HOME}/.bashrc
+
+# # Fix Rviz GUI 
+# ENV LIBGL_DRI3_DISABLE=1
+
+###############################################
+# Install Dependencies
+
+# Install Osqp and OsqpEigen
+WORKDIR /tmp
+RUN git clone --recursive --branch v0.6.3 https://github.com/osqp/osqp
+RUN mkdir -p osqp/build
+RUN cd osqp/build && cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+RUN cd osqp/build && make && make install
+
+RUN git clone --branch v0.8.1 https://github.com/robotology/osqp-eigen.git
+RUN mkdir -p osqp-eigen/build
+RUN cd osqp-eigen/build && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+RUN cd osqp-eigen/build && make && make install
+ENV OsqpEigen_DIR=/usr
+
+# Install pybind11
+RUN /workspace/isaacsim/python.sh -m pip install pybind11
+
+# Install personal CLI
+RUN echo "deb [trusted=yes] https://khaledjalloul.github.io/debian-repository unstable main" | tee /etc/apt/sources.list.d/khaledjalloul.list
+RUN apt update
+RUN apt install -y khaled-cli
+
+# Install rosdep dependencies
 ENV WORKSPACE=/workspace/taser
 WORKDIR ${WORKSPACE}
+
+COPY ./src/taser_ros/package.xml ${WORKSPACE}/src/taser_ros/package.xml
+RUN rosdep update
+RUN rosdep install --from-paths src --ignore-src -r -y
+
+###############################################
+# Finalization
+
+# Install project
+COPY ./pyproject.toml ${WORKSPACE}
+COPY ./src/taser_cpp ${WORKSPACE}/src/taser_cpp
+RUN mkdir -p ${WORKSPACE}/src/taser
+RUN PYBIND11_DIR=$(/workspace/isaacsim/python.sh -c "import pybind11; print(pybind11.get_cmake_dir())") \
+    /workspace/isaacsim/python.sh -m pip install --verbose -e .
+
+# Update environment variables for the Python bindings
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/isaac-sim/kit/python/lib/python3.11/site-packages/lib
 
 ENTRYPOINT [ ]

@@ -149,42 +149,34 @@ RUN cd osqp-eigen/build && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
 RUN cd osqp-eigen/build && make && make install
 ENV OsqpEigen_DIR=/usr
 
-# Install rosdep dependencies to cache them in the image
-RUN apt install -y \
-    ros-humble-controller-manager \
-    ros-humble-ros2-control \
-    ros-humble-ros2-controllers \
-    ros-humble-velocity-controllers \
-    ros-humble-joint-state-broadcaster \
-    ros-humble-joint-state-publisher-gui \
-    ros-humble-robot-state-publisher \
-    ros-humble-rviz2 \
-    ros-humble-xacro
+# Remove OS conflicting dependencies
+RUN apt remove -y \
+    python3-blinker \
+    python3-matplotlib
 
 # Install personal CLI
 RUN echo "deb [trusted=yes] https://khaledjalloul.github.io/debian-repository unstable main" | tee /etc/apt/sources.list.d/khaledjalloul.list
 RUN apt update
 RUN apt install -y khaled-cli
 
+# Install rosdep dependencies
+ENV WORKSPACE=/workspace/taser
+WORKDIR ${WORKSPACE}
+
+COPY --chown=${USERNAME:-root} ./src/taser_ros/package.xml ${WORKSPACE}/src/taser_ros/package.xml
+RUN rosdep update
+RUN ROS_DISTRO=humble rosdep install --from-paths src --ignore-src -r -y
+
 ###############################################
 # Finalization
 
 USER ${USERNAME:-root}
-ENV WORKSPACE=/workspace/taser
-WORKDIR ${WORKSPACE}
 
-# Remove OS conflicting dependencies
-RUN sudo apt remove -y \
-    python3-blinker \
-    python3-matplotlib
-
-# Install project dependencies
+# Install project
 COPY --chown=${USERNAME:-root} ./pyproject.toml ${WORKSPACE}
 COPY --chown=${USERNAME:-root} ./src/taser_cpp ${WORKSPACE}/src/taser_cpp
 RUN mkdir -p ${WORKSPACE}/src/taser
 RUN python3 -m pip install --verbose -e .
 
 # Update environment variables for the Python bindings
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages/lib:/usr/local/lib/python3.10/dist-packages/lib
-ENV PYTHONPATH=${PYTHONPATH}:/workspace/taser/src:/usr/local/lib/python3.10/dist-packages
-ENV CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages/lib

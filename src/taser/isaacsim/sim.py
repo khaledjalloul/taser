@@ -6,24 +6,29 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+###############################################################
+
 from isaacsim.simulation_app import SimulationApp
 
 simulation_app = SimulationApp({"headless": args.headless})
+
+from taser.isaacsim.utils.extensions import enable_extensions
+
+enable_extensions()
+
+###############################################################
 
 import rclpy
 from isaacsim.core.api import World
 
 from taser.isaacsim.robot import TaserIsaacSimRobot
 from taser.isaacsim.scene import set_up_scene
-from taser.isaacsim.utils.extensions import enable_extensions
 from taser.isaacsim.utils.occupancy_grid import IsaacSimOccupancyGridGenerator
 from taser.isaacsim.utils.ros2_tf_publisher import set_up_omni_graph
 
 
 class TaserIsaacSim:
     def __init__(self):
-        enable_extensions()
-
         # Set up ROS 2 bridge omni graph
         set_up_omni_graph()
 
