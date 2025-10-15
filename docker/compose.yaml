@@ -1,55 +1,14 @@
 services:
-  taser-4.5.0-humble:
-    image: khaledjalloul/taser:4.5.0-humble
+  taser:
+    image: khaledjalloul/taser
     build:
       context: ..
-      dockerfile: docker/Dockerfile.4.5.0-humble
+      dockerfile: docker/Dockerfile
       args:
         USERNAME: ${USERNAME} # Set as empty string to use root
+        ISAACLAB_VERSION: 2.1.0 # 2.1.0 / 2.2.0
       network: host # Temporary fix for when using VPN
-    container_name: taser-4.5.0-humble
-    hostname: taser
-    network_mode: host # Temporary fix for when using VPN
-    environment:
-      - DISPLAY=${DISPLAY}
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
-      - OMNI_KIT_ACCEPT_EULA=YES # Isaac Sim Requirement
-      - OMNI_KIT_ALLOW_ROOT=1 # In case the user was root
-    runtime: nvidia
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
-    entrypoint: bash docker/entrypoint.bash
-    command: bash -c "while sleep 1000; do :; done"
-    volumes:
-      # Bind source code
-      - type: bind
-        source: ..
-        target: /workspace/taser
-      # Enable GUI
-      - type: bind
-        source: /tmp/.X11-unix
-        target: /tmp/.X11-unix
-      # Persist Isaac Sim cache
-      - type: bind
-        source: ${HOME}/docker/taser/ov-cache
-        target: ${HOME}/.cache/ov # Set to /root if necessary
-      - type: bind
-        source: ${HOME}/docker/taser/isaacsim-kit-cache
-        target: /workspace/isaacsim/kit/cache
-
-  taser-5.0.0:
-    image: khaledjalloul/taser:5.0.0
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.5.0.0
-      network: host # Temporary fix for when using VPN
-    container_name: taser-5.0.0
+    container_name: taser
     hostname: taser
     network_mode: host # Temporary fix for when using VPN
     environment:
@@ -79,37 +38,37 @@ services:
       # Xauthority for X11 forwarding
       - type: bind
         source: ${HOME}/.Xauthority
-        target: /root/.Xauthority
+        target: ${HOME}/.Xauthority # Change to /root if running as root
         read_only: false
       # Isaac Sim kit cache
       - type: bind
-        source: ${HOME}/docker/isaac-sim/cache/kit
+        source: ${HOME}/docker/taser/cache/kit
         target: /isaac-sim/kit/cache
       # OV cache
       - type: bind
-        source: ${HOME}/docker/isaac-sim/cache/ov
-        target: /root/.cache/ov
+        source: ${HOME}/docker/taser/cache/ov
+        target: ${HOME}/.cache/ov
       # pip cache
       - type: bind
-        source: ${HOME}/docker/isaac-sim/cache/pip
-        target: /root/.cache/pip
+        source: ${HOME}/docker/taser/cache/pip
+        target: ${HOME}/.cache/pip
       # NVIDIA GLCache
       - type: bind
-        source: ${HOME}/docker/isaac-sim/cache/glcache
-        target: /root/.cache/nvidia/GLCache
+        source: ${HOME}/docker/taser/cache/glcache
+        target: ${HOME}/.cache/nvidia/GLCache
       # NVIDIA ComputeCache
       - type: bind
-        source: ${HOME}/docker/isaac-sim/cache/computecache
-        target: /root/.nv/ComputeCache
+        source: ${HOME}/docker/taser/cache/computecache
+        target: ${HOME}/.nv/ComputeCache
       # Omniverse logs
       - type: bind
-        source: ${HOME}/docker/isaac-sim/logs
-        target: /root/.nvidia-omniverse/logs
+        source: ${HOME}/docker/taser/logs
+        target: ${HOME}/.nvidia-omniverse/logs
       # Omniverse data
       - type: bind
-        source: ${HOME}/docker/isaac-sim/data
-        target: /root/.local/share/ov/data
+        source: ${HOME}/docker/taser/data
+        target: ${HOME}/.local/share/ov/data
       # Documents
       - type: bind
-        source: ${HOME}/docker/isaac-sim/documents
-        target: /root/Documents
+        source: ${HOME}/docker/taser/documents
+        target: ${HOME}/Documents

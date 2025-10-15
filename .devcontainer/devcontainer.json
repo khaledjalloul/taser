@@ -1,10 +1,7 @@
 {
     "name": "TASER",
     "dockerComposeFile": "../docker/compose.yaml",
-    "service": "taser-4.5.0-humble",
-    "runServices": [
-        "taser-4.5.0-humble"
-    ],
+    "service": "taser",
     "workspaceFolder": "/workspace/taser",
     "customizations": {
         "vscode": {

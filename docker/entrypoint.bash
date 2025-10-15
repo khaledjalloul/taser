@@ -1,15 +1,22 @@
-# Create the cache folders if not existing and handle correct permissions
-sudo mkdir -p ${HOME}/.cache/ov && sudo mkdir -p /workspace/isaacsim/kit/cache
+# Fix correct permissions for cache folders
 if [ -n "$USERNAME" ]; then \
+    sudo chown -R ${USERNAME} /isaac-sim/kit/cache; \
     sudo chown -R ${USERNAME} ${HOME}/.cache/ov; \
-    sudo chown -R ${USERNAME} /workspace/isaacsim/kit/cache; \
+    sudo chown -R ${USERNAME} ${HOME}/.cache/pip; \
+    sudo chown -R ${USERNAME} ${HOME}/.cache/nvidia; \
+    sudo chown -R ${USERNAME} ${HOME}/.nv; \
+    sudo chown -R ${USERNAME} ${HOME}/.nvidia-omniverse; \
+    sudo chown -R ${USERNAME} ${HOME}/.local/share/ov; \
+    sudo chown -R ${USERNAME} ${HOME}/Documents; \
     fi
 
 # Set up CLI completion
 kj setup cli completion
 
+export WORKSPACE=/workspace/taser
+
 # Load environment variables
-echo 'source ${WORKSPACE}/.env.local' >> ~/.bashrc
+echo "source ${WORKSPACE}/.env.local" >> ~/.bashrc
 
 # Build the project
 if [ -f /opt/ros/humble/setup.bash ]; then

@@ -1,17 +1,11 @@
-FROM nvcr.io/nvidia/isaac-sim:4.5.0 AS isaac-sim
-
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+ARG ISAACLAB_VERSION=${ISAACLAB_VERSION:-2.1.0}
+FROM nvcr.io/nvidia/isaac-lab:${ISAACLAB_VERSION} AS base
 
 ###############################################
 # Initial Setup
 
 ARG USERNAME
 ENV USERNAME=${USERNAME}
-
-# Set required environment variables and shell
-ENV PLATFORM=amd64
-ENV SHELL=/bin/bash
-SHELL ["/bin/bash", "-c"]
 
 # Rename default ubuntu user to USERNAME only if USERNAME is set
 RUN apt update && apt install -y sudo
@@ -40,32 +34,57 @@ RUN if [ -n "$USERNAME" ]; then \
 RUN apt update
 RUN apt install -y \
     # Essentials
-    curl \
     nano \
     bash-completion \
     # Python
     python3-pip \
-    python3-venv \
-    # Cmake
-    build-essential \
-    cmake \
     # C++
     gdb \
     # Git
-    git \
     git-lfs \
-    # GUI support
+    # Python Qt GUI dependencies
     libxrandr2 \
-    libxcb-cursor0
+    libxcb-cursor0 \
+    # Taser C++ dependencies
+    libboost-all-dev \
+    libeigen3-dev \
+    libgtest-dev
 
 ###############################################
-# ROS 2
+# Isaac Sim
+
+USER ${USERNAME:-root}
+
+RUN if [ -n "$USERNAME" ]; then \
+    sudo chown -R ${USERNAME} /isaac-sim; \
+    sudo chown -R ${USERNAME} /workspace; \
+    fi
+
+# Create Isaac Sim workspace folder
+RUN ln -s /isaac-sim /workspace/isaacsim
+
+# Create aliases for omni_python and isaacsim
+RUN printf ' \
+    alias omni_python="/workspace/isaacsim/python.sh" \n \
+    alias isaacsim="/workspace/isaacsim/isaac-sim.sh" \n \
+    ' >> ${HOME}/.bashrc
+
+###############################################
+# Isaac Sim 4.5.0 Specific - Install ROS 2 Humble
+
+FROM base AS isaaclab-2.1.0
+
+USER root
 
 # Set UTF-8 locale
 RUN apt update && apt install locales
 RUN locale-gen en_US en_US.UTF-8
 RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 ENV LANG=en_US.UTF-8
+
+# Fix timezone to UTC
+RUN ln -sf /usr/share/zoneinfo/Etc/UTC /etc/localtime
+RUN echo "Etc/UTC" | tee /etc/timezone >/dev/null
 
 # Add ROS 2 repository
 RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
@@ -77,13 +96,12 @@ RUN apt install -y software-properties-common
 RUN add-apt-repository -y universe
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt install -y \
+RUN apt install -y --allow-downgrades \
+    # Fixes RVIZ installation
+    libbrotli1=1.0.9-2build6 \ 
     ros-dev-tools \
     ros-humble-desktop \
     python3-colcon-clean
-
-# Set up rosdep
-RUN rosdep init
 
 USER ${USERNAME:-root}
 
@@ -91,48 +109,34 @@ USER ${USERNAME:-root}
 RUN echo "source /opt/ros/humble/setup.bash" >> ${HOME}/.bashrc
 
 # Fix Rviz GUI 
-ENV LIBGL_DRI3_DISABLE=1
+# ENV LIBGL_DRI3_DISABLE=1
+
+USER root
+
+# Install rosdep dependencies
+RUN rosdep init
+COPY --chown=${USERNAME:-root} ./src/taser_ros/package.xml /workspace/taser/src/taser_ros/package.xml
+RUN rosdep update
+RUN ROS_DISTRO=humble rosdep install --from-paths /workspace/taser/src --ignore-src -r -y
 
 ###############################################
-# Isaac Sim
+# Isaac Sim 5.0.0 Specific
 
-# Create the workspace folder with proper permissions
-RUN sudo mkdir /workspace
-RUN if [ -n "$USERNAME" ]; then sudo chown -R ${USERNAME} /workspace; fi
+FROM base AS isaaclab-2.2.0
 
-# Copy Isaac Sim folder from its image because downloading and unzipping manually fails in docker due to large file size
-COPY --chown=${USERNAME:-root} --from=isaac-sim /isaac-sim /workspace/isaacsim
+# Enable bash completion
+RUN echo ". /etc/bash_completion" >> ${HOME}/.bashrc
 
-# Create aliases for python and pip to use those of Isaac Sim
-RUN printf ' \
-    \ralias omni_python="/workspace/isaacsim/python.sh" \n \
-    \ralias isaacsim="/workspace/isaacsim/isaac-sim.sh" \n \
-    ' >> ${HOME}/.bashrc
-
-###############################################
-# Isaac Lab
-
-ENV TERM=xterm
-RUN git clone https://github.com/isaac-sim/IsaacLab.git /workspace/isaaclab
-RUN ln -s /workspace/isaacsim /workspace/isaaclab/_isaac_sim
-RUN /workspace/isaaclab/isaaclab.sh --install
-
-###############################################
-# Python Environment
-
-# Upgrade omni_python pip
-RUN sudo /workspace/isaacsim/python.sh -m pip install --root-user-action=ignore --upgrade pip
-
-# Upgrade install dependencies
-RUN python3 -m pip install -U pip setuptools wheel build packaging scikit-build-core pyproject-metadata
-
-USER ${USERNAME:-root}
-
-# Unset python interactive startup script created by vscode
-RUN echo "unset PYTHONSTARTUP" >> ${HOME}/.bashrc
+# Enable Isaac Sim internal rclpy library 
+ENV ROS_DISTRO=humble
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/isaac-sim/exts/isaacsim.ros2.bridge/humble/lib
 
 ###############################################
 # Install Dependencies
+
+ARG ISAACLAB_VERSION
+FROM isaaclab-${ISAACLAB_VERSION} AS final
 
 USER root
 
@@ -159,24 +163,25 @@ RUN echo "deb [trusted=yes] https://khaledjalloul.github.io/debian-repository un
 RUN apt update
 RUN apt install -y khaled-cli
 
-# Install rosdep dependencies
-ENV WORKSPACE=/workspace/taser
-WORKDIR ${WORKSPACE}
-
-COPY --chown=${USERNAME:-root} ./src/taser_ros/package.xml ${WORKSPACE}/src/taser_ros/package.xml
-RUN rosdep update
-RUN ROS_DISTRO=humble rosdep install --from-paths src --ignore-src -r -y
-
 ###############################################
 # Finalization
 
 USER ${USERNAME:-root}
+WORKDIR /workspace/taser
+
+# Unset python interactive startup script created by vscode
+RUN echo "unset PYTHONSTARTUP" >> ${HOME}/.bashrc
+
+# Upgrade install dependencies
+RUN python3 -m pip install -U pip setuptools wheel build packaging scikit-build-core pyproject-metadata
 
 # Install project
-COPY --chown=${USERNAME:-root} ./pyproject.toml ${WORKSPACE}
-COPY --chown=${USERNAME:-root} ./src/taser_cpp ${WORKSPACE}/src/taser_cpp
-RUN mkdir -p ${WORKSPACE}/src/taser
+COPY --chown=${USERNAME:-root} ./pyproject.toml /workspace/taser
+COPY --chown=${USERNAME:-root} ./src/taser_cpp /workspace/taser/src/taser_cpp
+RUN mkdir -p /workspace/taser/src/taser
 RUN python3 -m pip install --verbose -e .
 
 # Update environment variables for the Python bindings
 ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages/lib
+
+ENTRYPOINT [ ]
