@@ -6,7 +6,7 @@ if [ -n "$USERNAME" ]; then \
     sudo chown -R ${USERNAME} ${HOME}/.cache/nvidia; \
     sudo chown -R ${USERNAME} ${HOME}/.nv; \
     sudo chown -R ${USERNAME} ${HOME}/.nvidia-omniverse; \
-    sudo chown -R ${USERNAME} ${HOME}/.local/share/ov; \
+    sudo chown -R ${USERNAME} ${HOME}/.local/share; \
     sudo chown -R ${USERNAME} ${HOME}/Documents; \
     fi
 

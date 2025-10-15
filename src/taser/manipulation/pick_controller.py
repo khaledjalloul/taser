@@ -1,20 +1,19 @@
-from enum import Enum
-
 import numpy as np
 
 from taser.common.datatypes import Pose, TaserJointState
 from taser.manipulation import ManipulationKinematics
 
+KP = 2.0
+Y_VELOCITY = 0.2
+Z_VELOCITY = 0.4
+
+XZ_THRESHOLD = 0.05
+Y_THRESHOLD = 0.15
+HEIGHT_THRESHOLD = 0.4
+
 
 def wrap_angle(angle: float) -> float:
     return np.arctan2(np.sin(angle), np.cos(angle))
-
-
-class Stage(Enum):
-    Align_XZ = 0
-    Align_Y = 1
-    Lift = 2
-    Reset = 3
 
 
 class PickController:
@@ -25,8 +24,6 @@ class PickController:
         self._home_pos_left = self._left_arm.get_eef_position(q=TaserJointState())
         self._home_pos_right = self._right_arm.get_eef_position(q=TaserJointState())
 
-        self._kp = 1
-
         self.reset()
 
     def reset(self):
@@ -36,7 +33,7 @@ class PickController:
         self._q_target_left = self._left_arm.get_q(self._target_pos_left_b)
         self._q_target_right = self._right_arm.get_q(self._target_pos_right_b)
 
-        self._stage = Stage.Reset
+        self._resetting = True
 
     def set_target(self, target_position_b: Pose):
         self._target_pos_left_b = Pose(
@@ -59,58 +56,51 @@ class PickController:
             q0=[-0.425, 0.0, -1.1],
         )
 
-        self._stage = Stage.Align_XZ
+        self._resetting = False
 
     def step(self, q: TaserJointState) -> tuple[TaserJointState, bool]:
-        if self._stage is None:
-            return TaserJointState(), True
-
         left_pos_b = self._left_arm.get_eef_position(q)
         right_pos_b = self._right_arm.get_eef_position(q)
 
-        if self._stage in [Stage.Reset, Stage.Align_XZ]:
-            dq_left = self._kp * wrap_angle(self._q_target_left - q.left_arm)
-            dq_right = self._kp * wrap_angle(self._q_target_right - q.right_arm)
+        if not (
+            np.abs(self._target_pos_left_b.x - left_pos_b.x) < XZ_THRESHOLD
+            and np.abs(self._target_pos_right_b.x - right_pos_b.x) < XZ_THRESHOLD
+            and np.abs(self._target_pos_left_b.z - left_pos_b.z) < XZ_THRESHOLD
+            and np.abs(self._target_pos_right_b.z - right_pos_b.z) < XZ_THRESHOLD
+        ):
+            dq_left = KP * wrap_angle(self._q_target_left - q.left_arm)
+            dq_right = KP * wrap_angle(self._q_target_right - q.right_arm)
+            return TaserJointState(left_arm=dq_left, right_arm=dq_right), False
 
-            if (
-                np.abs(self._target_pos_left_b.x - left_pos_b.x) < 0.05
-                and np.abs(self._target_pos_right_b.x - right_pos_b.x) < 0.05
-                and np.abs(self._target_pos_left_b.z - left_pos_b.z) < 0.05
-                and np.abs(self._target_pos_right_b.z - right_pos_b.z) < 0.05
-            ):
-                if self._stage == Stage.Reset:
-                    self._stage = None
-                else:
-                    self._stage = Stage.Align_Y
+        if self._resetting:
+            return TaserJointState(), True
 
-        if self._stage == Stage.Align_Y:
+        if not (
+            np.abs(left_pos_b.y) < Y_THRESHOLD and np.abs(right_pos_b.y) < Y_THRESHOLD
+        ):
             dq_left = self._left_arm.get_dq(
-                v=np.array([0, -0.2, 0, 0, 0, 0]),
+                v=np.array([0, -Y_VELOCITY, 0, 0, 0, 0]),
                 weights=np.array([0.5, 1, 0.5, 0, 0, 0]),
                 q=q,
             )
             dq_right = self._right_arm.get_dq(
-                v=np.array([0, 0.2, 0, 0, 0, 0]),
+                v=np.array([0, Y_VELOCITY, 0, 0, 0, 0]),
                 weights=np.array([0.5, 1, 0.5, 0, 0, 0]),
                 q=q,
             )
+            return TaserJointState(left_arm=dq_left, right_arm=dq_right), False
 
-            if np.abs(left_pos_b.y) < 0.15 and np.abs(right_pos_b.y) < 0.15:
-                self._stage = Stage.Lift
-
-        if self._stage == Stage.Lift:
+        if not (left_pos_b.z > HEIGHT_THRESHOLD and right_pos_b.z > HEIGHT_THRESHOLD):
             dq_left = self._left_arm.get_dq(
-                v=np.array([0, 0, 0.2, 0, 0, 0]),
+                v=np.array([0, 0, Z_VELOCITY, 0, 0, 0]),
                 weights=np.array([0.5, 0.5, 1, 0, 0, 0]),
                 q=q,
             )
             dq_right = self._right_arm.get_dq(
-                v=np.array([0, 0, 0.2, 0, 0, 0]),
+                v=np.array([0, 0, Z_VELOCITY, 0, 0, 0]),
                 weights=np.array([0.5, 0.5, 1, 0, 0, 0]),
                 q=q,
             )
+            return TaserJointState(left_arm=dq_left, right_arm=dq_right), False
 
-            if left_pos_b.z > 0.2 and right_pos_b.z > 0.2:
-                self._stage = None
-
-        return TaserJointState(left_arm=dq_left, right_arm=dq_right), False
+        return TaserJointState(), True

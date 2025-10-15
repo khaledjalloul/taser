@@ -48,7 +48,8 @@ RUN apt install -y \
     # Taser C++ dependencies
     libboost-all-dev \
     libeigen3-dev \
-    libgtest-dev
+    libgtest-dev \
+    pybind11-dev
 
 ###############################################
 # Isaac Sim
@@ -108,9 +109,6 @@ USER ${USERNAME:-root}
 # Add ROS sourcing to bashrc
 RUN echo "source /opt/ros/humble/setup.bash" >> ${HOME}/.bashrc
 
-# Fix Rviz GUI 
-# ENV LIBGL_DRI3_DISABLE=1
-
 USER root
 
 # Install rosdep dependencies
@@ -118,6 +116,9 @@ RUN rosdep init
 COPY --chown=${USERNAME:-root} ./src/taser_ros/package.xml /workspace/taser/src/taser_ros/package.xml
 RUN rosdep update
 RUN ROS_DISTRO=humble rosdep install --from-paths /workspace/taser/src --ignore-src -r -y
+
+# Create symlink for default python
+RUN ln -sf /usr/bin/python3 /usr/bin/python
 
 ###############################################
 # Isaac Sim 5.0.0 Specific
@@ -130,7 +131,14 @@ RUN echo ". /etc/bash_completion" >> ${HOME}/.bashrc
 # Enable Isaac Sim internal rclpy library 
 ENV ROS_DISTRO=humble
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/isaac-sim/exts/isaacsim.ros2.bridge/humble/lib
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib
+
+# Create symlink for default python
+RUN sudo ln -sf /workspace/isaacsim/kit/python/bin/python3 /usr/bin/python
+
+# Install pybind11 for Isaac Sim's python 3.11 since the global python is 3.10
+RUN python -m pip install pybind11
+ENV pybind11_DIR=/workspace/isaacsim/kit/python/lib/python3.11/site-packages/pybind11/share/cmake/pybind11
 
 ###############################################
 # Install Dependencies
@@ -173,15 +181,15 @@ WORKDIR /workspace/taser
 RUN echo "unset PYTHONSTARTUP" >> ${HOME}/.bashrc
 
 # Upgrade install dependencies
-RUN python3 -m pip install -U pip setuptools wheel build packaging scikit-build-core pyproject-metadata
+RUN python -m pip install -U pip setuptools wheel build packaging scikit-build-core pyproject-metadata
 
 # Install project
 COPY --chown=${USERNAME:-root} ./pyproject.toml /workspace/taser
 COPY --chown=${USERNAME:-root} ./src/taser_cpp /workspace/taser/src/taser_cpp
 RUN mkdir -p /workspace/taser/src/taser
-RUN python3 -m pip install --verbose -e .
+RUN python -m pip install --verbose -e .
 
 # Update environment variables for the Python bindings
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/kjalloul/.local/lib/python3.10/site-packages/lib
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HOME}/.local/lib/python3.10/site-packages/lib:/isaac-sim/kit/python/lib/python3.11/site-packages/lib
 
 ENTRYPOINT [ ]

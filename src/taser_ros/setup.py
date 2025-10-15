@@ -25,7 +25,6 @@ setup(
         ("share/" + package_name, ["package.xml"]),
         *get_install_files("config"),
         *get_install_files("launch"),
-        *get_install_files("robot_description"),
     ],
     install_requires=["setuptools"],
     zip_safe=True,

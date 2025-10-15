@@ -10,7 +10,7 @@ class ManipulationKinematics:
     def __init__(self, arm: str):
         self._arm_side = arm
 
-        self._arm = Robot.URDF(file_path=str(URDF_PATH), gripper=f"{arm}_arm_eef")
+        self._arm = Robot.URDF(file_path=str(URDF_PATH))
 
     def get_eef_position(self, q: TaserJointState) -> Pose:
         T = self._arm.fkine(
