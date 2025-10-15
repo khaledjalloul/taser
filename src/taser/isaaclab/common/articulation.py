@@ -1,24 +1,9 @@
-from pathlib import Path
-
 import isaaclab.sim as sim_utils
-from ament_index_python.packages import get_package_share_directory
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets.articulation import ArticulationCfg
 from isaaclab.sim.converters import UrdfConverterCfg
 
-URDF_PATH = (
-    Path(get_package_share_directory("taser_ros"))
-    / "robot_description"
-    / "urdf"
-    / "taser.urdf"
-)
-
-USD_PATH = (
-    Path(get_package_share_directory("taser_ros"))
-    / "robot_description"
-    / "usd"
-    / "taser.usd"
-)
+from taser.common.model import URDF_PATH, USD_PATH
 
 INIT_STATE = ArticulationCfg.InitialStateCfg(
     joint_pos={

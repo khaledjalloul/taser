@@ -5,7 +5,6 @@ from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
 from rclpy.time import Time
 from std_msgs.msg import Int32
-from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 
 from taser.navigation import OccupancyGrid
 
@@ -20,10 +19,6 @@ class TaserIsaacSimRosNode(Node):
         self._navigation_target_pose = None
         self._left_arm_target_velocity = None
         self._right_arm_target_velocity = None
-
-        self._buffer = Buffer()
-        self._tf_listener = TransformListener(self._buffer, self, spin_thread=True)
-        self._tf_broadcaster = TransformBroadcaster(self)
 
         self._navigation_target_pose_sub = self.create_subscription(
             Pose2DRos, "/taser/navigation/target_pose", navigation_target_pose_cb, 10

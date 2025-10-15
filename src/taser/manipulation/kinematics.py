@@ -1,23 +1,16 @@
-from pathlib import Path
-
 import numpy as np
-from ament_index_python.packages import get_package_share_directory
 from roboticstoolbox.robot import Robot
 from spatialmath import SE3
 
 from taser.common.datatypes import Pose, TaserJointState
+from taser.common.model import URDF_PATH
 
 
 class ManipulationKinematics:
     def __init__(self, arm: str):
         self._arm_side = arm
 
-        taser_ros_share_dir = get_package_share_directory("taser_ros")
-        urdf_path = (
-            Path(taser_ros_share_dir) / "robot_description" / "urdf" / "taser.urdf"
-        )
-
-        self._arm = Robot.URDF(file_path=str(urdf_path), gripper=f"{arm}_arm_eef")
+        self._arm = Robot.URDF(file_path=str(URDF_PATH), gripper=f"{arm}_arm_eef")
 
     def get_eef_position(self, q: TaserJointState) -> Pose:
         T = self._arm.fkine(

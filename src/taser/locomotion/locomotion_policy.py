@@ -32,8 +32,8 @@ class LocomotionPolicy:
         if (
             np.all(base_target_planar_velocity_b == 0)
             and np.all(joint_velocities.wheels < 5)
-            and np.all(base_linear_velocity_b < 0.5)
-            and np.all(base_angular_velocity_b < 0.5)
+            and np.all(np.abs(base_linear_velocity_b) < 0.5)
+            and np.all(np.abs(base_angular_velocity_b) < 0.5)
         ):
             policy = self._balance_policy
             obs = np.concatenate(

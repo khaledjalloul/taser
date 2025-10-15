@@ -12,9 +12,11 @@ kj setup cli completion
 echo 'source ${WORKSPACE}/.env.local' >> ~/.bashrc
 
 # Build the project
-source /opt/ros/humble/setup.sh \
-&& colcon build \
-&& echo "source ${WORKSPACE}/install/local_setup.bash" >> ~/.bashrc
+if [ -f /opt/ros/humble/setup.bash ]; then
+    source /opt/ros/humble/setup.sh \
+    && colcon build \
+    && echo "source ${WORKSPACE}/install/local_setup.bash" >> ~/.bashrc
+fi
 
 # Simulation aliases
 echo "alias sim_ros='ros2 launch taser_ros sim.launch.yaml'" >> ~/.bashrc

@@ -105,8 +105,8 @@ COPY --chown=${USERNAME:-root} --from=isaac-sim /isaac-sim /workspace/isaacsim
 
 # Create aliases for python and pip to use those of Isaac Sim
 RUN printf ' \
-    alias omni_python="/workspace/isaacsim/python.sh" \n \
-    alias isaacsim="/workspace/isaacsim/isaac-sim.sh" \n \
+    \ralias omni_python="/workspace/isaacsim/python.sh" \n \
+    \ralias isaacsim="/workspace/isaacsim/isaac-sim.sh" \n \
     ' >> ${HOME}/.bashrc
 
 ###############################################

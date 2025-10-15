@@ -1,19 +1,14 @@
-from pathlib import Path
-
 import matplotlib.pyplot as plt
-from ament_index_python.packages import get_package_share_directory
 from roboticstoolbox.robot import Robot
 
 from taser.common.datatypes import Pose, TaserJointState
+from taser.common.model import URDF_PATH
 from taser.manipulation import PickController
 
 DT = 0.05
 
 if __name__ == "__main__":
-    taser_ros_share_dir = get_package_share_directory("taser_ros")
-    urdf_path = Path(taser_ros_share_dir) / "robot_description" / "urdf" / "taser.urdf"
-
-    robot = Robot.URDF(str(urdf_path))
+    robot = Robot.URDF(str(URDF_PATH))
 
     controller = PickController()
     q = TaserJointState()

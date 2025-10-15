@@ -1,7 +1,4 @@
-from pathlib import Path
-
 import numpy as np
-from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import Pose2D as Pose2DRos
 from isaacsim.core.prims import SingleArticulation
 from isaacsim.core.utils.rotations import quat_to_euler_angles, quat_to_rot_matrix
@@ -10,6 +7,7 @@ from isaacsim.core.utils.types import ArticulationAction
 from std_msgs.msg import Int32
 
 from taser.common.datatypes import Pose, TaserJointState, Workspace
+from taser.common.model import USD_PATH
 from taser.isaacsim.utils.occupancy_grid import OccupancyGrid
 from taser.isaacsim.utils.ros2_tf_publisher import add_tf_publisher
 from taser.isaacsim.utils.teleop import Teleop
@@ -20,12 +18,6 @@ from taser.ros.isaac.sim_node import TaserIsaacSimRosNode
 
 NAME = "taser"
 PRIM_PATH = "/World/Taser"
-USD_PATH = str(
-    Path(get_package_share_directory("taser_ros"))
-    / "robot_description"
-    / "usd"
-    / "taser.usd"
-)
 
 V_MAX = 2.0
 W_MAX = 2.0
@@ -44,7 +36,7 @@ class TaserIsaacSimRobot(SingleArticulation):
             position (tuple[float, float, float]): Initial position of the robot in meters.
             orientation (tuple[float, float, float]): Initial orientation of the robot as a quaternion [w, x, y, z].
         """
-        add_reference_to_stage(usd_path=USD_PATH, prim_path=PRIM_PATH)
+        add_reference_to_stage(usd_path=str(USD_PATH), prim_path=PRIM_PATH)
 
         super().__init__(
             name=NAME,
