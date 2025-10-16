@@ -8,15 +8,12 @@ if [ -n "$USERNAME" ]; then \
     sudo chown -R ${USERNAME} ${HOME}/.nvidia-omniverse; \
     sudo chown -R ${USERNAME} ${HOME}/.local/share; \
     sudo chown -R ${USERNAME} ${HOME}/Documents; \
-    fi
+fi
 
 # Set up CLI completion
 kj setup cli completion
 
 export WORKSPACE=/workspace/taser
-
-# Load environment variables
-echo "source ${WORKSPACE}/.env.local" >> ~/.bashrc
 
 # Build the project
 if [ -f /opt/ros/humble/setup.bash ]; then

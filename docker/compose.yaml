@@ -5,17 +5,18 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       args:
-        USERNAME: ${USERNAME} # Set as empty string to use root
-        ISAACLAB_VERSION: 2.1.0 # 2.1.0 / 2.2.0
+        USERNAME: ${DOCKER_USERNAME}
+        ISAACLAB_VERSION: ${ISAACLAB_VERSION}
       network: host # Temporary fix for when using VPN
     container_name: taser
     hostname: taser
     network_mode: host # Temporary fix for when using VPN
     environment:
       - DISPLAY=${DISPLAY}
+      - WANDB_API_KEY=${WANDB_API_KEY}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
-      - OMNI_KIT_ALLOW_ROOT=1 # In case the user was root
+      - OMNI_KIT_ALLOW_ROOT=1
     runtime: nvidia
     deploy:
       resources:
@@ -38,7 +39,7 @@ services:
       # Xauthority for X11 forwarding
       - type: bind
         source: ${HOME}/.Xauthority
-        target: ${HOME}/.Xauthority # Change to /root if running as root
+        target: ${DOCKER_HOME}/.Xauthority
         read_only: false
       # Isaac Sim kit cache
       - type: bind
@@ -47,28 +48,28 @@ services:
       # OV cache
       - type: bind
         source: ${HOME}/docker/taser/cache/ov
-        target: ${HOME}/.cache/ov
+        target: ${DOCKER_HOME}/.cache/ov
       # pip cache
       - type: bind
         source: ${HOME}/docker/taser/cache/pip
-        target: ${HOME}/.cache/pip
+        target: ${DOCKER_HOME}/.cache/pip
       # NVIDIA GLCache
       - type: bind
         source: ${HOME}/docker/taser/cache/glcache
-        target: ${HOME}/.cache/nvidia/GLCache
+        target: ${DOCKER_HOME}/.cache/nvidia/GLCache
       # NVIDIA ComputeCache
       - type: bind
         source: ${HOME}/docker/taser/cache/computecache
-        target: ${HOME}/.nv/ComputeCache
+        target: ${DOCKER_HOME}/.nv/ComputeCache
       # Omniverse logs
       - type: bind
         source: ${HOME}/docker/taser/logs
-        target: ${HOME}/.nvidia-omniverse/logs
+        target: ${DOCKER_HOME}/.nvidia-omniverse/logs
       # Omniverse data
       - type: bind
         source: ${HOME}/docker/taser/data
-        target: ${HOME}/.local/share/ov/data
+        target: ${DOCKER_HOME}/.local/share/ov/data
       # Documents
       - type: bind
         source: ${HOME}/docker/taser/documents
-        target: ${HOME}/Documents
+        target: ${DOCKER_HOME}/Documents
