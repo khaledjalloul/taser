@@ -6,6 +6,7 @@ authors = [{ "name" = "Khaled Jalloul", email = "khaled.jalloul@hotmail.com" }]
 
 dependencies = [
     "cvxpy==1.4.2",
+    "dotenv",
     "matplotlib",
     "numpy==1.24.0",
     "onnxruntime",

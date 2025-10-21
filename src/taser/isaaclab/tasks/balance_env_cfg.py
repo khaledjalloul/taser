@@ -141,6 +141,8 @@ class SceneCfg(TaserBaseSceneCfg):
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
+    time_out = TerminationTermCfg(func=mdp.time_out, time_out=True)
+
     robot_falling = TerminationTermCfg(
         func=mdp.bad_orientation,
         params={

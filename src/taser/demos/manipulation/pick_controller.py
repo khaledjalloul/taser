@@ -4,7 +4,7 @@ from taser.common.datatypes import Pose, TaserJointState
 from taser.manipulation import ManipulationKinematics, PickController
 
 DT = 0.05
-TARGET_CUBE_SIZE = 0.3
+TARGET_CUBE_SIZE = 0.5
 
 if __name__ == "__main__":
     left_arm = ManipulationKinematics(arm="left")
@@ -18,6 +18,7 @@ if __name__ == "__main__":
     controller.set_target(target)
 
     fig = plt.figure()
+    fig.set_size_inches(14, 10)
     ax: plt.Axes = fig.add_subplot(111, projection="3d")
 
     while True:
@@ -48,7 +49,6 @@ if __name__ == "__main__":
         ax.set_ylim([-0.5, 0.5])
         ax.set_zlim([-0.5, 0.5])
         ax.set_aspect("equal", adjustable="box")
-
 
         links = left_arm._arm.links
 

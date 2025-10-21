@@ -125,6 +125,8 @@ if __name__ == "__main__":
     reached = False
 
     fig, plt_ax = plt.subplots(1, 1)
+    fig.set_size_inches(14, 10)
+
     traj_x, traj_y = [robot.x], [robot.y]
 
     for _ in range(1200):  # up to 60 s
