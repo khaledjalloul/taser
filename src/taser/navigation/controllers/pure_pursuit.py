@@ -69,7 +69,7 @@ class PurePursuitController:
         safety_radius: robot radius + margin
         slow_zone: distance span over which we ramp speed (m)
         """
-        if self._path is None:
+        if self._path is None or len(self._path) < 2:
             return VelocityCommand(0.0, 0.0), True, {"reason": "no_path"}
 
         # Goal check (position)
@@ -204,4 +204,3 @@ class PurePursuitController:
                 best_s = self._cum_s[i] + math.sqrt(seg2) * t
                 best_pt = (cx, cy)
         return best_s, best_pt
-

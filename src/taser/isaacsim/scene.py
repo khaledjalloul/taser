@@ -1,9 +1,10 @@
 import numpy as np
 import omni.isaac.core.utils.prims as prim_utils
+from isaacsim.core.api.objects import DynamicCuboid
 from isaacsim.core.api.scenes import Scene
 from isaacsim.core.utils.stage import add_reference_to_stage
 from isaacsim.storage.native import get_assets_root_path
-from omni.isaac.core.prims import XFormPrim
+from omni.isaac.core.prims import RigidPrim
 
 
 def set_up_scene(scene: Scene):
@@ -37,8 +38,16 @@ def set_up_scene(scene: Scene):
                 usd_path=nucleus_root_path + "/Isaac/Props/Pallet/o3dyn_pallet.usd",
                 prim_path=pallet_prim_path,
             )
-            XFormPrim(
+            prim = RigidPrim(
                 prim_path=pallet_prim_path,
                 name=f"Pallet_{count}",
                 position=(x * offset, y * offset, 0.0),
             )
+            prim.set_mass(100000)
+
+    DynamicCuboid(
+        prim_path="/World/target",
+        position=np.array([2.45, 0.0, 1.0]),
+        scale=np.array([0.4, 0.4, 0.4]),
+        color=np.array([0.0, 0.3, 0.3]),
+    )

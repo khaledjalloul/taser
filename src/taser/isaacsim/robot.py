@@ -4,6 +4,7 @@ from isaacsim.core.prims import SingleArticulation
 from isaacsim.core.utils.rotations import quat_to_euler_angles, quat_to_rot_matrix
 from isaacsim.core.utils.stage import add_reference_to_stage
 from isaacsim.core.utils.types import ArticulationAction
+from omni.usd import get_context, get_world_transform_matrix
 from std_msgs.msg import Int32
 
 from taser.common.datatypes import Pose, TaserJointState, Workspace
@@ -18,9 +19,6 @@ from taser.ros.isaac.sim_node import TaserIsaacSimRosNode
 
 NAME = "taser"
 PRIM_PATH = "/World/Taser"
-
-V_MAX = 2.0
-W_MAX = 2.0
 
 
 class TaserIsaacSimRobot(SingleArticulation):
@@ -53,7 +51,10 @@ class TaserIsaacSimRobot(SingleArticulation):
 
         self._pick_controller = PickController()
         self._locomotion_policy = LocomotionPolicy()
-        self._teleop = Teleop(v_max=V_MAX, w_max=W_MAX)
+        self._teleop = Teleop(
+            v_max=self._locomotion_policy.v_max,
+            w_max=self._locomotion_policy.w_max,
+        )
 
         self._path_plan: list[Pose] = []
 
@@ -62,15 +63,20 @@ class TaserIsaacSimRobot(SingleArticulation):
             manipulation_task_cb=self._manipulation_task_cb,
         )
 
+        stage = get_context().get_stage()
+        self._target_prim = stage.GetPrimAtPath("/World/target")
+        self._is_picking = False
+
     def initialize(self, workspace: Workspace) -> None:
         super().initialize()
         self._occupancy_grid = OccupancyGrid(workspace=workspace, cellsize=0.1)
         self._navigator = GridNavigator(
             workspace=workspace,
             occupancy_grid=self._occupancy_grid,
-            v_max=V_MAX,
-            w_max=W_MAX,
+            v_max=self._locomotion_policy.v_max,
+            w_max=self._locomotion_policy.w_max,
             wheel_base=0.6,
+            goal_pos_tol=0.5,
         )
 
     def step(self, dt: float, occupancy_grid: OccupancyGrid) -> None:
@@ -103,6 +109,19 @@ class TaserIsaacSimRobot(SingleArticulation):
                 self._path_plan = []
         else:
             vel_cmd = np.array([0.0, 0.0, 0.0])
+
+        if self._is_picking:
+            target_pos_w = get_world_transform_matrix(
+                self._target_prim
+            ).ExtractTranslation()
+            target_pos_b = np.matmul(R_BI, target_pos_w - position_w)
+            self._pick_controller.set_target(
+                Pose(
+                    x=target_pos_b[0],
+                    y=target_pos_b[1],
+                    z=target_pos_b[2],
+                )
+            )
 
         joint_velocities, _ = self._pick_controller.step(q)
 
@@ -144,7 +163,7 @@ class TaserIsaacSimRobot(SingleArticulation):
         )
 
     def _manipulation_task_cb(self, task: Int32):
-        if task.data == 0:
+        self._is_picking = bool(task.data)
+
+        if not self._is_picking:
             self._pick_controller.reset()
-        elif task.data == 1:
-            self._pick_controller.set_target(Pose(x=0.5, y=0.0, z=0.0))

@@ -16,6 +16,7 @@ class GridNavigator:
         v_max: float,
         w_max: float,
         wheel_base: float,
+        goal_pos_tol: float = 0.2,
     ):
         self._planner = DistanceTransformPathPlanner(
             occupancy_grid=occupancy_grid,
@@ -29,7 +30,7 @@ class GridNavigator:
             v_max=v_max,
             w_max=w_max,
             curve_slowdown=1.0,
-            goal_pos_tol=0.2
+            goal_pos_tol=goal_pos_tol
         )
 
     def plan_path(

@@ -8,7 +8,7 @@ Y_VELOCITY = 0.2
 Z_VELOCITY = 0.4
 
 XZ_THRESHOLD = 0.05
-Y_THRESHOLD = 0.15
+Y_THRESHOLD = 0.25
 HEIGHT_THRESHOLD = 0.4
 
 
@@ -30,12 +30,16 @@ class PickController:
         self._target_pos_left_b = self._home_pos_left
         self._target_pos_right_b = self._home_pos_right
 
-        self._q_target_left = self._left_arm.get_q(self._target_pos_left_b)
-        self._q_target_right = self._right_arm.get_q(self._target_pos_right_b)
+        self._q_target_left, _ = self._left_arm.get_q(self._target_pos_left_b)
+        self._q_target_right, _ = self._right_arm.get_q(self._target_pos_right_b)
 
-        self._resetting = True
+        self._picking = False
 
     def set_target(self, target_position_b: Pose):
+        if abs(target_position_b.x) > 0.8:
+            self._picking = False
+            return
+
         self._target_pos_left_b = Pose(
             x=target_position_b.x,
             y=self._home_pos_left.y,
@@ -47,16 +51,19 @@ class PickController:
             z=target_position_b.z,
         )
 
-        self._q_target_left = self._left_arm.get_q(
+        self._q_target_left, success_left = self._left_arm.get_q(
             pose=self._target_pos_left_b,
             q0=[-0.425, 0.0, -1.1],
         )
-        self._q_target_right = self._right_arm.get_q(
+        self._q_target_right, success_right = self._right_arm.get_q(
             pose=self._target_pos_right_b,
             q0=[-0.425, 0.0, -1.1],
         )
 
-        self._resetting = False
+        if not (success_left and success_right):
+            self._picking = False
+
+        self._picking = True
 
     def step(self, q: TaserJointState) -> tuple[TaserJointState, bool]:
         left_pos_b = self._left_arm.get_eef_position(q)
@@ -72,7 +79,7 @@ class PickController:
             dq_right = KP * wrap_angle(self._q_target_right - q.right_arm)
             return TaserJointState(left_arm=dq_left, right_arm=dq_right), False
 
-        if self._resetting:
+        if not self._picking:
             return TaserJointState(), True
 
         if not (
@@ -104,3 +111,7 @@ class PickController:
             return TaserJointState(left_arm=dq_left, right_arm=dq_right), False
 
         return TaserJointState(), True
+
+    @property
+    def picking(self) -> bool:
+        return self._picking

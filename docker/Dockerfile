@@ -51,10 +51,13 @@ RUN apt install -y \
     libgtest-dev \
     pybind11-dev
 
+USER ${USERNAME:-root}
+
+# Enable bash completion
+RUN echo ". /etc/bash_completion" >> ${HOME}/.bashrc
+
 ###############################################
 # Isaac Sim
-
-USER ${USERNAME:-root}
 
 RUN if [ -n "$USERNAME" ]; then \
     sudo chown -R ${USERNAME} /isaac-sim; \
@@ -125,9 +128,6 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python
 
 FROM base AS isaaclab-2.2.0
 
-# Enable bash completion
-RUN echo ". /etc/bash_completion" >> ${HOME}/.bashrc
-
 # Enable Isaac Sim internal rclpy library 
 ENV ROS_DISTRO=humble
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -190,6 +190,9 @@ RUN mkdir -p /workspace/taser/src/taser
 RUN python -m pip install --verbose -e .
 
 # Update environment variables for the Python bindings
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HOME}/.local/lib/python3.10/site-packages/lib:/isaac-sim/kit/python/lib/python3.11/site-packages/lib
+# LD_LIBRARY_PATH is needed to find the C++ shared libraries
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib/python3.10/dist-packages/lib:/isaac-sim/kit/python/lib/python3.11/site-packages/lib
+# PYTHONPATH is needed for the Isaac Sim python interpreter to find the taser package installed globally
+ENV PYTHONPATH=${PYTHONPATH}:/workspace/taser/src:/usr/local/lib/python3.10/dist-packages
 
 ENTRYPOINT [ ]

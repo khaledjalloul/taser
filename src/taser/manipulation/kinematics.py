@@ -37,19 +37,21 @@ class ManipulationKinematics:
         v = J @ (dq.left_arm if self._arm_side == "left" else dq.right_arm)
         return v[0:3]
 
-    def get_q(self, pose: Pose, q0: list[float] = None) -> np.ndarray:
+    def get_q(self, pose: Pose, q0: list[float] = None) -> tuple[np.ndarray, bool]:
         T = SE3.Trans(pose.x, pose.y, pose.z)
 
         # if pose.rx or pose.ry or pose.rz:
         #     T = T * SE3.RPY([pose.rx, pose.ry, pose.rz], unit="rad")
 
-        return self._arm.ikine_LM(
+        sol = self._arm.ikine_LM(
             Tep=T,
             start="base_link",
             end=f"{self._arm_side}_arm_eef",
             mask=[1, 1, 1, 0, 0, 0],
             q0=q0,
-        ).q
+        )
+
+        return sol.q, sol.success
 
     def get_dq(
         self, v: np.ndarray, weights: np.ndarray, q: TaserJointState
@@ -102,7 +104,7 @@ if __name__ == "__main__":
     print("Start Pose:", pose_start)
 
     pose_end = Pose(x=0.5, y=0.0, z=0.0)
-    q_end = kinematics.get_q(pose=pose_end)
+    q_end, _ = kinematics.get_q(pose=pose_end)
     print("End Joint Angles:", q_end)
 
     dq = kinematics.get_dq(v_lin=np.array([0.1, 0.0, 0.0]), q=q_start)

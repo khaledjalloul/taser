@@ -1,6 +1,9 @@
+from threading import Thread
+
 import numpy as np
 from geometry_msgs.msg import Pose2D as Pose2DRos
 from nav_msgs.msg import OccupancyGrid as OccupancyGridRos
+from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
 from rclpy.time import Time
@@ -38,6 +41,20 @@ class TaserIsaacSimRosNode(Node):
         self._occupancy_grid_publisher = self.create_publisher(
             OccupancyGridRos, "/taser/navigation/occupancy_grid", qos
         )
+
+        self._executor = SingleThreadedExecutor()
+
+        def run_executor():
+            self._executor.add_node(self)
+            self._executor.spin()
+            self._executor.remove_node(self)
+
+        self._executor_thread = Thread(target=run_executor, daemon=True)
+        self._executor_thread.start()
+
+    def __del__(self):
+        self._executor.shutdown()
+        self._executor_thread.join()
 
     def publish_occupancy_grid(self, occupancy_grid: OccupancyGrid) -> None:
         workspace = occupancy_grid.workspace
