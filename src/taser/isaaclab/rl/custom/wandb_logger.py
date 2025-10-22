@@ -1,9 +1,9 @@
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import wandb
-from dotenv import dotenv_values
 
 
 class WandbLogger:
@@ -30,8 +30,7 @@ class WandbLogger:
 
         logger = logging.getLogger("TASER")
 
-        env_config = dotenv_values(".env.local")
-        api_key = env_config.get("WANDB_API_KEY")
+        api_key = os.environ.get("WANDB_API_KEY")
 
         if not api_key:
             logger.warning(

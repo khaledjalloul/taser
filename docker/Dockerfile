@@ -1,5 +1,5 @@
-ARG ISAACLAB_VERSION=${ISAACLAB_VERSION:-2.1.0}
-FROM nvcr.io/nvidia/isaac-lab:${ISAACLAB_VERSION} AS base
+ARG ISAACSIM_VERSION=${ISAACSIM_VERSION:-4.5.0}
+FROM nvcr.io/nvidia/isaac-sim:${ISAACSIM_VERSION} AS base
 
 ###############################################
 # Initial Setup
@@ -44,12 +44,7 @@ RUN apt install -y \
     git-lfs \
     # Python Qt GUI dependencies
     libxrandr2 \
-    libxcb-cursor0 \
-    # Taser C++ dependencies
-    libboost-all-dev \
-    libeigen3-dev \
-    libgtest-dev \
-    pybind11-dev
+    libxcb-cursor0
 
 USER ${USERNAME:-root}
 
@@ -59,6 +54,7 @@ RUN echo ". /etc/bash_completion" >> ${HOME}/.bashrc
 ###############################################
 # Isaac Sim
 
+RUN sudo mkdir /workspace
 RUN if [ -n "$USERNAME" ]; then \
     sudo chown -R ${USERNAME} /isaac-sim; \
     sudo chown -R ${USERNAME} /workspace; \
@@ -68,15 +64,23 @@ RUN if [ -n "$USERNAME" ]; then \
 RUN ln -s /isaac-sim /workspace/isaacsim
 
 # Create aliases for omni_python and isaacsim
-RUN printf ' \
-    alias omni_python="/workspace/isaacsim/python.sh" \n \
-    alias isaacsim="/workspace/isaacsim/isaac-sim.sh" \n \
-    ' >> ${HOME}/.bashrc
+RUN printf '%s\n' \
+    "alias omni_python=\"/workspace/isaacsim/python.sh\"" \
+    "alias isaacsim=\"/workspace/isaacsim/isaac-sim.sh\"" \
+    >> ${HOME}/.bashrc
+
+###############################################
+# Isaac Lab (Installed manually to get latest version)
+
+ENV TERM=xterm
+RUN git clone https://github.com/isaac-sim/IsaacLab.git /workspace/isaaclab
+RUN ln -s /workspace/isaacsim /workspace/isaaclab/_isaac_sim
+RUN /workspace/isaaclab/isaaclab.sh --install
 
 ###############################################
 # Isaac Sim 4.5.0 Specific - Install ROS 2 Humble
 
-FROM base AS isaaclab-2.1.0
+FROM base AS isaacsim-4.5.0
 
 USER root
 
@@ -126,7 +130,7 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python
 ###############################################
 # Isaac Sim 5.0.0 Specific
 
-FROM base AS isaaclab-2.2.0
+FROM base AS isaacsim-5.0.0
 
 # Enable Isaac Sim internal rclpy library 
 ENV ROS_DISTRO=humble
@@ -143,23 +147,10 @@ ENV pybind11_DIR=/workspace/isaacsim/kit/python/lib/python3.11/site-packages/pyb
 ###############################################
 # Install Dependencies
 
-ARG ISAACLAB_VERSION
-FROM isaaclab-${ISAACLAB_VERSION} AS final
+ARG ISAACSIM_VERSION
+FROM isaacsim-${ISAACSIM_VERSION} AS final
 
 USER root
-
-# Install Osqp and OsqpEigen
-WORKDIR /tmp
-RUN git clone --recursive --branch v0.6.3 https://github.com/osqp/osqp
-RUN mkdir -p osqp/build
-RUN cd osqp/build && cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
-RUN cd osqp/build && make && make install
-
-RUN git clone --branch v0.8.1 https://github.com/robotology/osqp-eigen.git
-RUN mkdir -p osqp-eigen/build
-RUN cd osqp-eigen/build && cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
-RUN cd osqp-eigen/build && make && make install
-ENV OsqpEigen_DIR=/usr
 
 # Remove OS conflicting dependencies
 RUN apt remove -y \
@@ -185,14 +176,8 @@ RUN python -m pip install -U pip setuptools wheel build packaging scikit-build-c
 
 # Install project
 COPY --chown=${USERNAME:-root} ./pyproject.toml /workspace/taser
+COPY --chown=${USERNAME:-root} ./install.bash /workspace/taser
 COPY --chown=${USERNAME:-root} ./src/taser_cpp /workspace/taser/src/taser_cpp
-RUN mkdir -p /workspace/taser/src/taser
-RUN python -m pip install --verbose -e .
-
-# Update environment variables for the Python bindings
-# LD_LIBRARY_PATH is needed to find the C++ shared libraries
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib/python3.10/dist-packages/lib:/isaac-sim/kit/python/lib/python3.11/site-packages/lib
-# PYTHONPATH is needed for the Isaac Sim python interpreter to find the taser package installed globally
-ENV PYTHONPATH=${PYTHONPATH}:/workspace/taser/src:/usr/local/lib/python3.10/dist-packages
+RUN bash ./install.bash
 
 ENTRYPOINT [ ]

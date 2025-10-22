@@ -31,7 +31,7 @@
                 // GitLens
                 "eamodio.gitlens",
                 // Shell Formatter
-                "shakram02.bash-beautify"
+                "mkhl.shfmt"
             ],
             "settings": {
                 "gitlens.codeLens.authors.enabled": false,
