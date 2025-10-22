@@ -30,10 +30,11 @@ python -m pip install --verbose -e "${PROJECT_DIR}"
 # LD_LIBRARY_PATH is needed to find the C++ shared libraries
 # PYTHONPATH is needed for the Isaac Sim python interpreter to find the globally installed python packages where
 # PROJECT_DIR/src is needed to find the taser package source code and
-# PYTHON_LIB_DIR is needed to find the installed dependencies
-PYTHON_LIB_DIR=$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+# PYTHON_DIST_DIR and PYTHON_SITE_DIR are needed to find the installed dependencies
+PYTHON_DIST_DIR=$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+PYTHON_SITE_DIR=$(python -c 'import site; print(site.getusersitepackages())')
 # TODO: Fix duplication in new terminal sessions
 printf '%s\n' \
-	"export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${PYTHON_LIB_DIR}/lib" \
-	"export PYTHONPATH=\$PYTHONPATH:${PROJECT_DIR}/src:${PYTHON_LIB_DIR}" \
+	"export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${PYTHON_DIST_DIR}/lib:${PYTHON_SITE_DIR}/lib" \
+	"export PYTHONPATH=\$PYTHONPATH:${PROJECT_DIR}/src:${PYTHON_DIST_DIR}:${PYTHON_SITE_DIR}" \
 	>>"${HOME}/.bashrc"

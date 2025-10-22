@@ -8,7 +8,7 @@ from taser.locomotion import __file__ as locomotion_path
 
 MODELS_PATH = Path(locomotion_path).parent / "models"
 
-V_MAX = 2.0
+V_MAX = 3.0
 W_MAX = 2.0
 
 

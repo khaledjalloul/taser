@@ -36,8 +36,12 @@ class PickController:
         self._picking = False
 
     def set_target(self, target_position_b: Pose):
-        if abs(target_position_b.x) > 0.8:
-            self._picking = False
+        target_distance = np.linalg.norm(
+            [target_position_b.x, target_position_b.y, target_position_b.z]
+        )
+        if target_distance > 0.6 or target_position_b.x < 0:
+            if self._picking:
+                self.reset()
             return
 
         self._target_pos_left_b = Pose(
@@ -55,15 +59,19 @@ class PickController:
             pose=self._target_pos_left_b,
             q0=[-0.425, 0.0, -1.1],
         )
+        if len(self._q_target_left) != 3:
+            success_left = False
         self._q_target_right, success_right = self._right_arm.get_q(
             pose=self._target_pos_right_b,
             q0=[-0.425, 0.0, -1.1],
         )
+        if len(self._q_target_right) != 3:
+            success_right = False
 
         if not (success_left and success_right):
-            self._picking = False
-
-        self._picking = True
+            self.reset()
+        else:
+            self._picking = True
 
     def step(self, q: TaserJointState) -> tuple[TaserJointState, bool]:
         left_pos_b = self._left_arm.get_eef_position(q)

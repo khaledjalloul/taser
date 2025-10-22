@@ -33,4 +33,4 @@ class TaserBaseEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         self.decimation = 1
-        self.episode_length_s = 60
+        self.episode_length_s = 20

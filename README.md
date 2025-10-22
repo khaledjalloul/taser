@@ -37,7 +37,7 @@ To achieve self-balancing locomotion, TASER is trained using reinforcement learn
 1. **Balance (top)**: The joint velocity action range is kept small to ensure stable balancing while the robot is at an idle state.
 2. **Track Velocity (bottom)**: The joint velocity action range is increased to allow the robot to track a desired velocity of the shape (lin_x, ang_z) while maintaining balance.
 
-For both tasks, the robot arms' joints are set to randomized positions at the start of each episode to accommodate different center of mass configurations.
+For both tasks, the robot arms' joint positions and velocities are randomized at the start of each episode to accommodate different center of mass configurations.
 
 <img src="./media/isaaclab_balance.gif" alt="Isaac Lab Balance Task" width="100%"/>
 <img src="./media/isaaclab_track_velocity.gif" alt="Isaac Lab Track Velocity Task" width="100%" />

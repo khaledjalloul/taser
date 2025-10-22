@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from isaaclab.assets import Articulation
 from isaaclab.envs import ManagerBasedEnv, mdp
 from isaaclab.managers import (
     EventTermCfg,
@@ -29,6 +30,14 @@ class ActionsCfg:
     )
 
 
+def set_random_arm_joint_velocities(env: ManagerBasedEnv, *args):
+    robot: Articulation = env.scene["robot"]
+    arm_joint_ids = [0, 2, 4, 5, 6, 7]
+
+    vel_target = torch.randn((env.num_envs, len(arm_joint_ids)), device=env.device) * 2
+    robot.set_joint_velocity_target(vel_target, joint_ids=arm_joint_ids)
+
+
 @configclass
 class EventsCfg:
     """Configuration for events."""
@@ -53,6 +62,11 @@ class EventsCfg:
             "position_range": (-torch.pi / 2, torch.pi / 2),
             "velocity_range": (0.0, 0.0),
         },
+    )
+
+    set_random_arm_joint_velocities = EventTermCfg(
+        func=set_random_arm_joint_velocities,
+        mode="reset",
     )
 
     reset_robot_base = EventTermCfg(

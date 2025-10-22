@@ -400,8 +400,3 @@ class TaserPickEnvCfg(TaserBaseEnvCfg):
     rewards = RewardsCfg()
     scene = SceneCfg()
     terminations = TerminationsCfg()
-
-    def __post_init__(self):
-        """Post initialization."""
-        super().__post_init__()
-        self.episode_length_s = 10

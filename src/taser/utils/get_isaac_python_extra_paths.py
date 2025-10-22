@@ -13,4 +13,4 @@ for ext in local_exts_path.glob("*"):
     paths_str += f"\"{ext}\",\n"
 
 pyperclip.copy(paths_str)
-print("Copied to clipboard:")
+print("Copied to clipboard.")

@@ -65,7 +65,7 @@ class TaserIsaacSimRobot(SingleArticulation):
 
         stage = get_context().get_stage()
         self._target_prim = stage.GetPrimAtPath("/World/target")
-        self._is_picking = False
+        self._is_picking = True
 
     def initialize(self, workspace: Workspace) -> None:
         super().initialize()

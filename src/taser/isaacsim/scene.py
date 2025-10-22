@@ -49,5 +49,5 @@ def set_up_scene(scene: Scene):
         prim_path="/World/target",
         position=np.array([2.45, 0.0, 1.0]),
         scale=np.array([0.4, 0.4, 0.4]),
-        color=np.array([0.0, 0.3, 0.3]),
+        color=np.array([0.63, 0.0, 0.8]),
     )
