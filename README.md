@@ -2,90 +2,71 @@
 
 ## Overview
 
-A wheeled robot with two arms that detects targets in an environment and moves towards them to catch them.
+An Isaac Sim simulation of a self-balancing wheeled robot with arms, combining navigation, reinforcement learning-trained locomotion, and inverse kinematics-based manipulation.
 
-### Environment
+<img src="./media/isaacsim_move.gif" alt="Moving in Isaac Sim" width="100%" />
+<img src="./media/isaacsim_pick.gif" alt="Picking up cube in Isaac Sim" width="100%" />
 
-- ROS 2 Jazzy
-- Rviz Simulation (without physics)
-- Isaac Lab for RL training with physics
+### Navigation
 
-<div align="center">
-    <img src="./media/full.gif" alt="Full Simulation" width="100%" />
-</div>
+TASER has two navigation stack implementations:
 
-### Arms
-
-The robot has two arms, each with 3 revolute joints around the axes: y, z, y.
-
-Each arm consists of:
-
-- A PID position controller that outputs end-effector velocities for a desired end-effector position.
-- A kinematics model that computes joint velocities from the desired end-effector velocities using differential inverse kinematics.
-
-To Do: The arms will be trained with reinforcement learning in Isaac Lab to move efficiently towards a target while avoiding self-collisions and obstacles.
-
-### Base
-
-The base consists of:
-
-#### RRT* & Dubins Path Planner
-
-The RRT* path planner uses Dubins paths to plan a path from a starting pose to a goal position while avoiding static obstacles.
+|       | Obstacle Representation | Path Planner                                   | Tracking Controller            |
+| ----- | ----------------------- | ---------------------------------------------- | ------------------------------ |
+| Left  | Occupancy Grid          | Distance Transform (from the Robotics Toolbox) | Pure Pursuit                   |
+| Right | Polygonal Obstacles     | RRT* with Dubins Paths                         | Model Predictive Control (MPC) |
 
 <div align="center">
-    <img src="./media/rrt_dubins.gif" alt="RRT*" width="49.5%" />
-    <img src="./media/dubins_utils.gif" alt="Dubins Path" width="49.5%" />
+    <img src="./media/demo_grid_navigator.gif" alt="Occupancy Grid Navigator" width="49.5%"/>
+    <img src="./media/demo_polygon_navigator.gif" alt="Polygon Navigator" width="49.5%"/>
 </div>
 
+#### RRT* Path Planner
 
-#### Tracking Controller
-
-The tracking controller uses Model Predictive Control (MPC) to track the generated path and avoid drifting from it.
-
-The MPC uses linearized dynamics of the differential drive model.
+The RRT* path planner is implemented in C++ and generates Dubins paths using geometric primitives.
 
 <div align="center">
-    <img src="./media/base_mpc.gif" alt="Tracking Controller" width="100%" />
+    <img src="./media/demo_rrt_dubins.gif" alt="RRT*" width="49.5%" />
+    <img src="./media/demo_dubins_utils.gif" alt="Dubins Path" width="49.5%" />
 </div>
 
+### Locomotion
 
-### RL Training for Balancing
+To achieve self-balancing locomotion, TASER is trained using reinforcement learning with Isaac Lab and Proximal Policy Optimization (PPO). Two tasks are defined:
 
-The Rviz simulation does not include physics or gravity, so the robot never has to stay in balance to avoid falling over.
+1. **Balance (top)**: The joint velocity action range is kept small to ensure stable balancing while the robot is at an idle state.
+2. **Track Velocity (bottom)**: The joint velocity action range is increased to allow the robot to track a desired velocity of the shape (lin_x, ang_z) while maintaining balance.
 
-Isaac Lab is thus used to train the robot to stay balanced in a realistic simulation environment with gravity. The robot is trained in different scenarios:
+For both tasks, the robot arms' joints are set to randomized positions at the start of each episode to accommodate different center of mass configurations.
 
-- Stationary:
+<img src="./media/isaaclab_balance.gif" alt="Isaac Lab Balance Task" width="100%"/>
+<img src="./media/isaaclab_track_velocity.gif" alt="Isaac Lab Track Velocity Task" width="100%" />
 
-<img src="./media/isaaclab/balance.gif" alt="Isaac Lab Stationary Balancing" />
+### Manipulation
 
-- Tracking linear and angular velocities generated from the MPC tracking controller:
+Each of the robot's arms consists of 3 revolute joints around the axes: y, z, y.
 
-<img src="./media/isaaclab/track_velocity.gif" alt="Isaac Lab Balancing and Velocity Tracking"/>
+The pick manipulation task is implemented with simple inverse kinematics. First, the arms reach toward the target by computing desired joint positions and tracking them with a PD controller, then the picking motion is executed by commanding joint velocities along the y- and z-axes.
 
+<div align="center">
+    <img src="./media/demo_pick.gif" alt="Pick up cube using inverse kinematics" width="49.5%"  />
+</div>
 
-### State Machine
+## Usage
 
-The robot uses a state machine to manage its behavior.
+- Create a `.env` file in the `docker/` directory based on the provided `.env.template`.
 
-States:
-  - **IDLE**: The robot is idle and waiting for a target to be spawned.
-  - **REST_ARMS**: The robot moves its arms to a resting position on its sides.
-  - **GRAB**: The robot moves its arms to grab a target.
-  - **MOVE_BASE**: The robot moves towards a target or a given position.
+- Run the project's docker container either in a VSCode Dev Container or using:
 
-The current behavior uses the following transitions:
+    ```bash
+    docker compose -f docker/compose.yaml run --build taser bash
+    ```
 
-IDLE -> MOVE_BASE -> GRAB -> REST_ARMS -> IDLE
+- Launch the Isaac Sim simulation:
 
-## ROS Packages
+    ```bash
+    sim_isaac
 
-| Package | Description |
-| --- | --- |
-| taser | Robot logic (ROS-independent) |
-| taser_py | Python bindings of the core package |
-| taser_ros | ROS interface and node, URDF files, Rviz, launch files |
-| taser_isaaclab | Isaac Lab environment for RL training |
-| taser_msgs | Custom ROS messages |
-| state_machine | State machine, states, and missions |
+    # or
+    omni_python src/taser/isaacsim/sim.py
+    ```
