@@ -1,11 +1,12 @@
-ARG ISAACSIM_VERSION=${ISAACSIM_VERSION:-4.5.0}
-FROM nvcr.io/nvidia/isaac-sim:${ISAACSIM_VERSION} AS base
+FROM nvcr.io/nvidia/isaac-sim:5.1.0 AS base
 
 ###############################################
 # Initial Setup
 
 ARG USERNAME
 ENV USERNAME=${USERNAME}
+
+USER root
 
 # Rename default ubuntu user to USERNAME only if USERNAME is set
 RUN apt update && apt install -y sudo
@@ -42,6 +43,8 @@ RUN apt install -y \
     gdb \
     # Git
     git-lfs \
+    # Shell Formatter
+    shfmt \
     # Python Qt GUI dependencies
     libxrandr2 \
     libxcb-cursor0
@@ -63,12 +66,6 @@ RUN if [ -n "$USERNAME" ]; then \
 # Create Isaac Sim workspace folder
 RUN ln -s /isaac-sim /workspace/isaacsim
 
-# Create aliases for omni_python and isaacsim
-RUN printf '%s\n' \
-    "alias omni_python=\"/workspace/isaacsim/python.sh\"" \
-    "alias isaacsim=\"/workspace/isaacsim/isaac-sim.sh\"" \
-    >> ${HOME}/.bashrc
-
 ###############################################
 # Isaac Lab (Installed manually to get latest version)
 
@@ -78,9 +75,7 @@ RUN ln -s /workspace/isaacsim /workspace/isaaclab/_isaac_sim
 RUN /workspace/isaaclab/isaaclab.sh --install
 
 ###############################################
-# Isaac Sim 4.5.0 Specific - Install ROS 2 Humble
-
-FROM base AS isaacsim-4.5.0
+# ROS 2 jazzy
 
 USER root
 
@@ -104,58 +99,24 @@ RUN apt install -y software-properties-common
 RUN add-apt-repository -y universe
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt install -y --allow-downgrades \
-    # Fixes RVIZ installation
-    libbrotli1=1.0.9-2build6 \ 
+RUN apt install -y \
     ros-dev-tools \
-    ros-humble-desktop \
+    ros-jazzy-desktop \
     python3-colcon-clean
 
-USER ${USERNAME:-root}
-
-# Add ROS sourcing to bashrc
-RUN echo "source /opt/ros/humble/setup.bash" >> ${HOME}/.bashrc
-
-USER root
-
-# Install rosdep dependencies
+# Install ROS 2 dependencies for taser_ros package
 RUN rosdep init
 COPY --chown=${USERNAME:-root} ./src/taser_ros/package.xml /workspace/taser/src/taser_ros/package.xml
 RUN rosdep update
-RUN ROS_DISTRO=humble rosdep install --from-paths /workspace/taser/src --ignore-src -r -y
-
-# Create symlink for default python
-RUN ln -sf /usr/bin/python3 /usr/bin/python
-
-###############################################
-# Isaac Sim 5.0.0 Specific
-
-FROM base AS isaacsim-5.0.0
+RUN ROS_DISTRO=jazzy rosdep install --from-paths /workspace/taser/src --ignore-src -r -y
 
 # Enable Isaac Sim internal rclpy library 
-ENV ROS_DISTRO=humble
+ENV ROS_DISTRO=jazzy
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/workspace/isaacsim/exts/isaacsim.ros2.bridge/humble/lib
-
-# Create symlink for default python
-RUN sudo ln -sf /workspace/isaacsim/kit/python/bin/python3 /usr/bin/python
-
-# Install pybind11 for Isaac Sim's python 3.11 since the global python is 3.10
-RUN python -m pip install pybind11
-ENV pybind11_DIR=/workspace/isaacsim/kit/python/lib/python3.11/site-packages/pybind11/share/cmake/pybind11
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/workspace/isaacsim/exts/isaacsim.ros2.bridge/jazzy/lib
 
 ###############################################
 # Install Dependencies
-
-ARG ISAACSIM_VERSION
-FROM isaacsim-${ISAACSIM_VERSION} AS final
-
-USER root
-
-# Remove OS conflicting dependencies
-RUN apt remove -y \
-    python3-blinker \
-    python3-matplotlib
 
 # Install personal CLI
 RUN echo "deb [trusted=yes] https://khaledjalloul.github.io/debian-repository unstable main" | tee /etc/apt/sources.list.d/khaledjalloul.list
@@ -167,12 +128,6 @@ RUN apt install -y khaled-cli
 
 USER ${USERNAME:-root}
 WORKDIR /workspace/taser
-
-# Unset python interactive startup script created by vscode
-RUN echo "unset PYTHONSTARTUP" >> ${HOME}/.bashrc
-
-# Upgrade install dependencies
-RUN python -m pip install -U pip setuptools wheel build packaging scikit-build-core pyproject-metadata
 
 # Install project
 COPY --chown=${USERNAME:-root} ./pyproject.toml /workspace/taser

@@ -1,12 +1,11 @@
 services:
   taser:
-    image: khaledjalloul/taser:${ISAACSIM_VERSION}
+    image: khaledjalloul/taser
     build:
       context: ..
       dockerfile: docker/Dockerfile
       args:
         USERNAME: ${DOCKER_USERNAME}
-        ISAACSIM_VERSION: ${ISAACSIM_VERSION}
       network: host # Temporary fix for when using VPN
     container_name: taser
     hostname: taser

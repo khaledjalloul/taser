@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # Requires: PyQt6, rclpy, geometry_msgs, nav_msgs, tf2_ros
 
-import math
 import sys
 import threading
 import time
@@ -267,7 +266,6 @@ class TaserGUI(QtWidgets.QMainWindow):
         self.setWindowTitle("TASER Control Panels (PyQt6)")
 
         # ROS node
-        rclpy.init(args=None)
         self.node = node.Node("taser_gui_qt6")
 
         # TF buffer/listener
@@ -490,12 +488,13 @@ class TaserGUI(QtWidgets.QMainWindow):
         super().closeEvent(event)
 
 
-def main():
+def start_cmd_gui():
     app = QtWidgets.QApplication(sys.argv)
     win = TaserGUI()
     win.show()
-    sys.exit(app.exec())
+    app.exec()
 
 
 if __name__ == "__main__":
-    main()
+    rclpy.init()
+    start_cmd_gui()

@@ -4,6 +4,7 @@ parser = argparse.ArgumentParser(description="Isaac Sim Taser Simulation")
 parser.add_argument(
     "--headless", action="store_true", help="Run simulation in headless mode"
 )
+parser.add_argument("--cmd_gui", action="store_true", help="Start the command GUI")
 args = parser.parse_args()
 
 ###############################################################
@@ -18,6 +19,8 @@ enable_extensions()
 
 ###############################################################
 
+import threading
+
 import rclpy
 from isaacsim.core.api import World
 
@@ -25,6 +28,7 @@ from taser.isaacsim.robot import TaserIsaacSimRobot
 from taser.isaacsim.scene import set_up_scene
 from taser.isaacsim.utils.occupancy_grid import IsaacSimOccupancyGridGenerator
 from taser.isaacsim.utils.ros2_tf_publisher import set_up_omni_graph
+from taser.ros.isaac.cmd_gui import start_cmd_gui
 
 
 class TaserIsaacSim:
@@ -75,6 +79,9 @@ class TaserIsaacSim:
 
 def main():
     rclpy.init()
+
+    if args.cmd_gui:
+        threading.Thread(target=start_cmd_gui).start()
 
     sim = TaserIsaacSim()
     simulation_app.update()
