@@ -23,7 +23,7 @@ class LocomotionPolicy:
             providers=["CPUExecutionProvider"],
         )
 
-        self._base_velocity_buffer = np.zeros((10, 6), dtype=np.float32)
+        self._base_velocity_buffer = np.zeros((10, 10), dtype=np.float32)
 
     def step(
         self,
@@ -40,10 +40,14 @@ class LocomotionPolicy:
             axis=0,
         )
         self._base_velocity_buffer[-1, :3] = base_linear_velocity_b
-        self._base_velocity_buffer[-1, 3:] = base_angular_velocity_b
+        self._base_velocity_buffer[-1, 3:6] = base_angular_velocity_b
+        self._base_velocity_buffer[-1, 6:] = base_quaternion_w
 
-        use_balance_policy = np.all(base_target_planar_velocity_b == 0) and np.all(
-            np.abs(self._base_velocity_buffer[:, :3]) < 0.2
+        use_balance_policy = (
+            np.all(base_target_planar_velocity_b == 0)
+            and np.all(np.abs(self._base_velocity_buffer[:, :3]) < 0.2)
+            and np.all(np.abs(self._base_velocity_buffer[:, 3:6]) < 0.5)
+            and np.all(np.abs(self._base_velocity_buffer[:, 7:9]) < 0.02)
         )
 
         if use_balance_policy:

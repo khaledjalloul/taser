@@ -33,14 +33,9 @@ from taser.ros.isaac.cmd_gui import start_cmd_gui
 
 class TaserIsaacSim:
     def __init__(self):
-        # Set up ROS 2 bridge omni graph
         set_up_omni_graph()
 
-        self.world = World(
-            stage_units_in_meters=1.0,
-            physics_dt=0.01,
-            # rendering_dt=0.05,
-        )
+        self.world = World()
 
         set_up_scene(scene=self.world.scene)
 
