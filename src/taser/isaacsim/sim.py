@@ -37,12 +37,12 @@ class TaserIsaacSim:
 
         self.world = World()
 
-        set_up_scene(scene=self.world.scene)
-
         self.robot = TaserIsaacSimRobot(
             position=(0.0, 0.0, 0.65),
             orientation=(1.0, 0.0, 0.0, 0.0),
         )
+
+        set_up_scene(scene=self.world.scene, robot=self.robot)
 
         self.occupancy_grid_generator = IsaacSimOccupancyGridGenerator()
 
@@ -55,7 +55,7 @@ class TaserIsaacSim:
     def on_physics_step(self, step_size: float) -> None:
         if self.first_step:
             self.occupancy_grid_generator.setup()
-            self.robot.initialize(self.occupancy_grid_generator.workspace)
+            self.robot.first_step(self.occupancy_grid_generator.workspace)
             self.first_step = False
         elif self.needs_reset:
             self.world.reset(True)

@@ -1,6 +1,7 @@
 import numpy as np
 from geometry_msgs.msg import Pose2D as Pose2DRos
-from isaacsim.core.prims import SingleArticulation
+from isaacsim.core.api.robots.robot import Robot
+from isaacsim.core.prims import XFormPrim
 from isaacsim.core.utils.rotations import quat_to_euler_angles, quat_to_rot_matrix
 from isaacsim.core.utils.stage import add_reference_to_stage
 from isaacsim.core.utils.types import ArticulationAction
@@ -20,7 +21,7 @@ NAME = "taser"
 PRIM_PATH = "/World/Taser"
 
 
-class TaserIsaacSimRobot(SingleArticulation):
+class TaserIsaacSimRobot(Robot):
     def __init__(
         self,
         position: tuple[float, float, float],
@@ -49,12 +50,14 @@ class TaserIsaacSimRobot(SingleArticulation):
         )
 
         self._pick_controller = PickController()
+        self._is_picking = True
+
         self._locomotion_policy = LocomotionPolicy()
+
         self._teleop = Teleop(
             v_max=self._locomotion_policy.v_max,
             w_max=self._locomotion_policy.w_max,
         )
-
         self._path_plan: list[Pose] = []
 
         self._ros_node = TaserIsaacSimRosNode(
@@ -62,12 +65,10 @@ class TaserIsaacSimRobot(SingleArticulation):
             manipulation_task_cb=self._manipulation_task_cb,
         )
 
+    def first_step(self, workspace: Workspace) -> None:
         stage = get_context().get_stage()
-        self._target_prim = stage.GetPrimAtPath("/World/target")
-        self._is_picking = True
+        self._target_prim: XFormPrim = stage.GetPrimAtPath("/World/target")
 
-    def initialize(self, workspace: Workspace) -> None:
-        super().initialize()
         self._occupancy_grid = OccupancyGrid(workspace=workspace, cellsize=0.1)
         self._navigator = GridNavigator(
             workspace=workspace,

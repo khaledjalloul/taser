@@ -1,13 +1,14 @@
 import numpy as np
 import omni.isaac.core.utils.prims as prim_utils
 from isaacsim.core.api.objects import DynamicCuboid
+from isaacsim.core.api.robots.robot import Robot
 from isaacsim.core.api.scenes import Scene
 from isaacsim.core.utils.stage import add_reference_to_stage
 from isaacsim.storage.native import get_assets_root_path
 from omni.isaac.core.prims import RigidPrim
 
 
-def set_up_scene(scene: Scene):
+def set_up_scene(scene: Scene, robot: Robot):
     scene.add_default_ground_plane()
 
     prim_utils.create_prim(
@@ -51,3 +52,5 @@ def set_up_scene(scene: Scene):
         scale=np.array([0.4, 0.4, 0.4]),
         color=np.array([0.63, 0.0, 0.8]),
     )
+
+    scene.add(robot)
