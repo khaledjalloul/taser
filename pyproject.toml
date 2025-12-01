@@ -5,6 +5,7 @@ description = "A wheeled robot with two arms that detects targets in an environm
 authors = [{ "name" = "Khaled Jalloul", email = "khaled.jalloul@hotmail.com" }]
 
 dependencies = [
+    "click",
     "cvxpy==1.4.2",
     "dotenv",
     "matplotlib",
