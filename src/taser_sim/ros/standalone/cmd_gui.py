@@ -19,7 +19,7 @@ from tf2_ros import (
 )
 
 from taser.common.datatypes import Polygon, Workspace
-from taser.ros.standalone.parameters import load_sim_parameters
+from taser_sim.ros.standalone.parameters import load_sim_parameters
 
 # ---------------- Parameters & Mapping ----------------
 

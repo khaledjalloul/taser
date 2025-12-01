@@ -13,7 +13,7 @@ from isaacsim.simulation_app import SimulationApp
 
 simulation_app = SimulationApp({"headless": args.headless})
 
-from taser.isaacsim.utils.extensions import enable_extensions
+from taser_sim.utils.extensions import enable_extensions
 
 enable_extensions()
 
@@ -24,11 +24,11 @@ import threading
 import rclpy
 from isaacsim.core.api import World
 
-from taser.isaacsim.robot import TaserIsaacSimRobot
-from taser.isaacsim.scene import set_up_scene
-from taser.isaacsim.utils.occupancy_grid import IsaacSimOccupancyGridGenerator
-from taser.isaacsim.utils.ros2_tf_publisher import set_up_omni_graph
-from taser.ros.isaac.cmd_gui import start_cmd_gui
+from taser_sim.robot import TaserIsaacSimRobot
+from taser_sim.ros.cmd_gui import start_cmd_gui
+from taser_sim.scene import set_up_scene
+from taser_sim.utils.occupancy_grid import IsaacSimOccupancyGridGenerator
+from taser_sim.utils.ros2_tf_publisher import set_up_omni_graph
 
 
 class TaserIsaacSim:

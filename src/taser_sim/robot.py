@@ -10,12 +10,12 @@ from std_msgs.msg import Int32
 
 from taser.common.datatypes import Pose, TaserJointState, Workspace
 from taser.common.model import USD_PATH
-from taser.isaacsim.utils.ros2_tf_publisher import add_tf_publisher
-from taser.isaacsim.utils.teleop import Teleop
 from taser.locomotion import LocomotionPolicy
 from taser.manipulation import PickController
 from taser.navigation import GridNavigator, OccupancyGrid
-from taser.ros.isaac.sim_node import TaserIsaacSimRosNode
+from taser_sim.ros.sim_node import TaserIsaacSimRosNode
+from taser_sim.utils.ros2_tf_publisher import add_tf_publisher
+from taser_sim.utils.teleop import Teleop
 
 NAME = "taser"
 PRIM_PATH = "/World/Taser"

@@ -38,8 +38,8 @@ import gymnasium as gym
 import torch
 from isaaclab_tasks.utils import parse_env_cfg
 
-import taser.isaaclab.tasks  # noqa: F401 # register tasks
-from taser.isaaclab.rl.custom import ActorCritic
+import taser_training.isaaclab.tasks  # noqa: F401 # register tasks
+from taser_training.isaaclab.rl.custom import ActorCritic
 
 
 def play(env: gym.Env):

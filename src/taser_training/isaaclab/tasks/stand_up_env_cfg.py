@@ -12,8 +12,11 @@ from isaaclab.managers import (
 )
 from isaaclab.utils import configclass
 
-from taser.isaaclab.common.articulation import TASER_CONFIG_USD
-from taser.isaaclab.common.base_env_cfg import TaserBaseEnvCfg, TaserBaseSceneCfg
+from taser_training.isaaclab.common.articulation import TASER_CONFIG_USD
+from taser_training.isaaclab.common.base_env_cfg import (
+    TaserBaseEnvCfg,
+    TaserBaseSceneCfg,
+)
 
 
 @configclass

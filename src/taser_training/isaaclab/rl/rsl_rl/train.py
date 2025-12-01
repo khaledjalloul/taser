@@ -13,7 +13,10 @@ import sys
 from isaaclab.app import AppLauncher
 
 # local imports
-from taser.isaaclab.rl.rsl_rl.cli_args import add_rsl_rl_args, update_rsl_rl_cfg
+from taser_training.isaaclab.rl.rsl_rl.cli_args import (
+    add_rsl_rl_args,
+    update_rsl_rl_cfg,
+)
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
@@ -123,6 +126,7 @@ from datetime import datetime
 import gymnasium as gym
 import isaaclab_tasks  # noqa: F401
 import omni
+import taser.isaaclab.tasks  # noqa: F401 # register tasks
 import torch
 from isaaclab.envs import (
     DirectMARLEnv,
@@ -137,8 +141,6 @@ from isaaclab_rl.rsl_rl import RslRlBaseRunnerCfg, RslRlVecEnvWrapper
 from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 from rsl_rl.runners import DistillationRunner, OnPolicyRunner
-
-import taser.isaaclab.tasks  # noqa: F401 # register tasks
 
 # PLACEHOLDER: Extension template (do not remove this comment)
 

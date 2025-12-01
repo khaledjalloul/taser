@@ -9,7 +9,7 @@ from isaacsim.core.api.scenes import Scene
 from isaacsim.core.utils.stage import add_reference_to_stage
 
 from taser.common.model import URDF_PATH, USD_PATH
-from taser.isaacsim.utils.extensions import enable_extensions
+from taser_sim.utils.extensions import enable_extensions
 
 DRIVE_DAMPING = 50
 

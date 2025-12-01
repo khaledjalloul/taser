@@ -18,20 +18,21 @@ def ensure_xclip_installed():
         subprocess.run(["sudo", "apt", "install", "-y", "xclip"], check=True)
 
 
-ensure_xclip_installed()
+if __name__ == "__main__":
+    ensure_xclip_installed()
 
-ISAAC_SIM_PATH = Path("/isaac-sim")
+    isaac_sim_path = Path("/isaac-sim")
 
-paths = [
-    ISAAC_SIM_PATH / "exts",
-    ISAAC_SIM_PATH / "extsDeprecated",
-    ISAAC_SIM_PATH / "kit/extscore",
-]
+    paths = [
+        isaac_sim_path / "exts",
+        isaac_sim_path / "extsDeprecated",
+        isaac_sim_path / "kit/extscore",
+    ]
 
-paths_str = "\n"
-for path in paths:
-    for ext in path.glob("*"):
-        paths_str += f'"{ext}",\n'
+    paths_str = "\n"
+    for path in paths:
+        for ext in path.glob("*"):
+            paths_str += f'"{ext}",\n'
 
-pyperclip.copy(paths_str)
-print("Copied to clipboard.")
+    pyperclip.copy(paths_str)
+    print("Copied to clipboard.")

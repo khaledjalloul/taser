@@ -10,8 +10,8 @@ from taser.common.datatypes import Pose, VelocityCommand
 from taser.locomotion import DifferentialDriveKinematics
 from taser.manipulation import ManipulationKinematics
 from taser.navigation import PolygonNavigator
-from taser.ros.standalone.parameters import load_sim_parameters
-from taser.ros.standalone.ros_node import TaserStandaloneRosNode
+from taser_sim.ros.standalone.parameters import load_sim_parameters
+from taser_sim.ros.standalone.ros_node import TaserStandaloneRosNode
 
 
 class TaserRvizSim:
