@@ -1,6 +1,11 @@
+#!/isaac-sim/python.sh
+
 import subprocess
+import sys
 
 import click
+
+CONTEXT_SETTINGS = {"ignore_unknown_options": True, "allow_extra_args": True}
 
 
 @click.group()
@@ -15,14 +20,17 @@ def install():
     subprocess.run(["bash", "/workspace/taser/install.bash"])
 
 
-@cli.command()
+@cli.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
     "-t", "--type", type=click.Choice(["isaacsim", "ros"]), default="isaacsim"
 )
 def sim(type: str):
     """Launch the Taser simulation environment."""
     if type == "isaacsim":
-        subprocess.run(["/isaac-sim/python.sh", "-m", "taser_sim.sim"])
+        sys.argv = sys.argv[1:]
+        from taser_sim.sim import main as start_sim
+
+        start_sim()
     elif type == "ros":
         subprocess.run(["ros2", "launch", "taser_ros", "sim.launch.yaml"])
 
@@ -33,24 +41,34 @@ def isaaclab():
     pass
 
 
-@isaaclab.command()
+@isaaclab.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--rsl", is_flag=True, help="Use RSL RL training/playback scripts")
 def train(rsl):
     """Train an RL task in Isaac Lab."""
-    folder = "rsl_rl" if rsl else "custom"
-    subprocess.run(
-        ["/isaac-sim/python.sh", "-m", f"taser_training.isaaclab.rl.{folder}.train"],
-    )
+    sys.argv = sys.argv[2:]
+    if rsl:
+        from taser_training.isaaclab.rl.rsl_rl.train import main as train_rsl
+
+        train_rsl()
+    else:
+        from taser_training.isaaclab.rl.custom.train import main as train_custom
+
+        train_custom()
 
 
-@isaaclab.command()
+@isaaclab.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--rsl", is_flag=True, help="Use RSL RL training/playback scripts")
 def play(rsl):
     """Play back an RL task in Isaac Lab."""
-    folder = "rsl_rl" if rsl else "custom"
-    subprocess.run(
-        ["/isaac-sim/python.sh", "-m", f"taser_training.isaaclab.rl.{folder}.play"],
-    )
+    sys.argv = sys.argv[2:]
+    if rsl:
+        from taser_training.isaaclab.rl.rsl_rl.play import main as play_rsl
+
+        play_rsl()
+    else:
+        from taser_training.isaaclab.rl.custom.play import main as play_custom
+
+        play_custom()
 
 
 @cli.group()
@@ -73,10 +91,13 @@ def generate():
     )
 
 
-@urdf.command()
+@urdf.command(context_settings=CONTEXT_SETTINGS)
 def convert_to_usd():
     """Convert the URDF file to USD format."""
-    subprocess.run(["/isaac-sim/python.sh -m taser_sim.utils.urdf_to_usd"], shell=True)
+    sys.argv = sys.argv[2:]
+    from taser_sim.utils.urdf_to_usd import main as convert
+
+    convert()
 
 
 if __name__ == "__main__":

@@ -10,9 +10,6 @@ if [ -n "$USERNAME" ]; then
 	sudo chown -R ${USERNAME} ${HOME}/Documents
 fi
 
-# Set up CLI completion
-kj setup cli completion
-
 export WORKSPACE=/workspace/taser
 
 # Build ROS packages if ROS is installed (run in subshell to avoid ROS env contamination)
@@ -33,9 +30,16 @@ printf '%s\n' \
 	"/isaac-sim/python.sh'" \
 	>>~/.bashrc
 
-# Simulation aliases
+# Set up taser CLI with completion
+sudo ln -s /workspace/taser/src/taser/cli.py /usr/local/bin/taser
+sudo chmod +x /usr/local/bin/taser
+_TASER_COMPLETE=bash_source taser | sudo dd status=none of=/etc/bash_completion.d/taser
+
+# Set up personal CLI completion
+kj setup cli completion
+
+# Simulation alias
 echo "alias isaacsim='/isaac-sim/isaac-sim.sh'" >>~/.bashrc
-echo "alias taser='omni_python -m taser.cli'" >>~/.bashrc
 
 # Unset python interactive startup script created by vscode
 echo "unset PYTHONSTARTUP" >>~/.bashrc

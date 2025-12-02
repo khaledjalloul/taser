@@ -1,6 +1,9 @@
 {
     "name": "TASER",
-    "dockerComposeFile": "../docker/compose.yaml",
+    "dockerComposeFile": [
+        "../docker/compose.yaml",
+        "./compose.yaml"
+    ],
     "service": "taser",
     "workspaceFolder": "/workspace/taser",
     "customizations": {

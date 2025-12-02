@@ -6,10 +6,8 @@ services:
       dockerfile: docker/Dockerfile
       args:
         USERNAME: ${DOCKER_USERNAME}
-      network: host # Temporary fix for when using VPN
     container_name: taser
     hostname: taser
-    network_mode: host # Temporary fix for when using VPN
     environment:
       - DISPLAY=${DISPLAY}
       - WANDB_API_KEY=${WANDB_API_KEY}
@@ -25,7 +23,7 @@ services:
               count: all
               capabilities: [ gpu ]
     entrypoint: bash docker/entrypoint.bash
-    command: bash -c "while sleep 1000; do :; done"
+    command: bash
     volumes:
       # Bind source code
       - type: bind

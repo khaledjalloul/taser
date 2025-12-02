@@ -126,7 +126,6 @@ from datetime import datetime
 import gymnasium as gym
 import isaaclab_tasks  # noqa: F401
 import omni
-import taser.isaaclab.tasks  # noqa: F401 # register tasks
 import torch
 from isaaclab.envs import (
     DirectMARLEnv,
@@ -141,6 +140,8 @@ from isaaclab_rl.rsl_rl import RslRlBaseRunnerCfg, RslRlVecEnvWrapper
 from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 from rsl_rl.runners import DistillationRunner, OnPolicyRunner
+
+import taser_training.isaaclab.tasks  # noqa: F401 # register tasks
 
 # PLACEHOLDER: Extension template (do not remove this comment)
 
@@ -272,9 +273,10 @@ def main(
     # close the simulator
     env.close()
 
+    # close sim app
+    simulation_app.close()
+
 
 if __name__ == "__main__":
     # run the main function
     main()
-    # close sim app
-    simulation_app.close()

@@ -154,7 +154,7 @@ def train(env: gym.Env):
     logger.finish()
 
 
-if __name__ == "__main__":
+def main():
     env_cfg = parse_env_cfg(
         task_name=args.task,
         num_envs=args.num_envs,
@@ -165,3 +165,7 @@ if __name__ == "__main__":
 
     env.close()
     simulation_app.close()
+
+
+if __name__ == "__main__":
+    main()
