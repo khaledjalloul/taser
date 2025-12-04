@@ -22,7 +22,7 @@ def install():
 
 @cli.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
-    "-t", "--type", type=click.Choice(["isaacsim", "ros"]), default="isaacsim"
+    "-t", "--type", type=click.Choice(["isaacsim", "ros", "rviz"]), default="isaacsim"
 )
 def sim(type: str):
     """Launch the Taser simulation environment."""
@@ -31,8 +31,16 @@ def sim(type: str):
         from taser_sim.sim import main as start_sim
 
         start_sim()
-    elif type == "ros":
-        subprocess.run(["ros2", "launch", "taser_ros", "sim.launch.yaml"])
+    elif type in ["ros", "rviz"]:
+        launch_file = "sim" if type == "ros" else "rviz"
+        subprocess.run(
+            [
+                "unset PYTHONPATH && source /opt/ros/jazzy/setup.bash && "
+                f"ros2 launch taser_ros {launch_file}.launch.yaml"
+            ],
+            shell=True,
+            executable="/bin/bash",
+        )
 
 
 @cli.group()

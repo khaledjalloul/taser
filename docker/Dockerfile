@@ -115,6 +115,9 @@ ENV ROS_DISTRO=jazzy
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/workspace/isaacsim/exts/isaacsim.ros2.bridge/jazzy/lib
 
+# Fix Rviz display issue
+ENV LIBGL_DRI3_DISABLE=1
+
 ###############################################
 # Install Dependencies
 

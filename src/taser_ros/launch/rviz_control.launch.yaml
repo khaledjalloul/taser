@@ -11,7 +11,7 @@ launch:
       output: screen
       param:
         - name: robot_description
-          value: $(command 'xacro $(find-pkg-share taser_ros)/robot_description/urdf/xacro/robot.urdf.xacro')
+          value: $(command 'cat /workspace/taser/src/taser/common/model/urdf/taser.urdf')
         - from: $(find-pkg-share taser_ros)/config/controller_manager.yaml
 
   - node:

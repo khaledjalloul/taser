@@ -21,14 +21,9 @@ export WORKSPACE=/workspace/taser
 	fi
 )
 
-# Set LD_LIBRARY_PATH to find the C++ shared libraries for the Python bindings
-PYTHON_DIST_DIR=$(/isaac-sim/python.sh -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
-PYTHON_SITE_DIR=$(/isaac-sim/python.sh -c 'import site; print(site.getusersitepackages())')
-printf '%s\n' \
-	"alias omni_python='" \
-	"LD_LIBRARY_PATH=${PYTHON_DIST_DIR}/lib:${PYTHON_SITE_DIR}/lib:\$LD_LIBRARY_PATH" \
-	"/isaac-sim/python.sh'" \
-	>>~/.bashrc
+# Python aliases
+echo "alias omni_python='/isaac-sim/python.sh'" >>~/.bashrc
+echo "alias isaacsim='/isaac-sim/isaac-sim.sh'" >>~/.bashrc
 
 # Set up taser CLI with completion
 sudo ln -s /workspace/taser/src/taser/cli.py /usr/local/bin/taser
@@ -37,9 +32,6 @@ _TASER_COMPLETE=bash_source taser | sudo dd status=none of=/etc/bash_completion.
 
 # Set up personal CLI completion
 kj setup cli completion
-
-# Simulation alias
-echo "alias isaacsim='/isaac-sim/isaac-sim.sh'" >>~/.bashrc
 
 # Unset python interactive startup script created by vscode
 echo "unset PYTHONSTARTUP" >>~/.bashrc

@@ -18,7 +18,9 @@ endforeach()
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 # Create library
-add_library(${PROJECT_NAME} SHARED
+# Using STATIC instead of SHARED since I want to link it directly into the python module
+# instead of creating a separate shared library, which would require setting LD_LIBRARY_PATH
+add_library(${PROJECT_NAME} STATIC
   src/locomotion/kinematics.cpp
   src/manipulation/controller.cpp
   src/manipulation/kinematics.cpp
@@ -42,50 +44,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   osqp::osqp
   OsqpEigen::OsqpEigen
 )
-
-# Install library
-install(
-  DIRECTORY include/
-  DESTINATION include/${PROJECT_NAME}
-)
-install(
-  TARGETS ${PROJECT_NAME}
-  EXPORT export_${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-# Create and install CMake config files
-include(CMakePackageConfigHelpers)
-
-# <project>Config.cmake (from a template)
-configure_package_config_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-  INSTALL_DESTINATION lib/cmake/${PROJECT_NAME}
-)
-
-# <project>ConfigVersion.cmake
-write_basic_package_version_file(
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-  VERSION ${PROJECT_VERSION}
-  COMPATIBILITY SameMajorVersion
-)
-
-# Exported targets file (${PROJECT_NAME}Targets.cmake)
-install(
-  EXPORT export_${PROJECT_NAME}
-  NAMESPACE ${PROJECT_NAME}::
-  FILE ${PROJECT_NAME}Targets.cmake
-  DESTINATION lib/cmake/${PROJECT_NAME}
-)
-
-install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-  DESTINATION lib/cmake/${PROJECT_NAME}
-)
+# Make static lib PIC so it can be linked into a shared object
+set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Create Python package "${PROJECT_NAME}_py_bindings"
 pybind11_add_module(
