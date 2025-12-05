@@ -17,6 +17,9 @@ class PPOTrainerCfg:
     learning_rate: float
     """Learning rate"""
 
+    lr_decay_factor: float
+    """Decay factor for exponential learning rate schedule"""
+
     gamma: float
     """Discount factor"""
 

@@ -13,6 +13,7 @@ from isaaclab.managers import (
 )
 from isaaclab.utils import configclass
 
+from taser.common.datatypes import TaserJointState
 from taser_training.isaaclab.common.articulation import TASER_CONFIG_USD
 from taser_training.isaaclab.common.base_env_cfg import (
     TaserBaseEnvCfg,
@@ -92,12 +93,29 @@ class CurriculumCfg:
     )
 
 
-def set_random_arm_joint_velocities(env: ManagerBasedEnv, *args):
+def set_random_joint_velocities(env: ManagerBasedEnv, *args):
     robot: Articulation = env.scene["robot"]
-    arm_joint_ids = [0, 2, 4, 5, 6, 7]
 
-    vel_target = torch.randn((env.num_envs, len(arm_joint_ids)), device=env.device) * 2
-    robot.set_joint_velocity_target(vel_target, joint_ids=arm_joint_ids)
+    idx = TaserJointState.isaac_indices
+    joint_vels = {
+        idx.locks[0]: [0.8, 0.2],
+        idx.locks[1]: [7.0, -10.0],
+        idx.locks[2]: [0.8, 0.2],
+        idx.locks[3]: [7.0, -10.0],
+        idx.left_arm[0]: [4.0, -2.0],
+        idx.left_arm[1]: [4.0, -2.0],
+        idx.left_arm[2]: [4.0, -2.0],
+        idx.right_arm[0]: [4.0, -2.0],
+        idx.right_arm[1]: [4.0, -2.0],
+        idx.right_arm[2]: [4.0, -2.0],
+    }
+
+    vel_target = (
+        torch.rand((env.num_envs, len(joint_vels)), device=env.device)
+        * torch.tensor(list(joint_vels.values()), device=env.device)[:, 0]
+        + torch.tensor(list(joint_vels.values()), device=env.device)[:, 1]
+    )
+    robot.set_joint_velocity_target(vel_target, joint_ids=list(joint_vels.keys()))
 
 
 @configclass
@@ -126,8 +144,40 @@ class EventsCfg:
         },
     )
 
-    set_random_arm_joint_velocities = EventTermCfg(
-        func=set_random_arm_joint_velocities,
+    reset_robot_lock_joints = EventTermCfg(
+        func=mdp.reset_joints_by_offset,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg(
+                "robot",
+                joint_names=[
+                    "base_link_front_lock_joint",
+                    "base_link_back_lock_joint",
+                ],
+            ),
+            "position_range": (0.15, 0.15),
+            "velocity_range": (0.0, 0.0),
+        },
+    )
+
+    reset_robot_lock_support_joints = EventTermCfg(
+        func=mdp.reset_joints_by_offset,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg(
+                "robot",
+                joint_names=[
+                    "front_lock_support_joint",
+                    "back_lock_support_joint",
+                ],
+            ),
+            "position_range": (-np.deg2rad(90), -np.deg2rad(90)),
+            "velocity_range": (0.0, 0.0),
+        },
+    )
+
+    set_random_joint_velocities = EventTermCfg(
+        func=set_random_joint_velocities,
         mode="reset",
     )
 

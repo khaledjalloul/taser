@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import ClassVar, Literal
 
 import numpy as np
 
@@ -45,47 +46,63 @@ Polygon = list[Pose]
 
 @dataclass
 class TaserJointState:
+    locks: np.ndarray = field(
+        default_factory=lambda: np.zeros(4)
+    )  # front, front_support, back, back_support
     left_arm: np.ndarray = field(default_factory=lambda: np.zeros(3))
     right_arm: np.ndarray = field(default_factory=lambda: np.zeros(3))
-    wheels: np.ndarray = field(default_factory=lambda: np.zeros(2))
+    wheels: np.ndarray = field(default_factory=lambda: np.zeros(2))  # left, right
+
+    rtb_indices: ClassVar["TaserJointState"]
+    ros_indices: ClassVar["TaserJointState"]
+    isaac_indices: ClassVar["TaserJointState"]
 
     @classmethod
-    def from_ros(cls, ros_state: list[float]) -> "TaserJointState":
-        left_arm = [ros_state[0], ros_state[1], ros_state[3]]
-        right_arm = [ros_state[2], ros_state[4], ros_state[5]]
-        wheels = ros_state[6:8]
+    def construct_from(
+        cls, format: Literal["rtb", "ros", "isaac"], state: np.ndarray
+    ) -> "TaserJointState":
+        if type(state) is not np.ndarray:
+            state = np.array(state)
+        indices: TaserJointState = cls.__dict__[f"{format}_indices"]
         return TaserJointState(
-            left_arm=np.array(left_arm),
-            right_arm=np.array(right_arm),
-            wheels=np.array(wheels),
+            left_arm=state[indices.left_arm],
+            right_arm=state[indices.right_arm],
+            wheels=state[indices.wheels],
+            locks=state[indices.locks],
         )
 
-    @classmethod
-    def from_isaac(cls, isaac_state: np.ndarray) -> "TaserJointState":
-        left_arm = [isaac_state[0], isaac_state[4], isaac_state[6]]
-        right_arm = [isaac_state[2], isaac_state[5], isaac_state[7]]
-        wheels = [isaac_state[1], isaac_state[3]]
-        return TaserJointState(
-            left_arm=np.array(left_arm),
-            right_arm=np.array(right_arm),
-            wheels=np.array(wheels),
+    def to(self, format: Literal["rtb", "ros", "isaac"]) -> np.ndarray:
+        indices: TaserJointState = self.__class__.__dict__[f"{format}_indices"]
+        out = np.zeros(
+            self.locks.size
+            + self.left_arm.size
+            + self.right_arm.size
+            + self.wheels.size
         )
+        out[indices.locks] = self.locks
+        out[indices.left_arm] = self.left_arm
+        out[indices.right_arm] = self.right_arm
+        out[indices.wheels] = self.wheels
+        return out
 
-    @property
-    def ordered_rtb(self) -> np.ndarray:
-        return np.concatenate([self.left_arm, self.right_arm, self.wheels])
 
-    @property
-    def ordered_isaac(self) -> np.ndarray:
-        return np.array(
-            [
-                self.left_arm[0],
-                self.wheels[0],
-                self.right_arm[0],
-                self.wheels[1],
-                self.left_arm[1],
-                self.right_arm[1],
-                self.left_arm[2],
-                self.right_arm[2],
-            ]
-        )
+TaserJointState.rtb_indices = TaserJointState(
+    locks=np.array([0, 1, 2, 3]),
+    left_arm=np.array([4, 5, 6]),
+    right_arm=np.array([7, 8, 9]),
+    wheels=np.array([10, 11]),
+)
+
+TaserJointState.ros_indices = TaserJointState(
+    locks=np.array([0, 1, 2, 3]),
+    left_arm=np.array([4, 5, 6]),
+    right_arm=np.array([7, 8, 9]),
+    wheels=np.array([10, 11]),
+)
+
+TaserJointState.isaac_indices = TaserJointState(
+    locks=np.array([1, 7, 0, 6]),
+    left_arm=np.array([2, 8, 10]),
+    right_arm=np.array([4, 9, 11]),
+    wheels=np.array([3, 5]),
+)

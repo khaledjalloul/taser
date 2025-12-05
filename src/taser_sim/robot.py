@@ -83,8 +83,8 @@ class TaserIsaacSimRobot(Robot):
         self._occupancy_grid = occupancy_grid
         self._hide_robot_from_occupancy_grid()
 
-        q = TaserJointState.from_isaac(self.get_joint_positions())
-        dq = TaserJointState.from_isaac(self.get_joint_velocities())
+        q = TaserJointState.construct_from("isaac", self.get_joint_positions())
+        dq = TaserJointState.construct_from("isaac", self.get_joint_velocities())
 
         position_w, quaternion_w = self.get_world_pose()
         R_IB = quat_to_rot_matrix(quaternion_w)
@@ -123,9 +123,9 @@ class TaserIsaacSimRobot(Robot):
                 )
             )
 
-        joint_velocities, _ = self._pick_controller.step(q)
+        manipulation_action, _ = self._pick_controller.step(q)
 
-        joint_velocities.wheels = self._locomotion_policy.step(
+        locomotion_action = self._locomotion_policy.step(
             joint_positions=q,
             joint_velocities=dq,
             base_quaternion_w=quaternion_w,
@@ -134,7 +134,14 @@ class TaserIsaacSimRobot(Robot):
             base_target_planar_velocity_b=vel_cmd,
         )
 
-        action = ArticulationAction(joint_velocities=joint_velocities.ordered_isaac)
+        joint_velocities = TaserJointState(
+            left_arm=manipulation_action.left_arm,
+            right_arm=manipulation_action.right_arm,
+            wheels=locomotion_action.wheels,
+            locks=locomotion_action.locks,
+        )
+
+        action = ArticulationAction(joint_velocities=joint_velocities.to("isaac"))
         self.apply_action(action)
 
     def _hide_robot_from_occupancy_grid(self) -> None:

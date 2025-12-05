@@ -59,14 +59,14 @@ if __name__ == "__main__":
                 )
                 link = links[link_idx]
                 link_pose = left_arm._arm.fkine(
-                    q.ordered_rtb,
+                    q.to("rtb"),
                     end=link.name,
                     start="base_link",
                 )
 
                 parent_link = link.parent.name
                 parent_link_pose = left_arm._arm.fkine(
-                    q.ordered_rtb,
+                    q.to("rtb"),
                     end=parent_link,
                     start="base_link",
                 )

@@ -25,29 +25,54 @@
 
     </xacro:macro>
 
-    <xacro:macro name="lock" params="side offset_sign default_angle lower_limit upper_limit">
+    <xacro:macro name="lock" params="side offset_sign">
 
         <link name="${side}_lock">
             <visual>
-                <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.0866" />
+                <origin rpy="0.0 0.0 0.0" xyz="${offset_sign}0.0125 0.0 0.0" />
                 <geometry>
-                    <box size="0.02 0.3 0.1732" />
+                    <box size="0.025 0.4 1.0" />
                 </geometry>
                 <material name="blue" />
             </visual>
             <collision>
-                <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.0866" />
+                <origin rpy="0.0 0.0 0.0" xyz="${offset_sign}0.0125 0.0 0.0" />
                 <geometry>
-                    <box size="0.02 0.3 0.1732" />
+                    <box size="0.025 0.4 1.0" />
                 </geometry>
             </collision>
         </link>
-        <joint name="base_link_${side}_lock_joint" type="revolute">
+        <joint name="base_link_${side}_lock_joint" type="prismatic">
             <parent link="base_link" />
             <child link="${side}_lock" />
-            <origin rpy="0.0 ${default_angle} 0.0" xyz="${offset_sign}0.1 0.0 -0.5" />
-            <axis xyz="0 1 0" />
-            <limit lower="${lower_limit}" upper="${upper_limit}" effort="0.0" velocity="0.0" />
+            <origin rpy="0.0 0.0 0.0" xyz="${offset_sign}0.1 0.0 -0.15" />
+            <axis xyz="0 0 1" />
+            <dynamics damping="0.1" friction="0.1" />
+            <limit effort="0.0" lower="0.0" upper="0.15" velocity="0.0" />
+        </joint>
+
+        <link name="${side}_lock_support">
+            <visual>
+                <origin rpy="0.0 0.0 0.0" xyz="${offset_sign}0.075 0.0 -0.01" />
+                <geometry>
+                    <box size="0.15 0.4 0.02" />
+                </geometry>
+                <material name="blue" />
+            </visual>
+            <collision>
+                <origin rpy="0.0 0.0 0.0" xyz="${offset_sign}0.075 0.0 -0.01" />
+                <geometry>
+                    <box size="0.15 0.4 0.02" />
+                </geometry>
+            </collision>
+        </link>
+        <joint name="${side}_lock_support_joint" type="revolute">
+            <parent link="${side}_lock" />
+            <child link="${side}_lock_support" />
+            <origin rpy="0.0 0.0 0.0" xyz="${offset_sign}0.025 0.0 -0.48" />
+            <axis xyz="0 ${offset_sign}1 0" />
+            <dynamics damping="0.1" friction="0.1" />
+            <limit effort="0.0" lower="-1.57" upper="0.0" velocity="0.0" />
         </joint>
 
     </xacro:macro>

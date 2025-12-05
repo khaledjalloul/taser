@@ -24,8 +24,11 @@ class PPOTrainer:
         self.optimizer = torch.optim.Adam(
             self.policy.parameters(), lr=cfg.learning_rate
         )
+        self.current_iter = 0
 
     def train_step(self):
+        current_lr = self.update_learning_rate()
+
         # Rollout
         with torch.no_grad():
             obs_dict, act, adv, ret, mu_old, std_old = self.rollout()
@@ -79,6 +82,7 @@ class PPOTrainer:
             loss.backward()
             self.optimizer.step()
 
+        self.current_iter += 1
         num_epochs = _ + 1  # Actual number of epochs completed
         return {
             "loss": total_loss / num_epochs,
@@ -87,7 +91,17 @@ class PPOTrainer:
             "entropy": total_entropy / num_epochs,
             "kl": total_kl / num_epochs,
             "common_step_counter": self.env.unwrapped.common_step_counter,
+            "learning_rate": current_lr,
         }
+
+    def update_learning_rate(self) -> float:
+        """Update learning rate using exponential decay schedule."""
+        if self.cfg.lr_decay_factor == 1.0:
+            return self.cfg.learning_rate
+        lr = self.cfg.learning_rate * (self.cfg.lr_decay_factor**self.current_iter)
+        for param_group in self.optimizer.param_groups:
+            param_group["lr"] = lr
+        return lr
 
     def rollout(self):
         obs_dict, _ = self.env.reset()

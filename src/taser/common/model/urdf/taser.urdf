@@ -79,47 +79,95 @@
   </link>
   <link name="front_lock">
     <visual>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.0866"/>
+      <origin rpy="0.0 0.0 0.0" xyz="+0.0125 0.0 0.0"/>
       <geometry>
-        <box size="0.02 0.3 0.1732"/>
+        <box size="0.025 0.4 1.0"/>
       </geometry>
       <material name="blue"/>
     </visual>
     <collision>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.0866"/>
+      <origin rpy="0.0 0.0 0.0" xyz="+0.0125 0.0 0.0"/>
       <geometry>
-        <box size="0.02 0.3 0.1732"/>
+        <box size="0.025 0.4 1.0"/>
       </geometry>
     </collision>
   </link>
-  <joint name="base_link_front_lock_joint" type="revolute">
+  <joint name="base_link_front_lock_joint" type="prismatic">
     <parent link="base_link"/>
     <child link="front_lock"/>
-    <origin rpy="0.0 -0.5236 0.0" xyz="+0.1 0.0 -0.5"/>
-    <axis xyz="0 1 0"/>
-    <limit effort="0.0" lower="-2.618" upper="0.0" velocity="0.0"/>
+    <origin rpy="0.0 0.0 0.0" xyz="+0.1 0.0 -0.15"/>
+    <axis xyz="0 0 1"/>
+    <dynamics damping="0.1" friction="0.1"/>
+    <limit effort="0.0" lower="0.0" upper="0.15" velocity="0.0"/>
+  </joint>
+  <link name="front_lock_support">
+    <visual>
+      <origin rpy="0.0 0.0 0.0" xyz="+0.075 0.0 -0.01"/>
+      <geometry>
+        <box size="0.15 0.4 0.02"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <origin rpy="0.0 0.0 0.0" xyz="+0.075 0.0 -0.01"/>
+      <geometry>
+        <box size="0.15 0.4 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="front_lock_support_joint" type="revolute">
+    <parent link="front_lock"/>
+    <child link="front_lock_support"/>
+    <origin rpy="0.0 0.0 0.0" xyz="+0.025 0.0 -0.48"/>
+    <axis xyz="0 +1 0"/>
+    <dynamics damping="0.1" friction="0.1"/>
+    <limit effort="0.0" lower="-1.57" upper="0.0" velocity="0.0"/>
   </joint>
   <link name="back_lock">
     <visual>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.0866"/>
+      <origin rpy="0.0 0.0 0.0" xyz="-0.0125 0.0 0.0"/>
       <geometry>
-        <box size="0.02 0.3 0.1732"/>
+        <box size="0.025 0.4 1.0"/>
       </geometry>
       <material name="blue"/>
     </visual>
     <collision>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.0866"/>
+      <origin rpy="0.0 0.0 0.0" xyz="-0.0125 0.0 0.0"/>
       <geometry>
-        <box size="0.02 0.3 0.1732"/>
+        <box size="0.025 0.4 1.0"/>
       </geometry>
     </collision>
   </link>
-  <joint name="base_link_back_lock_joint" type="revolute">
+  <joint name="base_link_back_lock_joint" type="prismatic">
     <parent link="base_link"/>
     <child link="back_lock"/>
-    <origin rpy="0.0 0.5236 0.0" xyz="-0.1 0.0 -0.5"/>
-    <axis xyz="0 1 0"/>
-    <limit effort="0.0" lower="0.0" upper="2.618" velocity="0.0"/>
+    <origin rpy="0.0 0.0 0.0" xyz="-0.1 0.0 -0.15"/>
+    <axis xyz="0 0 1"/>
+    <dynamics damping="0.1" friction="0.1"/>
+    <limit effort="0.0" lower="0.0" upper="0.15" velocity="0.0"/>
+  </joint>
+  <link name="back_lock_support">
+    <visual>
+      <origin rpy="0.0 0.0 0.0" xyz="-0.075 0.0 -0.01"/>
+      <geometry>
+        <box size="0.15 0.4 0.02"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <origin rpy="0.0 0.0 0.0" xyz="-0.075 0.0 -0.01"/>
+      <geometry>
+        <box size="0.15 0.4 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="back_lock_support_joint" type="revolute">
+    <parent link="back_lock"/>
+    <child link="back_lock_support"/>
+    <origin rpy="0.0 0.0 0.0" xyz="-0.025 0.0 -0.48"/>
+    <axis xyz="0 -1 0"/>
+    <dynamics damping="0.1" friction="0.1"/>
+    <limit effort="0.0" lower="-1.57" upper="0.0" velocity="0.0"/>
   </joint>
   <link name="left_arm_shoulder">
     <visual>

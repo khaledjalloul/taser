@@ -67,6 +67,7 @@ class WandbLogger:
                 "train/total_loss": train_info["loss"],
                 "train/kl_divergence": train_info["kl"],
                 "train/common_step_counter": train_info["common_step_counter"],
+                "train/learning_rate": train_info["learning_rate"],
             },
             step=update,
         )

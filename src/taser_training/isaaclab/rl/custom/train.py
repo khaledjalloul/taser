@@ -8,7 +8,7 @@ parser.add_argument(
 parser.add_argument(
     "--num_iters",
     type=int,
-    default=400,
+    default=500,
     help="Number of iterations (rollout + training).",
 )
 parser.add_argument("--resume", type=str, help="Path to checkpoint to resume from.")
@@ -52,6 +52,7 @@ def train(env: gym.Env):
         num_rollout_steps=2048,
         num_epochs=10,
         learning_rate=3e-4,
+        lr_decay_factor=1.0,  # Disabled, tried 0.995 but led to worse performance
         gamma=0.99,
         gae_lambda=0.95,
         clip_eps=0.2,

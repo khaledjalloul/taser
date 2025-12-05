@@ -39,7 +39,7 @@ def main():
 
     for joint in robot_model.joints.values():
         joint.drive.set_target_type(_urdf.UrdfJointTargetType.JOINT_DRIVE_VELOCITY)
-        joint.drive.set_strength(50)
+        joint.drive.set_strength(DRIVE_DAMPING)
 
     # Import the robot onto the current stage and retrieve its prim path
     result, _ = omni.kit.commands.execute(
@@ -56,7 +56,7 @@ def main():
     if not simulation_app.config["headless"]:
         scene: Scene = world.scene
         scene.add_default_ground_plane()
-        add_reference_to_stage(usd_path=str(USD_PATH), prim_path="/World/Taser")
+        add_reference_to_stage(usd_path=str(USD_PATH), prim_path="/World/taser")
         while simulation_app.is_running():
             world.step(render=True)
 

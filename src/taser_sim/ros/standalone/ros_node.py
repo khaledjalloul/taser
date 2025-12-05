@@ -154,9 +154,9 @@ class TaserStandaloneRosNode(Node):
     @property
     def joint_positions(self) -> TaserJointState:
         pos = self._joint_state.position if self._joint_state.position else [0.0] * 8
-        return TaserJointState.from_ros(pos)
+        return TaserJointState.construct_from("ros", pos)
 
     @property
     def joint_velocities(self) -> TaserJointState:
         vel = self._joint_state.velocity if self._joint_state.velocity else [0.0] * 8
-        return TaserJointState.from_ros(vel)
+        return TaserJointState.construct_from("ros", vel)

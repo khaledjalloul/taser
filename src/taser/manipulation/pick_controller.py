@@ -39,7 +39,7 @@ class PickController:
         target_distance = np.linalg.norm(
             [target_position_b.x, target_position_b.y, target_position_b.z]
         )
-        if target_distance > 0.6 or target_position_b.x < 0:
+        if target_distance > 0.66 or target_position_b.x < 0:
             if self._picking:
                 self.reset()
             return

@@ -14,7 +14,7 @@ class ManipulationKinematics:
 
     def get_eef_position(self, q: TaserJointState) -> Pose:
         T = self._arm.fkine(
-            q=q.ordered_rtb,
+            q=q.to("rtb"),
             start="base_link",
             end=f"{self._arm_side}_arm_eef",
         )
@@ -30,7 +30,7 @@ class ManipulationKinematics:
 
     def get_eef_velocity(self, q: TaserJointState, dq: TaserJointState) -> np.ndarray:
         J = self._arm.jacob0(
-            q=q.ordered_rtb,
+            q=q.to("rtb"),
             start="base_link",
             end=f"{self._arm_side}_arm_eef",
         )
@@ -57,7 +57,7 @@ class ManipulationKinematics:
         self, v: np.ndarray, weights: np.ndarray, q: TaserJointState
     ) -> np.ndarray:
         J = self._arm.jacob0(
-            q=q.ordered_rtb,
+            q=q.to("rtb"),
             start="base_link",
             end=f"{self._arm_side}_arm_eef",
         )

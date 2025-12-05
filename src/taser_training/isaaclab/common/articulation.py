@@ -15,6 +15,10 @@ INIT_STATE = ArticulationCfg.InitialStateCfg(
         "right_arm_2_right_arm_3_joint": 0.0,
         "base_link_left_wheel_joint": 0.0,
         "base_link_right_wheel_joint": 0.0,
+        "base_link_front_lock_joint": 0.0,
+        "front_lock_support_joint": 0.0,
+        "base_link_back_lock_joint": 0.0,
+        "back_lock_support_joint": 0.0,
     },
     pos=(0.0, 0.0, 0.65),
 )
@@ -42,6 +46,16 @@ ACTUATORS = {
         joint_names_expr=[
             "base_link_left_wheel_joint",
             "base_link_right_wheel_joint",
+        ],
+        stiffness=None,
+        damping=None,
+    ),
+    "lock_joints": ImplicitActuatorCfg(
+        joint_names_expr=[
+            "base_link_front_lock_joint",
+            "front_lock_support_joint",
+            "base_link_back_lock_joint",
+            "back_lock_support_joint",
         ],
         stiffness=None,
         damping=None,
