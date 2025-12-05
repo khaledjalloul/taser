@@ -1,13 +1,14 @@
+from typing import Literal
+
 import carb
 import numpy as np
 import torch
 from curobo.geom.types import WorldConfig
 from curobo.util.usd_helper import UsdHelper
-from isaacsim.core.api.objects import VisualCuboid
 from pxr import Usd, UsdGeom
 from trimesh import Trimesh
 
-X_RANGE = (-0.5, 0.5)
+X_RANGE = (0.2, 0.5)
 Y_RANGE_LEFT = (0.0, 0.25)
 Y_RANGE_RIGHT = (-0.25, 0.0)
 Z_RANGE = (-0.4, 0.4)
@@ -108,98 +109,30 @@ def get_world_cfg_from_obstacles(
     ).get_collision_check_world()
 
 
-def sample_target_poses(
-    num_targets: int,
+def sample_target(
     root_pos_w: torch.Tensor,
+    side: Literal["left", "right"],
     terrain_mesh: Trimesh = None,
-    start_eef_pos_b: torch.Tensor = None,
-) -> dict[torch.Tensor, torch.Tensor]:
-    """
-    Sample a batch of random valid target poses in a single environment.
+) -> dict[str, torch.Tensor]:
+    y_range = Y_RANGE_LEFT if side == "left" else Y_RANGE_RIGHT
+    position = None
 
-    Args:
-        num_targets (int): Number of targets to sample.
-        root_pos_w (torch.Tensor): Root position of the current environment in world frame (3,).
-        desired_pitch (float): Desired pitch angle for the target orientations.
-        terrain_mesh (Trimesh, optional): Terrain mesh for collision checking. Defaults to None.
-        is_mpc (bool, optional): Whether the sampling is for MPC (limits theta range). Defaults to False.
-        start_eef_pos_b (torch.Tensor, optional): Starting end-effector position to avoid sampling too close (3,). Defaults to None.
-
-    Returns:
-        torch.Tensor: Sampled target poses of shape (num_targets, 7)
-        torch.Tensor: Corresponding orientations without yaw of shape (num_targets, 4)
-    """
-
-    positions = torch.zeros((2, 0, 3), dtype=torch.float32)
-
-    while positions.shape[1] < num_targets:
-        num_new_targets = num_targets - positions.shape[1]
-
-        x_left = torch.rand(num_new_targets) * (X_RANGE[1] - X_RANGE[0]) + X_RANGE[0]
-        y_left = (
-            torch.rand(num_new_targets) * (Y_RANGE_LEFT[1] - Y_RANGE_LEFT[0])
-            + Y_RANGE_LEFT[0]
-        )
-        z_left = torch.rand(num_new_targets) * (Z_RANGE[1] - Z_RANGE[0]) + Z_RANGE[0]
-        new_samples_left = torch.stack((x_left, y_left, z_left), dim=1)
-
-        x_right = torch.rand(num_new_targets) * (X_RANGE[1] - X_RANGE[0]) + X_RANGE[0]
-        y_right = (
-            torch.rand(num_new_targets) * (Y_RANGE_RIGHT[1] - Y_RANGE_RIGHT[0])
-            + Y_RANGE_RIGHT[0]
-        )
-        z_right = torch.rand(num_new_targets) * (Z_RANGE[1] - Z_RANGE[0]) + Z_RANGE[0]
-        new_samples_right = torch.stack((x_right, y_right, z_right), dim=1)
-
-        new_samples = torch.stack((new_samples_left, new_samples_right), dim=0)
+    while position is None:
+        x_sign = 1.0 if torch.rand(1) > 0.5 else -1.0
+        x = x_sign * (torch.rand(1) * (X_RANGE[1] - X_RANGE[0]) + X_RANGE[0])
+        y = torch.rand(1) * (y_range[1] - y_range[0]) + y_range[0]
+        z = torch.rand(1) * (Z_RANGE[1] - Z_RANGE[0]) + Z_RANGE[0]
+        new_sample = torch.cat((x, y, z), dim=0)
 
         # Filter out samples that are in collision with the terrain
         if terrain_mesh is not None:
             # Check distance between new samples and the mesh, negative sign distance means a point is outside the mesh
-            query_samples = (
-                new_samples.clone() + root_pos_w.cpu()
-            )  # Translate to world coordinates
-            distances = terrain_mesh.nearest.signed_distance(query_samples)
-            new_samples = new_samples[:, distances <= -0.5]
+            query_sample = new_sample.clone() + root_pos_w.cpu()
+            distance = terrain_mesh.nearest.signed_distance(query_sample)
+            if distance <= -0.5:
+                position = new_sample.clone()
+        else:
+            position = new_sample.clone()
 
-            # if start_eef_pos_b is not None:
-            #     # Further filter samples that are too close to the start eef position
-            #     dists_to_start = torch.linalg.vector_norm(
-            #         new_samples - start_eef_pos_b.cpu().unsqueeze(0), dim=1
-            #     )
-            #     new_samples = new_samples[dists_to_start >= 5.0]
-
-        positions = torch.cat((positions, new_samples), dim=1)
-
-    orientations_quat = torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.float32)[
-        None, None, :
-    ].repeat(2, num_targets, 1)
-
-    return torch.cat((positions, orientations_quat), dim=2).to(root_pos_w.device)
-
-
-def visualize_targets(
-    positions: torch.Tensor, quaternions: torch.Tensor, prim_path: str
-):
-    """
-    Spawn visualization cubes at the target positions in the simulation.
-
-    Args:
-        positions (torch.Tensor): Positions of the targets (N, 3).
-        quaternions (torch.Tensor): Orientations of the targets as quaternions (N, 4).
-        prim_path (str): The prim path where the cubes will be spawned.
-    """
-    VisualCuboid(
-        prim_path=f"{prim_path}_left",
-        position=positions[0].cpu().numpy(),
-        orientation=quaternions[0].cpu().numpy(),
-        scale=np.array([0.05, 0.05, 0.05]),
-        color=np.array([0.63, 0.0, 0.8]),
-    )
-    VisualCuboid(
-        prim_path=f"{prim_path}_right",
-        position=positions[1].cpu().numpy(),
-        orientation=quaternions[1].cpu().numpy(),
-        scale=np.array([0.05, 0.05, 0.05]),
-        color=np.array([0.0, 0.63, 0.8]),
-    )
+    quaternion = torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.float32)
+    return torch.cat((position, quaternion), dim=0).to(root_pos_w.device)
