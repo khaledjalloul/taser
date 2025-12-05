@@ -17,8 +17,8 @@ from isaaclab.managers import (
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 
-from taser_training.isaaclab.common.articulation import TASER_CONFIG_FIXED_BASE_USD
-from taser_training.isaaclab.common.base_env_cfg import (
+from taser_training.RL.isaaclab.articulation import TASER_CONFIG_FIXED_BASE_USD
+from taser_training.RL.isaaclab.base_env_cfg import (
     TaserBaseEnvCfg,
     TaserBaseSceneCfg,
 )

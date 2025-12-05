@@ -14,8 +14,8 @@ from isaaclab.managers import (
 from isaaclab.utils import configclass
 
 from taser.common.datatypes import TaserJointState
-from taser_training.isaaclab.common.articulation import TASER_CONFIG_USD
-from taser_training.isaaclab.common.base_env_cfg import (
+from taser_training.RL.isaaclab.articulation import TASER_CONFIG_USD
+from taser_training.RL.isaaclab.base_env_cfg import (
     TaserBaseEnvCfg,
     TaserBaseSceneCfg,
 )

@@ -18,11 +18,11 @@ from isaacsim.core.prims import Articulation
 from pxr import UsdGeom
 from trimesh import Trimesh
 
-from taser_training.curobo.data_collection.config.curobo_planner_cfg import (
+from taser_training.BC.curobo.config.curobo_planner_cfg import (
     CuroboMotionGenCfg,
     CuroboMotionGenPlanConfig,
 )
-from taser_training.curobo.data_collection.config.curobo_planner_cfg import (
+from taser_training.BC.curobo.config.curobo_planner_cfg import (
     __file__ as CUROBO_CONFIG_PATH,
 )
 
@@ -171,8 +171,13 @@ class CuroboPlanner:
             return None
 
         # Get the successful paths of the sampled targets
-        trajectories = result.get_paths()
-        successes = result.success
+        if self.num_envs > 1:
+            trajectories = result.get_paths()
+            successes = result.success
+        else:
+            trajectories = [result.get_interpolated_plan()]
+            successes = [result.success]
+
         max_trajectory_length = max(
             [traj.position.shape[0] for traj in trajectories if traj is not None]
         )

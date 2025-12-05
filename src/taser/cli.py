@@ -14,12 +14,6 @@ def cli():
     pass
 
 
-@cli.command()
-def install():
-    """Install Taser dependencies and project."""
-    subprocess.run(["bash", "/workspace/taser/install.bash"])
-
-
 @cli.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
     "-t", "--type", type=click.Choice(["isaacsim", "ros", "rviz"]), default="isaacsim"
@@ -44,39 +38,50 @@ def sim(type: str):
 
 
 @cli.group()
-def isaaclab():
+def training():
+    """Commands for training Taser models."""
+    pass
+
+
+@training.group(name="rl", context_settings=CONTEXT_SETTINGS)
+def reinforcement_learning():
     """Commands for Isaac Lab RL training/playback."""
     pass
 
 
-@isaaclab.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--rsl", is_flag=True, help="Use RSL RL training/playback scripts")
-def train(rsl):
+@reinforcement_learning.command(context_settings=CONTEXT_SETTINGS)
+def train():
     """Train an RL task in Isaac Lab."""
-    sys.argv = sys.argv[2:]
-    if rsl:
-        from taser_training.isaaclab.rl.rsl_rl.train import main as train_rsl
+    sys.argv = sys.argv[3:]
+    from taser_training.RL.train import main as train_rl
 
-        train_rsl()
-    else:
-        from taser_training.isaaclab.rl.custom.train import main as train_custom
-
-        train_custom()
+    train_rl()
 
 
-@isaaclab.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--rsl", is_flag=True, help="Use RSL RL training/playback scripts")
-def play(rsl):
+@reinforcement_learning.command(context_settings=CONTEXT_SETTINGS)
+def play():
     """Play back an RL task in Isaac Lab."""
-    sys.argv = sys.argv[2:]
-    if rsl:
-        from taser_training.isaaclab.rl.rsl_rl.play import main as play_rsl
+    sys.argv = sys.argv[3:]
+    from taser_training.RL.play import main as play_rl
 
-        play_rsl()
-    else:
-        from taser_training.isaaclab.rl.custom.play import main as play_custom
+    play_rl()
 
-        play_custom()
+
+@training.group(name="bc", context_settings=CONTEXT_SETTINGS)
+def behavior_cloning():
+    """Commands for behavior cloning training/playback."""
+    pass
+
+
+@behavior_cloning.command(context_settings=CONTEXT_SETTINGS)
+def collect_curobo_episodes():
+    """Collect Curobo motion plans for behavior cloning."""
+    sys.argv = sys.argv[3:]
+    from taser_training.BC.curobo.collect_episodes import (
+        main as collect_episodes,
+    )
+
+    collect_episodes()
 
 
 @cli.group()
@@ -86,7 +91,7 @@ def urdf():
 
 
 @urdf.command()
-def generate():
+def generate_from_xacro():
     """Generate the URDF file from the Xacro files."""
     subprocess.run(
         [

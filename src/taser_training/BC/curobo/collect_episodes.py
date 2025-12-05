@@ -37,7 +37,7 @@ from tqdm import tqdm
 
 from taser.common.datatypes import TaserJointState
 from taser.common.model import USD_PATH
-from taser_training.curobo.data_collection.curobo_planner import (
+from taser_training.BC.curobo.curobo_planner import (
     CuroboEpisode,
     CuroboPlanner,
 )

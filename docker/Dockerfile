@@ -149,6 +149,9 @@ RUN echo "deb [trusted=yes] https://khaledjalloul.github.io/debian-repository un
 RUN apt update
 RUN apt install -y khaled-cli
 
+# Force reinstall click to fix intellisense
+RUN /isaac-sim/python.sh -m pip install --force-reinstall click
+
 ###############################################
 # Finalization
 
