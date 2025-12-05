@@ -8,7 +8,7 @@ parser.add_argument(
 parser.add_argument(
     "--num_iters",
     type=int,
-    default=500,
+    default=600,
     help="Number of iterations (rollout + training).",
 )
 parser.add_argument("--resume", type=str, help="Path to checkpoint to resume from.")
