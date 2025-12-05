@@ -1,0 +1,39 @@
+robot_cfg:
+  kinematics:
+    # Asset paths
+    usd_path: "/workspace/taser/src/taser/common/model/usd/taser.usd"
+    # Path to robot in Isaac Sim world
+    usd_robot_root: "/World/envs/env_0/Robot"
+    # isaac_usd_path: "/Isaac/Robots/m445/m445.usd"
+    urdf_path: "/workspace/taser/src/taser/common/model/urdf/taser.urdf"
+    # Path to meshes
+    asset_root_path: "/workspace/taser/src/taser/common/model/urdf"
+    # Path to this config file
+    external_robot_configs_path: /workspace/taser/src/taser_training/curobo/data_collection/config
+
+    # Robot configuration
+    base_link: "base_link"
+    ee_link: "left_arm_eef"
+    link_names: ["left_arm_eef", "right_arm_eef"]
+    cspace:
+      joint_names:
+        - "base_link_left_arm_shoulder_joint"
+        - "left_arm_1_left_arm_2_joint"
+        - "left_arm_2_left_arm_3_joint"
+        - "base_link_right_arm_shoulder_joint"
+        - "right_arm_1_right_arm_2_joint"
+        - "right_arm_2_right_arm_3_joint"
+      retract_config: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      null_space_weight: [1, 1, 1, 1, 1, 1]
+      cspace_distance_weight: [1, 1, 1, 1, 1, 1]
+      max_jerk: 500.0
+      max_acceleration: 1.0
+
+    # Collision handling
+    collision_link_names: []
+    # collision_spheres: "collision_spheres.yaml"
+    self_collision_ignore: {}
+    self_collision_buffer: {}
+    collision_sphere_buffer: 0.005
+    extra_collision_spheres: {}
+    use_global_cumul: True

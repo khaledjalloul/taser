@@ -37,6 +37,7 @@ RUN apt install -y \
     # Essentials
     nano \
     bash-completion \
+    wget \
     # Python
     python3-pip \
     # C++
@@ -73,6 +74,28 @@ ENV TERM=xterm
 RUN git clone https://github.com/isaac-sim/IsaacLab.git /workspace/isaaclab
 RUN ln -s /workspace/isaacsim /workspace/isaaclab/_isaac_sim
 RUN /workspace/isaaclab/isaaclab.sh --install
+
+###############################################
+# cuRobo
+
+USER root
+
+# Install CUDA Toolkit
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb && \
+    dpkg -i cuda-keyring_1.0-1_all.deb && \
+    rm -f cuda-keyring_1.0-1_all.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends cuda-toolkit-12.8 && \
+    rm -rf /var/lib/apt/lists/*
+
+USER ${USERNAME:-root}
+
+# Install cuRobo
+ENV TORCH_CUDA_ARCH_LIST="7.0+PTX"
+RUN git clone https://github.com/NVlabs/curobo.git /workspace/curobo
+RUN --mount=type=cache,target=/root/.cache/pip \
+    cd /workspace/curobo && \
+    /isaac-sim/python.sh -m pip install -e .[isaacsim] --no-build-isolation
 
 ###############################################
 # ROS 2 jazzy

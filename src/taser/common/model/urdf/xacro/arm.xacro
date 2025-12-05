@@ -26,12 +26,13 @@
             </collision>
         </link>
 
-        <joint name="base_link_${side}_arm_shoulder_joint" type="continuous">
+        <joint name="base_link_${side}_arm_shoulder_joint" type="revolute">
             <parent link="base_link" />
             <child link="${side}_arm_shoulder" />
             <origin rpy="0.0 0.0 0.0" xyz="0.0 ${offset_sign}0.2625 0.4" />
             <axis xyz="0 1 0" />
             <dynamics damping="0.1" friction="0.1" />
+            <limit effort="0.0" lower="-3.1416" upper="3.1416" velocity="1000.0" />
         </joint>
 
         <link name="${side}_arm_1">
@@ -54,7 +55,6 @@
             <parent link="${side}_arm_shoulder" />
             <child link="${side}_arm_1" />
             <origin rpy="0.0 0.0 0.0" xyz="0.0 ${offset_sign}0.0625 0.1" />
-            <axis xyz="0 1 0" />
         </joint>
 
         <link name="${side}_arm_2">
@@ -73,12 +73,13 @@
             </collision>
         </link>
 
-        <joint name="${side}_arm_1_${side}_arm_2_joint" type="continuous">
+        <joint name="${side}_arm_1_${side}_arm_2_joint" type="revolute">
             <parent link="${side}_arm_1" />
             <child link="${side}_arm_2" />
             <origin xyz="0.0 0 -0.3" rpy="0.0 0.0 0.0" />
             <axis xyz="0 0 1" />
             <dynamics damping="0.1" friction="0.1" />
+            <limit effort="0.0" lower="-3.1416" upper="3.1416" velocity="1000.0" />
         </joint>
 
         <link name="${side}_arm_3">
@@ -97,12 +98,13 @@
             </collision>
         </link>
 
-        <joint name="${side}_arm_2_${side}_arm_3_joint" type="continuous">
+        <joint name="${side}_arm_2_${side}_arm_3_joint" type="revolute">
             <parent link="${side}_arm_2" />
             <child link="${side}_arm_3" />
             <origin xyz="0.0 0 -0.2" rpy="0.0 0.0 0.0" />
             <axis xyz="0 1 0" />
             <dynamics damping="0.1" friction="0.1" />
+            <limit effort="0.0" lower="-3.1416" upper="3.1416" velocity="1000.0" />
         </joint>
 
         <link name="${side}_arm_eef">
