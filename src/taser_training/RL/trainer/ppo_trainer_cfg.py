@@ -39,13 +39,10 @@ class PPOTrainerCfg:
     """Target KL divergence threshold for early stopping"""
 
     eval_freq: int
-    """Frequency of evaluation"""
+    """Frequency of evaluation and model saving (in iterations)"""
 
     num_eval_steps: int
     """Number of timesteps to evaluate on"""
-
-    save_freq: int
-    """Frequency of saving model"""
 
     device: str
     """Device to run the PPO trainer on"""

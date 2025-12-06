@@ -36,14 +36,15 @@ from isaaclab_tasks.utils import parse_env_cfg
 from tqdm import tqdm
 
 import taser_training.RL.isaaclab.tasks  # noqa: F401 # register tasks
-from taser_training.RL.trainer import PPOTrainer, PPOTrainerCfg, WandbLogger
+from taser_training.RL.trainer.ppo_trainer import PPOTrainer, PPOTrainerCfg
+from taser_training.wandb_logger import WandbLogger
 
 
 def train(env: gym.Env):
     # Set up output path
     run_name = f"PPO_{args.task}_{datetime.now().strftime('%m%d_%H%M%S')}"
 
-    output_path = Path.cwd() / "outputs" / run_name
+    output_path = Path.cwd() / "outputs" / "RL" / run_name
     progress_path = output_path / "progress"
     progress_path.mkdir(parents=True, exist_ok=True)
 
@@ -61,7 +62,6 @@ def train(env: gym.Env):
         target_kl=0.015,
         eval_freq=5,
         num_eval_steps=256,
-        save_freq=5,
         device=env.unwrapped.device,
     )
 
@@ -89,7 +89,18 @@ def train(env: gym.Env):
         train_info = trainer.train_step()
 
         # Log training metrics
-        logger.log_training_step(train_info, update)
+        logger.log(
+            {
+                "train/policy_loss": train_info["policy_loss"],
+                "train/value_loss": train_info["value_loss"],
+                "train/entropy": train_info["entropy"],
+                "train/total_loss": train_info["loss"],
+                "train/kl_divergence": train_info["kl"],
+                "train/common_step_counter": train_info["common_step_counter"],
+                "train/learning_rate": trainer.optimizer.param_groups[0]["lr"],
+            },
+            step=update,
+        )
 
         # Update tqdm with wandb stats (e.g., reward, loss)
         tqdm.write(
@@ -135,16 +146,20 @@ def train(env: gym.Env):
                 trainer.policy.save(best_model_path)
 
             # Log evaluation metrics
-            logger.log_evaluation(normalized_reward.item(), best_reward, update)
+            logger.log(
+                {
+                    "eval/mean_reward": normalized_reward.item(),
+                    "eval/best_reward": best_reward,
+                },
+                step=update,
+            )
 
             # Update tqdm with evaluation stats
             tqdm.write(
                 f"Eval {update}: eval_reward={normalized_reward.item():.4f}, best_reward={best_reward:.4f}"
             )
 
-        # Regular checkpointing
-        if update % trainer_cfg.save_freq == 0 and update != 0:
-            model_path = progress_path / f"model_{update + 1}.pth"
+            model_path = progress_path / f"model_{update}.pth"
             trainer.policy.save(model_path)
 
     # Save final model

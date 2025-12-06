@@ -22,9 +22,9 @@ def sim(type: str):
     """Launch the Taser simulation environment."""
     if type == "isaacsim":
         sys.argv = sys.argv[1:]
-        from taser_sim.sim import main as start_sim
+        from taser_sim.sim import main
 
-        start_sim()
+        main()
     elif type in ["ros", "rviz"]:
         launch_file = "sim" if type == "ros" else "rviz"
         subprocess.run(
@@ -49,22 +49,22 @@ def reinforcement_learning():
     pass
 
 
-@reinforcement_learning.command(context_settings=CONTEXT_SETTINGS)
-def train():
+@reinforcement_learning.command(name="train", context_settings=CONTEXT_SETTINGS)
+def train_rl():
     """Train an RL task in Isaac Lab."""
     sys.argv = sys.argv[3:]
-    from taser_training.RL.train import main as train_rl
+    from taser_training.RL.train import main
 
-    train_rl()
+    main()
 
 
 @reinforcement_learning.command(context_settings=CONTEXT_SETTINGS)
 def play():
     """Play back an RL task in Isaac Lab."""
     sys.argv = sys.argv[3:]
-    from taser_training.RL.play import main as play_rl
+    from taser_training.RL.play import main
 
-    play_rl()
+    main()
 
 
 @training.group(name="bc", context_settings=CONTEXT_SETTINGS)
@@ -77,11 +77,18 @@ def behavior_cloning():
 def collect_curobo_episodes():
     """Collect Curobo motion plans for behavior cloning."""
     sys.argv = sys.argv[3:]
-    from taser_training.BC.curobo.collect_episodes import (
-        main as collect_episodes,
-    )
+    from taser_training.BC.curobo.collect_episodes import main
 
-    collect_episodes()
+    main()
+
+
+@behavior_cloning.command(name="train", context_settings=CONTEXT_SETTINGS)
+def train_bc():
+    """Train the GPT model with behavior cloning."""
+    sys.argv = sys.argv[3:]
+    from taser_training.BC.train import main
+
+    main()
 
 
 @cli.group()
@@ -93,11 +100,14 @@ def urdf():
 @urdf.command()
 def generate_from_xacro():
     """Generate the URDF file from the Xacro files."""
+    model_path = "/workspace/taser/src/taser/common/model/urdf"
+    xacro_path = f"{model_path}/xacro/robot.urdf.xacro"
+    urdf_path = f"{model_path}/taser.urdf"
+
     subprocess.run(
         [
             "unset PYTHONPATH && source /opt/ros/jazzy/setup.bash && "
-            "xacro /workspace/taser/src/taser/common/model/urdf/xacro/robot.urdf.xacro "
-            "-o /workspace/taser/src/taser/common/model/urdf/taser.urdf"
+            f"xacro {xacro_path} -o {urdf_path}"
         ],
         shell=True,
         executable="/bin/bash",
@@ -108,9 +118,9 @@ def generate_from_xacro():
 def convert_to_usd():
     """Convert the URDF file to USD format."""
     sys.argv = sys.argv[2:]
-    from taser_sim.utils.urdf_to_usd import main as convert
+    from taser_sim.utils.urdf_to_usd import main
 
-    convert()
+    main()
 
 
 if __name__ == "__main__":

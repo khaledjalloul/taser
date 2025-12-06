@@ -54,36 +54,12 @@ class WandbLogger:
         self.episode_lengths = []
         self.base_path = base_path
 
-    def log_training_step(self, train_info: Dict[str, float], update: int):
+    def log(self, metrics: Dict[str, Any], step: Optional[int] = None):
+        """Log metrics to wandb."""
         if not self.enabled:
             return
 
-        """Log training metrics for a single update step."""
-        wandb.log(
-            {
-                "train/policy_loss": train_info["policy_loss"],
-                "train/value_loss": train_info["value_loss"],
-                "train/entropy": train_info["entropy"],
-                "train/total_loss": train_info["loss"],
-                "train/kl_divergence": train_info["kl"],
-                "train/common_step_counter": train_info["common_step_counter"],
-                "train/learning_rate": train_info["learning_rate"],
-            },
-            step=update,
-        )
-
-    def log_evaluation(self, eval_reward: float, best_reward: float, update: int):
-        if not self.enabled:
-            return
-
-        """Log evaluation metrics."""
-        wandb.log(
-            {
-                "eval/mean_reward": eval_reward,
-                "eval/best_reward": best_reward,
-            },
-            step=update,
-        )
+        wandb.log(metrics, step=step)
 
     def save_model(self, model_path: Path):
         """Save model checkpoint to wandb."""

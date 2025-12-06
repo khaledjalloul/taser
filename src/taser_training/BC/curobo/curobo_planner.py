@@ -1,21 +1,19 @@
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Literal
 
 import carb
 import isaacsim.core.utils.prims as prim_utils
 import numpy as np
-import torch
 from curobo.geom.types import WorldConfig
 from curobo.types.math import Pose
 from curobo.types.state import JointState
 from curobo.util.logger import log_info, log_warn, setup_logger
 from curobo.util.usd_helper import UsdHelper
 from curobo.util_file import load_yaml
-from curobo.wrap.reacher.motion_gen import MotionGen, MotionGenConfig
+from curobo.wrap.reacher.motion_gen import MotionGen, MotionGenConfig, MotionGenResult
 from isaacsim.core.api.scenes import Scene
 from isaacsim.core.prims import Articulation
-from pxr import UsdGeom
+from pxr import UsdGeom  # type: ignore
 from trimesh import Trimesh
 
 from taser_training.BC.curobo.config.curobo_planner_cfg import (
@@ -36,11 +34,12 @@ Z_RANGE = (-0.4, 0.4)
 
 @dataclass
 class CuroboEpisode:
-    target_position: np.ndarray  # (num_envs, 3)
-    start_cfg: np.ndarray  # (num_envs, num_joints)
-    joint_positions: np.ndarray  # (num_envs, num_time_steps, num_joints)
-    joint_velocities: np.ndarray  # (num_envs, num_time_steps, num_joints)
-    ee_positions: np.ndarray  # (num_envs, num_time_steps, 3)
+    start_cfg: np.ndarray  # (num_envs, 2, num_joints)
+    joint_positions: np.ndarray  # (num_envs, num_time_steps, 2, num_joints)
+    joint_velocities: np.ndarray  # (num_envs, num_time_steps, 2, num_joints)
+    eef_positions: np.ndarray  # (num_envs, num_time_steps, 2, 3)
+    target_position: np.ndarray  # (num_envs, 2, 3)
+    mask: np.ndarray  # (num_envs, num_time_steps)
 
 
 class CuroboPlanner:
@@ -49,25 +48,14 @@ class CuroboPlanner:
         scene: Scene,
         robot: Articulation,
         interpolation_dt: float,
-        env_origins: torch.Tensor,
+        env_origins: np.ndarray,
         is_static_terrain: bool = True,
-        device: torch.device = torch.device("cpu"),
     ):
-        """
-        cuRobo motion planner class.
-
-        Args:
-            env (MoleSimEnv): The simulation environment.
-            interpolation_dt (float): The trajectory time step.
-            env_origins (torch.Tensor): The (x, y, z) positions of the environments in the world.
-        """
-
         self.stage = scene.stage
         self.robot = robot
         self.env_origins = env_origins
         self.num_envs = env_origins.shape[0]
         self.is_static_terrain = is_static_terrain
-        self.device = device
 
         # Load curobo robot configuration file
         robot_cfg_path = str(Path(CUROBO_CONFIG_PATH).parent / "robot_cfg.yaml")
@@ -101,131 +89,152 @@ class CuroboPlanner:
             )
         )
 
-    def plan(self, side: Literal["left", "right"]) -> list[CuroboEpisode]:
-        """
-        Plan a batch of cuRobo trajectories for the specified environment index.
+    def plan(self) -> CuroboEpisode:
+        start_cfg: dict[str, np.ndarray] = {"left": None, "right": None}
+        cu_js: dict[str, JointState] = {"left": None, "right": None}
+        targets = self._sample_targets()
+        goal_poses: dict[str, Pose] = {"left": None, "right": None}
+        result: dict[str, MotionGenResult] = {"left": None, "right": None}
+        trajectories: dict[str, list[JointState]] = {"left": None, "right": None}
+        successes: dict[str, list[bool]] = {"left": None, "right": None}
 
-        Args:
-            env_idx (int): The index of the environment to plan for.
-            start_cfg (torch.Tensor): The starting joint configuration of the robot. If None, uses a random valid configuration.
-            targets (torch.Tensor): The target poses as a tensor of shape (N, 7). If None, samples random target poses.
-
-        Returns:
-            list[CuroboEpisode]: A list of cuRobo episodes containing the planned trajectories.
-        """
-        if side == "left":
-            motion_gen = self.motion_gen_left
-        else:
-            motion_gen = self.motion_gen_right
-
-        # Get cuRobo world configs with info about obstacles in the scene
         if not self.is_static_terrain:
             world_cfg = self._get_world_cfg_from_obstacles()
-            motion_gen.update_world(world_cfg)
 
-        # Get joint limits to sample a valid random starting state
-        joint_limits = motion_gen.kinematics.get_joint_limits().position
+        for side, motion_gen in zip(
+            ["left", "right"],
+            [self.motion_gen_left, self.motion_gen_right],
+        ):
+            if not self.is_static_terrain:
+                motion_gen.update_world(world_cfg)
 
-        # Sample a valid random starting state
-        is_valid_start_cfg = False
-        while not is_valid_start_cfg:
-            start_cfg = (
-                torch.rand((self.num_envs, joint_limits.shape[1]), device=self.device)
-                * (joint_limits[1] - joint_limits[0])
-                + joint_limits[0]
+            # Get joint limits to sample a valid random starting state
+            joint_limits = (
+                motion_gen.kinematics.get_joint_limits().position.cpu().numpy()
             )
-            for cfg in start_cfg:
-                start_js = JointState.from_position(position=cfg)
-                is_valid_start_cfg, _ = motion_gen.check_start_state(start_js)
-                if not is_valid_start_cfg:
-                    break
 
-        cu_js = JointState.from_position(
-            position=start_cfg,
-            joint_names=motion_gen.kinematics.joint_names,
-        ).get_ordered_joint_state(motion_gen.kinematics.joint_names)
+            # Sample a valid random starting state
+            is_valid_start_cfg = False
+            while not is_valid_start_cfg:
+                start_cfg_side = (
+                    np.random.random(
+                        (self.num_envs, joint_limits.shape[1]),
+                    )
+                    * (joint_limits[1] - joint_limits[0])
+                    + joint_limits[0]
+                )
+                for cfg in start_cfg_side:
+                    start_js = JointState.from_position(
+                        position=motion_gen.tensor_args.to_device(cfg)
+                    )
+                    is_valid_start_cfg, _ = motion_gen.check_start_state(start_js)
+                    if not is_valid_start_cfg:
+                        break
+            start_cfg[side] = start_cfg_side
 
-        # Sample new valid random targets
-        targets = self._sample_targets(side=side)
+            cu_js[side] = JointState.from_position(
+                position=motion_gen.tensor_args.to_device(start_cfg_side),
+                joint_names=motion_gen.kinematics.joint_names,
+            ).get_ordered_joint_state(motion_gen.kinematics.joint_names)
 
-        # Create the cuRobo goal poses
-        goal_poses = Pose(
-            position=targets.clone(),
-            quaternion=torch.tensor([[1.0, 0.0, 0.0, 0.0]], device=self.device).expand(
-                targets.shape[0], -1
-            ),
-        )
+            # Create the cuRobo goal poses
+            goal_poses[side] = Pose(
+                position=motion_gen.tensor_args.to_device(targets[side]),
+                quaternion=motion_gen.tensor_args.to_device(
+                    [[1.0, 0.0, 0.0, 0.0]]
+                ).repeat(targets[side].shape[0], 1),
+            )
 
-        # Compute curobo solution
-        result = motion_gen.plan_batch_env(
-            start_state=cu_js,
-            goal_pose=goal_poses,
-            plan_config=self.plan_config,
-        )
+            # Compute curobo solution
+            result[side] = motion_gen.plan_batch_env(
+                start_state=cu_js[side],
+                goal_pose=goal_poses[side],
+                plan_config=self.plan_config,
+            )
 
-        if not result:
-            log_warn(f"Planning {side}: Failed.")
-            return None
-        elif torch.count_nonzero(result.success) == 0:
-            log_warn(f"Planning {side}: Failed. Result status: {result.status}")
-            return None
+            if not result[side]:
+                log_warn(f"Planning {side}: Failed.")
+                return None
+            elif np.count_nonzero(result[side].success.cpu()) == 0:
+                log_warn(
+                    f"Planning {side}: Failed. Result status: {result[side].status}"
+                )
+                return None
 
-        # Get the successful paths of the sampled targets
-        if self.num_envs > 1:
-            trajectories = result.get_paths()
-            successes = result.success
-        else:
-            trajectories = [result.get_interpolated_plan()]
-            successes = [result.success]
+            # Get the successful paths of the sampled targets
+            if self.num_envs > 1:
+                trajectories[side] = result[side].get_paths()
+                successes[side] = result[side].success
+            else:
+                trajectories[side] = [result[side].get_interpolated_plan()]
+                successes[side] = [result[side].success]
 
         max_trajectory_length = max(
-            [traj.position.shape[0] for traj in trajectories if traj is not None]
+            [
+                traj.position.shape[0]
+                for side_trajs in trajectories.values()
+                for traj in side_trajs
+            ]
         )
 
-        plans = CuroboEpisode(
-            target_position=targets.cpu().numpy(),
-            start_cfg=start_cfg.cpu().numpy(),
-            joint_positions=start_cfg.unsqueeze(1)
-            .expand((self.num_envs, max_trajectory_length, joint_limits.shape[1]))
-            .cpu()
-            .numpy(),
-            joint_velocities=np.zeros(
-                (self.num_envs, max_trajectory_length, joint_limits.shape[1])
+        start_cfg_stack = np.stack([c for c in start_cfg.values()], axis=1)
+        episode = CuroboEpisode(
+            start_cfg=start_cfg_stack,
+            joint_positions=start_cfg_stack[:, None, :, :].repeat(
+                max_trajectory_length, axis=1
             ),
-            ee_positions=np.zeros((self.num_envs, max_trajectory_length, 3)),
+            joint_velocities=np.zeros(
+                (self.num_envs, max_trajectory_length, 2, joint_limits.shape[1])
+            ),
+            eef_positions=np.zeros((self.num_envs, max_trajectory_length, 2, 3)),
+            target_position=np.stack([t for t in targets.values()], axis=1),
+            mask=np.zeros((self.num_envs, max_trajectory_length)),
         )
-        for traj_idx, trajectory in enumerate(trajectories):
-            if successes[traj_idx]:
-                new_cmd_plan = motion_gen.get_full_js(trajectory)
-                new_cmd_plan = new_cmd_plan.get_ordered_joint_state(
-                    motion_gen.kinematics.joint_names
-                )
 
-                pos_np = new_cmd_plan.position.cpu().numpy()
-                pos_len = pos_np.shape[0]
-                plans.joint_positions[traj_idx, :pos_len] = pos_np
-                if pos_len < plans.joint_positions.shape[1]:
-                    plans.joint_positions[traj_idx, pos_len:] = np.repeat(
-                        pos_np[-1][None, :],
-                        plans.joint_positions.shape[1] - pos_len,
-                        axis=0,
+        for side_idx, side in enumerate(["left", "right"]):
+            motion_gen = (
+                self.motion_gen_left if side == "left" else self.motion_gen_right
+            )
+            for env_idx, env_traj in enumerate(trajectories[side]):
+                if successes[side][env_idx]:
+                    new_cmd_plan = motion_gen.get_full_js(env_traj)
+                    new_cmd_plan = new_cmd_plan.get_ordered_joint_state(
+                        motion_gen.kinematics.joint_names
                     )
 
-                vel_np = new_cmd_plan.velocity.cpu().numpy()
-                vel_len = vel_np.shape[0]
-                plans.joint_velocities[traj_idx, :vel_len] = vel_np
+                    pos_np = new_cmd_plan.position.cpu().numpy()
+                    pos_len = pos_np.shape[0]
+                    episode.joint_positions[env_idx, :pos_len, side_idx] = pos_np
+                    if pos_len < episode.joint_positions.shape[1]:
+                        episode.joint_positions[env_idx, pos_len:, side_idx] = (
+                            np.repeat(
+                                pos_np[-1][None, :],
+                                episode.joint_positions.shape[1] - pos_len,
+                                axis=0,
+                            )
+                        )
 
-                ee_np = (
-                    motion_gen.compute_kinematics(new_cmd_plan).ee_pos_seq.cpu().numpy()
-                )
-                ee_len = ee_np.shape[0]
-                plans.ee_positions[traj_idx, :ee_len] = ee_np
-                if ee_len < plans.ee_positions.shape[1]:
-                    plans.ee_positions[traj_idx, ee_len:] = np.repeat(
-                        ee_np[-1][None, :], plans.ee_positions.shape[1] - ee_len, axis=0
+                    vel_np = new_cmd_plan.velocity.cpu().numpy()
+                    vel_len = vel_np.shape[0]
+                    episode.joint_velocities[env_idx, :vel_len, side_idx] = vel_np
+
+                    ee_np = (
+                        motion_gen.compute_kinematics(new_cmd_plan)
+                        .ee_pos_seq.cpu()
+                        .numpy()
                     )
+                    ee_len = ee_np.shape[0]
+                    episode.eef_positions[env_idx, :ee_len, side_idx] = ee_np
+                    if ee_len < episode.eef_positions.shape[1]:
+                        episode.eef_positions[env_idx, ee_len:, side_idx] = np.repeat(
+                            ee_np[-1][None, :],
+                            episode.eef_positions.shape[1] - ee_len,
+                            axis=0,
+                        )
 
-        return plans
+                    episode.mask[env_idx, :pos_len] = 1.0
+
+        return episode
 
     def _extract_terrain_mesh_from_stage(self) -> Trimesh:
         mesh_prim = self.stage.GetPrimAtPath("/World/terrain/mesh")
@@ -290,52 +299,29 @@ class CuroboPlanner:
             )
         return world_cfgs
 
-    def _sample_targets(self, side: Literal["left", "right"]) -> torch.Tensor:
+    def _sample_targets(self) -> dict[str, np.ndarray]:
         num_envs = self.env_origins.shape[0]
-        y_range = Y_RANGE_LEFT if side == "left" else Y_RANGE_RIGHT
-        positions = None
+        positions = {"left": None, "right": None}
 
-        while positions is None:
-            x_sign = torch.where(torch.rand(num_envs) > 0.5, 1.0, -1.0)
-            x = x_sign * (torch.rand(num_envs) * (X_RANGE[1] - X_RANGE[0]) + X_RANGE[0])
-            y = torch.rand(num_envs) * (y_range[1] - y_range[0]) + y_range[0]
-            z = torch.rand(num_envs) * (Z_RANGE[1] - Z_RANGE[0]) + Z_RANGE[0]
-            new_samples = torch.stack((x, y, z), dim=1)
+        for side in ["left", "right"]:
+            y_range = Y_RANGE_LEFT if side == "left" else Y_RANGE_RIGHT
+            while positions[side] is None:
+                x_sign = np.where(np.random.rand(num_envs) > 0.5, 1.0, -1.0)
+                x = x_sign * (
+                    np.random.rand(num_envs) * (X_RANGE[1] - X_RANGE[0]) + X_RANGE[0]
+                )
+                y = np.random.rand(num_envs) * (y_range[1] - y_range[0]) + y_range[0]
+                z = np.random.rand(num_envs) * (Z_RANGE[1] - Z_RANGE[0]) + Z_RANGE[0]
+                new_samples = np.stack((x, y, z), axis=1)
 
-            # Filter out samples that are in collision with the terrain
-            if self.terrain_mesh is not None:
-                # Check distance between new samples and the mesh, negative sign distance means a point is outside the mesh
-                query_sample = new_samples.clone() + self.env_origins.cpu()
-                distance = self.terrain_mesh.nearest.signed_distance(query_sample)
-                if torch.all(distance <= -0.5):
-                    positions = new_samples.clone()
-            else:
-                positions = new_samples.clone()
+                # Filter out samples that are in collision with the terrain
+                if self.terrain_mesh is not None:
+                    # Check distance between new samples and the mesh, negative sign distance means a point is outside the mesh
+                    query_sample = new_samples + self.env_origins
+                    distance = self.terrain_mesh.nearest.signed_distance(query_sample)
+                    if np.all(distance <= -0.5):
+                        positions[side] = new_samples
+                else:
+                    positions[side] = new_samples
 
-        return positions.to(self.env_origins.device)
-
-    # def collect_observations(
-    #     env: MoleSimEnv, target_xyz_b: torch.Tensor, target_quat: torch.Tensor
-    # ) -> torch.Tensor:
-    #     """
-    #     Collect observations for the dataset in the format required for the GPT model.
-
-    #     Args:
-    #         env (MoleSimEnv): The simulation environment.
-    #         target_xyz_b (torch.Tensor): Target position in the robot base frame of shape (num_envs, 3).
-    #         target_quat (torch.Tensor): Target orientation as quaternion of shape (num_envs, 4).
-    #     """
-
-    #     ee_pos_b = env.robot_measurements.bucket_pos_w - env.robot_measurements.root_pos_w
-    #     joint_pos = env.robot_measurements.joint_pos
-    #     joint_vel = env.robot_measurements.joint_vel
-    #     return torch.cat(
-    #         [
-    #             target_xyz_b,
-    #             ee_pos_b,
-    #             joint_pos,
-    #             joint_vel,
-    #             target_quat[:, 0].unsqueeze(1),
-    #         ],
-    #         dim=1,
-    #     )
+        return positions

@@ -5,6 +5,7 @@ from isaacsim.core.prims import XFormPrim
 from isaacsim.core.utils.rotations import quat_to_euler_angles, quat_to_rot_matrix
 from isaacsim.core.utils.stage import add_reference_to_stage
 from isaacsim.core.utils.types import ArticulationAction
+from isaacsim.sensors.camera import Camera
 from omni.usd import get_context, get_world_transform_matrix
 from std_msgs.msg import Int32
 
@@ -18,7 +19,7 @@ from taser_sim.utils.ros2_tf_publisher import add_tf_publisher
 from taser_sim.utils.teleop import Teleop
 
 NAME = "taser"
-PRIM_PATH = "/World/Taser"
+PRIM_PATH = f"/World/{NAME}"
 
 
 class TaserIsaacSimRobot(Robot):
@@ -48,6 +49,12 @@ class TaserIsaacSimRobot(Robot):
             target_prim=f"{PRIM_PATH}/base_link",
             tf_publisher_topic="/tf",
         )
+
+        self._camera = Camera(
+            name=f"{NAME}_camera",
+            prim_path=f"{PRIM_PATH}/base_link/{NAME}_camera",
+        )
+        self._camera.set_focal_length(1.5)
 
         self._pick_controller = PickController()
         self._is_picking = True

@@ -3,7 +3,8 @@ import torch.nn.functional as F
 from gymnasium import Env
 from torch.distributions import kl_divergence
 
-from .actor_critic import ActorCritic
+from taser_training.RL.model.actor_critic import ActorCritic
+
 from .ppo_trainer_cfg import PPOTrainerCfg
 
 
