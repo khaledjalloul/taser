@@ -39,7 +39,7 @@ class CuroboEpisode:
     joint_velocities: np.ndarray  # (num_envs, num_time_steps, 2, num_joints)
     eef_positions: np.ndarray  # (num_envs, num_time_steps, 2, 3)
     target_position: np.ndarray  # (num_envs, 2, 3)
-    mask: np.ndarray  # (num_envs, num_time_steps)
+    episode_length: np.ndarray  # (num_envs, 2)
 
 
 class CuroboPlanner:
@@ -171,9 +171,9 @@ class CuroboPlanner:
 
         max_trajectory_length = max(
             [
-                traj.position.shape[0]
-                for side_trajs in trajectories.values()
-                for traj in side_trajs
+                (traj.position.shape[0] if successes[side][traj_idx] else 0)
+                for side in ["left", "right"]
+                for traj_idx, traj in enumerate(trajectories[side])
             ]
         )
 
@@ -188,7 +188,7 @@ class CuroboPlanner:
             ),
             eef_positions=np.zeros((self.num_envs, max_trajectory_length, 2, 3)),
             target_position=np.stack([t for t in targets.values()], axis=1),
-            mask=np.zeros((self.num_envs, max_trajectory_length)),
+            episode_length=np.zeros((self.num_envs, 2)),
         )
 
         for side_idx, side in enumerate(["left", "right"]):
@@ -232,7 +232,7 @@ class CuroboPlanner:
                             axis=0,
                         )
 
-                    episode.mask[env_idx, :pos_len] = 1.0
+                    episode.episode_length[env_idx, side_idx] = pos_len
 
         return episode
 
