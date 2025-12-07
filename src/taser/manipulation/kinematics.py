@@ -94,27 +94,3 @@ class ManipulationKinematics:
             return traj.q
         elif type == "dq":
             return traj.qd
-
-
-if __name__ == "__main__":
-    kinematics = ManipulationKinematics(arm="left")
-
-    q_start = TaserJointState(left_arm=np.array([0.1, 0.1, 0.1]))
-    pose_start = kinematics.get_eef_position(q=q_start)
-    print("Start Pose:", pose_start)
-
-    pose_end = Pose(x=0.5, y=0.0, z=0.0)
-    q_end, _ = kinematics.get_q(pose=pose_end)
-    print("End Joint Angles:", q_end)
-
-    dq = kinematics.get_dq(v_lin=np.array([0.1, 0.0, 0.0]), q=q_start)
-    print("Joint Velocities for 0.1 m/s in x:", dq)
-
-    q_traj = kinematics.get_traj(
-        pose_start=pose_start,
-        pose_end=pose_end,
-        type="q",
-        time=5.0,
-        dt=0.1,
-    )
-    print("Joint Trajectory:", q_traj.shape)

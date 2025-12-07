@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser(description="Train a GPT model for behavior clo
 parser.add_argument(
     "--data_path",
     type=str,
-    default="data/dataset.h5",
+    required=True,
     help="Path to the dataset H5 file.",
 )
 args = parser.parse_args()
@@ -19,6 +19,7 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from taser_training.BC.model.gpt import GPT, GPTConfig
 from taser_training.BC.utils.dataset import GPTDataset
@@ -27,11 +28,12 @@ from taser_training.wandb_logger import WandbLogger
 
 @dataclass
 class TrainerCfg:
-    num_epochs: int = 500
+    num_epochs: int = 3000
     batch_size: int = 512
-    learning_rate: float = 1e-6
-    eval_freq: int = 10
-    data_split: float = 0.95
+    learning_rate: float = 1e-5
+    lr_decay_factor: float = 0.9977
+    eval_freq: int = 100
+    data_split: float = 0.9
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -42,8 +44,7 @@ class GPTTrainer:
 
         self.dataset = GPTDataset(
             file_path=args.data_path,
-            gpt_cfg=self.gpt_cfg,
-            device=self.trainer_cfg.device,
+            action_chunk_size=self.gpt_cfg.action_chunk_size,
         )
 
         data_split_len = int(self.trainer_cfg.data_split * len(self.dataset))
@@ -53,6 +54,9 @@ class GPTTrainer:
                 data_split_len,
                 len(self.dataset) - data_split_len,
             ],
+        )
+        print(
+            f"Dataset split into {data_split_len} training samples and {len(self.dataset) - data_split_len} evaluation samples."
         )
 
         self.train_dataloader = DataLoader(
@@ -75,7 +79,7 @@ class GPTTrainer:
 
         # Set up output path
         run_name = f"BC_GPT_{datetime.now().strftime('%m%d_%H%M%S')}"
-        self.output_path = Path.cwd() / "outputs" / "BC" / run_name
+        self.output_path = Path.cwd() / "outputs" / "BC" / "gpt_training" / run_name
         self.progress_path = self.output_path / "progress"
         self.progress_path.mkdir(parents=True, exist_ok=True)
 
@@ -87,20 +91,27 @@ class GPTTrainer:
         )
 
     def train(self) -> None:
-        for epoch in range(self.trainer_cfg.num_epochs):
+        best_eval_loss = float("inf")
+        for epoch in tqdm(
+            range(self.trainer_cfg.num_epochs),
+            desc="Training",
+            dynamic_ncols=True,
+            leave=True,
+        ):
             self.model.train()
+            self.update_learning_rate(iter=epoch)
             total_train_loss = 0.0
             num_batches = 0
 
             for batch in self.train_dataloader:
-                observations = batch["observations"]
-                actions = batch["actions"]
-                eef_pos = batch["eef_pos"]
+                observations = batch["observations"].to(self.trainer_cfg.device)
+                actions = batch["actions"].to(self.trainer_cfg.device)
+                eef_pos = batch["eef_pos"].to(self.trainer_cfg.device)
 
                 output = self.model(observations)
 
                 loss = F.l1_loss(
-                    input=output["output"],
+                    input=output["actions"],
                     target=actions,
                 )
 
@@ -132,14 +143,14 @@ class GPTTrainer:
                 eval_loss = 0.0
                 with torch.no_grad():
                     for batch in self.eval_dataloader:
-                        observations = batch["observations"]
-                        actions = batch["actions"]
-                        eef_pos = batch["eef_pos"]
+                        observations = batch["observations"].to(self.trainer_cfg.device)
+                        actions = batch["actions"].to(self.trainer_cfg.device)
+                        eef_pos = batch["eef_pos"].to(self.trainer_cfg.device)
 
                         output = self.model(observations)
 
                         batch_loss = F.l1_loss(
-                            input=output["output"],
+                            input=output["actions"],
                             target=actions,
                         )
 
@@ -152,14 +163,24 @@ class GPTTrainer:
                         eval_loss += batch_loss.item()
 
                 eval_loss /= len(self.eval_dataloader)
-                print(f"Epoch {epoch}: Eval Loss = {eval_loss:.6f}")
+
+                # Save best model
+                if eval_loss < best_eval_loss:
+                    best_eval_loss = eval_loss
+                    best_model_path = self.output_path / "best_model.pth"
+                    torch.save(self.model.state_dict(), best_model_path)
 
                 self.logger.log(
                     {
                         "eval/loss": eval_loss,
+                        "eval/best_loss": best_eval_loss,
                         "eval/epoch": epoch,
                     },
                     step=epoch,
+                )
+
+                tqdm.write(
+                    f"Epoch {epoch}: eval loss={eval_loss:.4f}, best loss={best_eval_loss:.4f}"
                 )
 
                 model_path = self.progress_path / f"model_{epoch}.pth"
@@ -169,6 +190,14 @@ class GPTTrainer:
         final_model_path = self.output_path / "final_model.pth"
         torch.save(self.model.state_dict(), final_model_path)
         self.logger.finish()
+
+    def update_learning_rate(self, iter: int) -> None:
+        """Update learning rate using exponential decay schedule."""
+        if self.trainer_cfg.lr_decay_factor == 1.0:
+            return
+        lr = self.trainer_cfg.learning_rate * (self.trainer_cfg.lr_decay_factor**iter)
+        for param_group in self.optimizer.param_groups:
+            param_group["lr"] = lr
 
 
 def main():

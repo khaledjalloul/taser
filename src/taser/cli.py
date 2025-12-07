@@ -58,8 +58,8 @@ def train_rl():
     main()
 
 
-@reinforcement_learning.command(context_settings=CONTEXT_SETTINGS)
-def play():
+@reinforcement_learning.command(name="play", context_settings=CONTEXT_SETTINGS)
+def play_rl():
     """Play back an RL task in Isaac Lab."""
     sys.argv = sys.argv[3:]
     from taser_training.RL.play import main
@@ -87,6 +87,24 @@ def train_bc():
     """Train the GPT model with behavior cloning."""
     sys.argv = sys.argv[3:]
     from taser_training.BC.train import main
+
+    main()
+
+
+@behavior_cloning.command(name="play", context_settings=CONTEXT_SETTINGS)
+def play_bc():
+    """Evaluate the GPT model."""
+    sys.argv = sys.argv[3:]
+    from taser_training.BC.play import main
+
+    main()
+
+
+@behavior_cloning.command(context_settings=CONTEXT_SETTINGS)
+def read_dataset():
+    """Read and print information about the GPT dataset."""
+    sys.argv = sys.argv[3:]
+    from taser_training.BC.utils.read_gpt_dataset import main
 
     main()
 

@@ -185,7 +185,7 @@ class Block(nn.Module):
 
 
 class GPT(nn.Module):
-    def __init__(self, config: GPTConfig):
+    def __init__(self, config: GPTConfig = GPTConfig()):
         super().__init__()
         self.config = config
         common_token_dim = 64
@@ -229,7 +229,7 @@ class GPT(nn.Module):
         self.action_head = nn.Linear(self.config.n_embd, self.config.action_dim)
 
         if self.config.predict_eef_pos:
-            self.eef_pos_head = nn.Linear(self.config.n_embd, 3)
+            self.eef_pos_head = nn.Linear(self.config.n_embd, 6)
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
         B = x.shape[0]
@@ -264,23 +264,10 @@ class GPT(nn.Module):
         # --- Heads ---
         # x is (B, chunk_size, n_embd)
         logits = self.action_head(x)  # (B, chunk_size, action_dim)
-        output = {"output": logits}
+        output = {"actions": logits}
 
         if self.config.predict_eef_pos:
             eef_pos = self.eef_pos_head(x)  # (B, chunk_size, 3)
             output["eef_pos"] = eef_pos
 
         return output
-
-
-if __name__ == "__main__":
-    cfg = GPTConfig()
-
-    # Simple test
-    model = GPT(config=cfg)
-
-    x = torch.randn(10, cfg.obs_dim)  # (batch_size, obs_dim)
-    out = model(x)
-    print(out["output"].shape)  # Expected: (batch_size, action_chunk_size, action_dim)
-    if cfg.predict_eef_pos:
-        print(out["eef_pos"].shape)  # Expected: (batch_size, action_chunk_size, 3)

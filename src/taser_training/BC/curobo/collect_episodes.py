@@ -41,7 +41,7 @@ from tqdm import tqdm
 from taser.common.datatypes import TaserJointState
 from taser.common.model import USD_PATH
 from taser_training.BC.curobo.curobo_planner import CuroboEpisode, CuroboPlanner
-from taser_training.BC.utils.dataset import GPTEpisode, save_episode_to_h5
+from taser_training.BC.utils.dataset import GPTEpisode
 
 Kp = 3.0
 Kd = 0.2
@@ -157,35 +157,20 @@ class CuroboDatasetCollector:
                 if not both_arms_success or is_done:
                     continue
 
-                self.dataset_episodes[env_idx].joint_positions = np.vstack(
-                    [
-                        self.dataset_episodes[env_idx].joint_positions,
-                        current_joint_pos[env_idx, self.arm_dof_ids],
-                    ]
+                self.dataset_episodes[env_idx].add_observation(
+                    GPTEpisode.collect_observation(
+                        joint_positions=current_joint_pos[env_idx, self.arm_dof_ids],
+                        joint_velocities=current_joint_vel[env_idx, self.arm_dof_ids],
+                        eef_positions=self.episode.eef_positions[
+                            env_idx, self.step
+                        ].flatten(),
+                        target_positions=self.episode.target_position[
+                            env_idx
+                        ].flatten(),
+                    )
                 )
-                self.dataset_episodes[env_idx].joint_velocities = np.vstack(
-                    [
-                        self.dataset_episodes[env_idx].joint_velocities,
-                        current_joint_vel[env_idx, self.arm_dof_ids],
-                    ]
-                )
-                self.dataset_episodes[env_idx].target_positions = np.vstack(
-                    [
-                        self.dataset_episodes[env_idx].target_positions,
-                        self.episode.target_position[env_idx].flatten(),
-                    ]
-                )
-                self.dataset_episodes[env_idx].eef_positions = np.vstack(
-                    [
-                        self.dataset_episodes[env_idx].eef_positions,
-                        self.episode.eef_positions[env_idx].reshape(-1, 6),
-                    ]
-                )
-                self.dataset_episodes[env_idx].actions = np.vstack(
-                    [
-                        self.dataset_episodes[env_idx].actions,
-                        actions[env_idx, self.arm_dof_ids],
-                    ]
+                self.dataset_episodes[env_idx].add_action(
+                    actions[env_idx, self.arm_dof_ids],
                 )
 
             self.robot.apply_action(ArticulationActions(joint_velocities=actions))
@@ -200,11 +185,10 @@ class CuroboDatasetCollector:
             if self.step < self.max_step:
                 continue
 
-            for env_episode in self.dataset_episodes:
-                if env_episode.joint_positions.shape[0] == 0:
+            for gpt_episode in self.dataset_episodes:
+                if gpt_episode.observations.shape[0] == 0:
                     continue  # Skip unsuccessful episodes
-                save_episode_to_h5(
-                    episode=env_episode,
+                gpt_episode.save_to_h5(
                     file_path=self.output_path,
                     episode_id=str(self.num_plans_saved),
                 )
@@ -255,16 +239,7 @@ class CuroboDatasetCollector:
             )
 
             # Prepare to store the executed plans in dataset format
-            self.dataset_episodes = [
-                GPTEpisode(
-                    joint_positions=np.empty((0, self.num_arm_dof)),
-                    joint_velocities=np.empty((0, self.num_arm_dof)),
-                    eef_positions=np.empty((0, 6)),
-                    target_positions=np.empty((0, 6)),
-                    actions=np.empty((0, self.num_arm_dof)),
-                )
-                for _ in range(self.num_envs)
-            ]
+            self.dataset_episodes = [GPTEpisode() for _ in range(self.num_envs)]
 
             self.step = 0
             self.max_step = self.episode.joint_velocities.shape[1]

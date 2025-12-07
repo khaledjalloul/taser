@@ -86,7 +86,7 @@ def train(env: gym.Env):
         range(trainer_cfg.num_iters), desc="Training", dynamic_ncols=True, leave=True
     ):
         # Training update
-        train_info = trainer.train_step()
+        train_info = trainer.train_step(iter=update)
 
         # Log training metrics
         logger.log(

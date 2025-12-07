@@ -57,17 +57,8 @@ target_link_libraries(${PROJECT_NAME}_py_bindings PRIVATE ${PROJECT_NAME})
 # Rename the Python package to ${PROJECT_NAME}
 set_target_properties(${PROJECT_NAME}_py_bindings PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
 
-# Choose the python package dir depending on build context
-if(SKBUILD)
-  set(PY_PKG_DIR "${SKBUILD_PLATLIB_DIR}")
-else()
-  # Fallback for plain CMake installs (non-wheel)
-  execute_process(
-    COMMAND "${Python3_EXECUTABLE}" -c "import sysconfig;print(sysconfig.get_path('platlib'))"
-    OUTPUT_VARIABLE PY_PKG_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-endif()
+# Set Python package install directory based on scikit-build
+set(PY_PKG_DIR "${SKBUILD_PLATLIB_DIR}")
 
 # Install Python package
 install(
