@@ -80,7 +80,7 @@ class GPTEvaluator:
 
     def setup(self) -> None:
         self.world.add_physics_callback(
-            "taser_curobo_step", callback_fn=self.on_physics_step
+            "taser_gpt_step", callback_fn=self.on_physics_step
         )
 
     def _spawn_robot(self) -> Articulation:
@@ -100,8 +100,6 @@ class GPTEvaluator:
 
         robot = Articulation(name="taser", prim_paths_expr="/World/envs/env.*/taser")
 
-        # TODO: Enable self-collisions
-        robot.set_enabled_self_collisions(np.full((self.num_envs), False))
         self.world.scene.add(robot)
         self.world.scene.add_default_ground_plane(z_position=-0.65)
 

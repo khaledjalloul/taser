@@ -26,6 +26,10 @@ if not args.model_path:
     subdirs = sorted(
         [outputs_dir / d for d in outputs_dir.glob(f"*{task}*") if d.is_dir()]
     )
+    if not subdirs:
+        raise FileNotFoundError(
+            f"No trained model directories found in {outputs_dir} for task {task}."
+        )
     args.model_path = subdirs[-1] / "best_model.pth"
     print(f"No model path provided. Using the latest model at {args.model_path}")
 

@@ -106,8 +106,6 @@ class CuroboDatasetCollector:
 
         robot = Articulation(name="taser", prim_paths_expr="/World/envs/env.*/taser")
 
-        # TODO: Enable self-collisions
-        robot.set_enabled_self_collisions(np.full((self.num_envs), False))
         self.world.scene.add(robot)
         self.world.scene.add_default_ground_plane(z_position=-0.65)
 

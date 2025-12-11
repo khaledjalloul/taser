@@ -178,19 +178,19 @@
       <material name="light-blue"/>
     </visual>
     <collision>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.15"/>
+      <origin rpy="1.57 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
         <cylinder length="0.025" radius="0.075"/>
       </geometry>
     </collision>
   </link>
-  <joint name="base_link_left_arm_shoulder_joint" type="revolute">
+  <joint name="base_link_left_arm_shoulder_joint" type="continuous">
     <parent link="base_link"/>
     <child link="left_arm_shoulder"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 +0.2625 0.4"/>
     <axis xyz="0 1 0"/>
     <dynamics damping="0.1" friction="0.1"/>
-    <limit effort="0.0" lower="-3.1416" upper="3.1416" velocity="1000.0"/>
+    <limit effort="0.0" velocity="1000.0"/>
   </joint>
   <link name="left_arm_1">
     <visual>
@@ -227,13 +227,13 @@
       </geometry>
     </collision>
   </link>
-  <joint name="left_arm_1_left_arm_2_joint" type="revolute">
+  <joint name="left_arm_1_left_arm_2_joint" type="continuous">
     <parent link="left_arm_1"/>
     <child link="left_arm_2"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0 -0.3"/>
     <axis xyz="0 0 1"/>
     <dynamics damping="0.1" friction="0.1"/>
-    <limit effort="0.0" lower="-3.1416" upper="3.1416" velocity="1000.0"/>
+    <limit effort="0.0" velocity="1000.0"/>
   </joint>
   <link name="left_arm_3">
     <visual>
@@ -256,7 +256,7 @@
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0 -0.2"/>
     <axis xyz="0 1 0"/>
     <dynamics damping="0.1" friction="0.1"/>
-    <limit effort="0.0" lower="-3.1416" upper="3.1416" velocity="1000.0"/>
+    <limit effort="0.0" lower="-2.3562" upper="2.3562" velocity="1000.0"/>
   </joint>
   <link name="left_arm_eef">
         </link>
@@ -274,19 +274,19 @@
       <material name="light-blue"/>
     </visual>
     <collision>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.15"/>
+      <origin rpy="1.57 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <geometry>
         <cylinder length="0.025" radius="0.075"/>
       </geometry>
     </collision>
   </link>
-  <joint name="base_link_right_arm_shoulder_joint" type="revolute">
+  <joint name="base_link_right_arm_shoulder_joint" type="continuous">
     <parent link="base_link"/>
     <child link="right_arm_shoulder"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.2625 0.4"/>
     <axis xyz="0 1 0"/>
     <dynamics damping="0.1" friction="0.1"/>
-    <limit effort="0.0" lower="-3.1416" upper="3.1416" velocity="1000.0"/>
+    <limit effort="0.0" velocity="1000.0"/>
   </joint>
   <link name="right_arm_1">
     <visual>
@@ -323,13 +323,13 @@
       </geometry>
     </collision>
   </link>
-  <joint name="right_arm_1_right_arm_2_joint" type="revolute">
+  <joint name="right_arm_1_right_arm_2_joint" type="continuous">
     <parent link="right_arm_1"/>
     <child link="right_arm_2"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0 -0.3"/>
     <axis xyz="0 0 1"/>
     <dynamics damping="0.1" friction="0.1"/>
-    <limit effort="0.0" lower="-3.1416" upper="3.1416" velocity="1000.0"/>
+    <limit effort="0.0" velocity="1000.0"/>
   </joint>
   <link name="right_arm_3">
     <visual>
@@ -352,7 +352,7 @@
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0 -0.2"/>
     <axis xyz="0 1 0"/>
     <dynamics damping="0.1" friction="0.1"/>
-    <limit effort="0.0" lower="-3.1416" upper="3.1416" velocity="1000.0"/>
+    <limit effort="0.0" lower="-2.3562" upper="2.3562" velocity="1000.0"/>
   </joint>
   <link name="right_arm_eef">
         </link>

@@ -12,12 +12,17 @@ class ManipulationKinematics:
 
         self._arm = Robot.URDF(file_path=str(URDF_PATH))
 
-    def get_eef_position(self, q: TaserJointState) -> Pose:
+    def get_eef_position(
+        self, q: TaserJointState, as_np: bool = False
+    ) -> Pose | np.ndarray:
         T = self._arm.fkine(
             q=q.to("rtb"),
             start="base_link",
             end=f"{self._arm_side}_arm_eef",
         )
+
+        if as_np:
+            return T.t
 
         return Pose(
             x=T.t[0],
