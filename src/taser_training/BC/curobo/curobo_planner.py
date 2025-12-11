@@ -4,6 +4,7 @@ from pathlib import Path
 import carb
 import isaacsim.core.utils.prims as prim_utils
 import numpy as np
+import torch
 from curobo.geom.types import WorldConfig
 from curobo.types.math import Pose
 from curobo.types.state import JointState
@@ -16,20 +17,12 @@ from isaacsim.core.prims import Articulation
 from pxr import UsdGeom  # type: ignore
 from trimesh import Trimesh
 
-from taser_training.BC.curobo.config.curobo_planner_cfg import (
+from taser_training.BC.curobo.curobo_planner_cfg import (
     CuroboMotionGenCfg,
     CuroboMotionGenPlanConfig,
 )
-from taser_training.BC.curobo.config.curobo_planner_cfg import (
-    __file__ as CUROBO_CONFIG_PATH,
-)
 
 ############################################################
-
-X_RANGE = (0.2, 0.5)
-Y_RANGE_LEFT = (0.0, 0.25)
-Y_RANGE_RIGHT = (-0.25, 0.0)
-Z_RANGE = (-0.4, 0.4)
 
 
 @dataclass
@@ -58,7 +51,7 @@ class CuroboPlanner:
         self.is_static_terrain = is_static_terrain
 
         # Load curobo robot configuration file
-        robot_cfg_path = str(Path(CUROBO_CONFIG_PATH).parent / "robot_cfg.yaml")
+        robot_cfg_path = str(Path(__file__).parent / "robot_cfg.yaml")
         robot_cfg_left = load_yaml(robot_cfg_path)["robot_cfg_left"]
         robot_cfg_right = load_yaml(robot_cfg_path)["robot_cfg_right"]
 
@@ -91,8 +84,8 @@ class CuroboPlanner:
 
     def plan(self) -> CuroboEpisode:
         start_cfg: dict[str, np.ndarray] = {"left": None, "right": None}
-        cu_js: dict[str, JointState] = {"left": None, "right": None}
-        targets = self._sample_targets()
+        start_js: dict[str, JointState] = {"left": None, "right": None}
+        targets: dict[str, torch.Tensor] = {"left": None, "right": None}
         goal_poses: dict[str, Pose] = {"left": None, "right": None}
         result: dict[str, MotionGenResult] = {"left": None, "right": None}
         trajectories: dict[str, list[JointState]] = {"left": None, "right": None}
@@ -116,41 +109,63 @@ class CuroboPlanner:
             # Sample a valid random starting state
             is_valid_start_cfg = False
             while not is_valid_start_cfg:
-                start_cfg_side = (
+                start_cfg[side] = (
                     np.random.random(
                         (self.num_envs, joint_limits.shape[1]),
                     )
                     * (joint_limits[1] - joint_limits[0])
                     + joint_limits[0]
                 )
-                for cfg in start_cfg_side:
-                    start_js = JointState.from_position(
-                        position=motion_gen.tensor_args.to_device(cfg)
+                start_js[side] = JointState.from_position(
+                    position=motion_gen.tensor_args.to_device(start_cfg[side]),
+                    joint_names=motion_gen.kinematics.joint_names,
+                ).get_ordered_joint_state(motion_gen.kinematics.joint_names)
+                for i in range(len(start_js[side])):
+                    is_valid_start_cfg, _ = motion_gen.check_start_state(
+                        start_js[side][i]
                     )
-                    is_valid_start_cfg, _ = motion_gen.check_start_state(start_js)
                     if not is_valid_start_cfg:
                         break
-            start_cfg[side] = start_cfg_side
 
-            cu_js[side] = JointState.from_position(
-                position=motion_gen.tensor_args.to_device(start_cfg_side),
-                joint_names=motion_gen.kinematics.joint_names,
-            ).get_ordered_joint_state(motion_gen.kinematics.joint_names)
+            # Sample a valid random end state
+            is_valid_end_cfg = False
+            while not is_valid_end_cfg:
+                end_cfg_side = (
+                    np.random.random(
+                        (self.num_envs, joint_limits.shape[1]),
+                    )
+                    * (joint_limits[1] - joint_limits[0])
+                    + joint_limits[0]
+                )
+                end_js = JointState.from_position(
+                    position=motion_gen.tensor_args.to_device(end_cfg_side),
+                    joint_names=motion_gen.kinematics.joint_names,
+                )
+                for i in range(len(end_js)):
+                    is_valid_end_cfg, _ = motion_gen.check_start_state(end_js[i])
+                    if not is_valid_end_cfg:
+                        break
+
+            targets[side] = motion_gen.compute_kinematics(end_js).ee_pos_seq
 
             # Create the cuRobo goal poses
             goal_poses[side] = Pose(
-                position=motion_gen.tensor_args.to_device(targets[side]),
+                position=targets[side],
                 quaternion=motion_gen.tensor_args.to_device(
                     [[1.0, 0.0, 0.0, 0.0]]
                 ).repeat(targets[side].shape[0], 1),
             )
 
             # Compute curobo solution
-            result[side] = motion_gen.plan_batch_env(
-                start_state=cu_js[side],
-                goal_pose=goal_poses[side],
-                plan_config=self.plan_config,
-            )
+            try:
+                result[side] = motion_gen.plan_batch_env(
+                    start_state=start_js[side],
+                    goal_pose=goal_poses[side],
+                    plan_config=self.plan_config,
+                )
+            except Exception as e:
+                log_warn(f"Planning {side}: Exception occurred: {e}")
+                return None
 
             if not result[side]:
                 log_warn(f"Planning {side}: Failed.")
@@ -169,13 +184,16 @@ class CuroboPlanner:
                 trajectories[side] = [result[side].get_interpolated_plan()]
                 successes[side] = [result[side].success]
 
-        max_trajectory_length = max(
-            [
-                (traj.position.shape[0] if successes[side][traj_idx] else 0)
-                for side in ["left", "right"]
-                for traj_idx, traj in enumerate(trajectories[side])
-            ]
-        )
+        max_trajectory_length = (
+            max(
+                [
+                    (traj.position.shape[0] if successes[side][traj_idx] else 0)
+                    for side in ["left", "right"]
+                    for traj_idx, traj in enumerate(trajectories[side])
+                ]
+            )
+            + 10
+        )  # +10 to account for last hold position
 
         start_cfg_stack = np.stack([c for c in start_cfg.values()], axis=1)
         episode = CuroboEpisode(
@@ -187,7 +205,9 @@ class CuroboPlanner:
                 (self.num_envs, max_trajectory_length, 2, joint_limits.shape[1])
             ),
             eef_positions=np.zeros((self.num_envs, max_trajectory_length, 2, 3)),
-            target_position=np.stack([t for t in targets.values()], axis=1),
+            target_position=np.stack(
+                [t.cpu().numpy() for t in targets.values()], axis=1
+            ),
             episode_length=np.zeros((self.num_envs, 2)),
         )
 
@@ -232,7 +252,9 @@ class CuroboPlanner:
                             axis=0,
                         )
 
-                    episode.episode_length[env_idx, side_idx] = pos_len
+                    episode.episode_length[env_idx, side_idx] = (
+                        pos_len + 10
+                    )  # +10 to account for last hold position
 
         return episode
 
@@ -298,30 +320,3 @@ class CuroboPlanner:
                 ).get_collision_check_world()
             )
         return world_cfgs
-
-    def _sample_targets(self) -> dict[str, np.ndarray]:
-        num_envs = self.env_origins.shape[0]
-        positions = {"left": None, "right": None}
-
-        for side in ["left", "right"]:
-            y_range = Y_RANGE_LEFT if side == "left" else Y_RANGE_RIGHT
-            while positions[side] is None:
-                x_sign = np.where(np.random.rand(num_envs) > 0.5, 1.0, -1.0)
-                x = x_sign * (
-                    np.random.rand(num_envs) * (X_RANGE[1] - X_RANGE[0]) + X_RANGE[0]
-                )
-                y = np.random.rand(num_envs) * (y_range[1] - y_range[0]) + y_range[0]
-                z = np.random.rand(num_envs) * (Z_RANGE[1] - Z_RANGE[0]) + Z_RANGE[0]
-                new_samples = np.stack((x, y, z), axis=1)
-
-                # Filter out samples that are in collision with the terrain
-                if self.terrain_mesh is not None:
-                    # Check distance between new samples and the mesh, negative sign distance means a point is outside the mesh
-                    query_sample = new_samples + self.env_origins
-                    distance = self.terrain_mesh.nearest.signed_distance(query_sample)
-                    if np.all(distance <= -0.5):
-                        positions[side] = new_samples
-                else:
-                    positions[side] = new_samples
-
-        return positions

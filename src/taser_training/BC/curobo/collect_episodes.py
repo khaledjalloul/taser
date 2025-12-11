@@ -79,11 +79,10 @@ class CuroboDatasetCollector:
         )
 
         run_name = f"GPT_dataset_{datetime.now().strftime('%m%d_%H%M%S')}.h5"
-        self.output_path = Path.cwd() / "outputs" / "BC" / "curobo_dataset" / run_name
+        self.output_path = Path.cwd() / "outputs" / "BC" / "datasets" / run_name
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
         self.needs_reset = True
-        self.first_step = True
 
     def setup(self) -> None:
         self.world.add_physics_callback(
@@ -115,12 +114,9 @@ class CuroboDatasetCollector:
         return robot
 
     def on_physics_step(self, step_size: float) -> None:
-        if self.first_step:
-            self.first_step = False
-        elif self.needs_reset:
+        if self.needs_reset:
             self.world.reset(True)
             self.needs_reset = False
-            self.first_step = True
 
             self.step: int = 0
             self.max_step: int = 0

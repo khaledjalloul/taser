@@ -18,9 +18,9 @@ class CuroboMotionGenCfg:
 
     interpolation_dt: float = MISSING
 
-    position_threshold: float = 0.1
+    position_threshold: float = 0.05
     collision_activation_distance: float = 0.025
-    maximum_trajectory_dt: float = 0.5
+    maximum_trajectory_dt: float = 0.2
 
     # Collision Check Options
     collision_checker_type: CollisionCheckerType = CollisionCheckerType.MESH

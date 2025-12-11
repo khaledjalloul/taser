@@ -23,7 +23,7 @@ robot_cfg_left:
       null_space_weight: [1, 1, 1]
       cspace_distance_weight: [1, 1, 1]
       max_jerk: 500.0
-      max_acceleration: 1.0
+      max_acceleration: 6.0
 
     # Collision handling
     collision_link_names: []
@@ -59,7 +59,7 @@ robot_cfg_right:
       null_space_weight: [1, 1, 1]
       cspace_distance_weight: [1, 1, 1]
       max_jerk: 500.0
-      max_acceleration: 1.0
+      max_acceleration: 6.0
 
     # Collision handling
     collision_link_names: []
