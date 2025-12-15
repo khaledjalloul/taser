@@ -1,14 +1,11 @@
-import logging
-
 import cvxpy as cp
 import numpy as np
 from taser_cpp.navigation import Controller
 
 from taser.common.datatypes import Pose, VelocityCommand
+from taser.common.logger import logger
 from taser_cpp import BaseVelocity
 from taser_cpp import Pose2D as Pose2DCpp
-
-logging.basicConfig(level=logging.INFO)
 
 
 class MPCController:
@@ -28,12 +25,12 @@ class MPCController:
         self, x0: Pose, x_ref: list[Pose], u_ref: list[VelocityCommand]
     ) -> VelocityCommand:
         if len(x_ref) < self.N:
-            logging.warning(
+            logger.warning(
                 "Cannot step base MPC controller, reference path x_ref has less than N elements."
             )
             return VelocityCommand()
         if len(u_ref) < self.N:
-            logging.warning(
+            logger.warning(
                 "Cannot step base MPC controller, reference velocity profile u_ref has less than N elements."
             )
             return VelocityCommand()
@@ -60,7 +57,7 @@ class MPCController:
         prob = cp.Problem(cp.Minimize(cost), constraints)
         result = prob.solve(solver=cp.OSQP)
         if np.isinf(result):
-            logging.warning("Problem is infeasible")
+            logger.warning("Problem is infeasible")
             return VelocityCommand()
 
         u_opt = u_ref[0].tuple() + delta_u[:, 0].value

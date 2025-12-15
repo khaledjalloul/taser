@@ -16,6 +16,8 @@ from pathlib import Path
 
 from isaaclab.app import AppLauncher
 
+from taser.common.logger import logger
+
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 task = f"TASER-{args.task}"
@@ -31,7 +33,7 @@ if not args.model_path:
             f"No trained model directories found in {outputs_dir} for task {task}."
         )
     args.model_path = subdirs[-1] / "best_model.pth"
-    print(f"No model path provided. Using the latest model at {args.model_path}")
+    logger.info(f"No model path provided. Using the latest model at {args.model_path}")
 
 app_launcher = AppLauncher(args)
 simulation_app = app_launcher.app
@@ -62,7 +64,7 @@ def play(env: gym.Env):
         export_path.mkdir(parents=True, exist_ok=True)
         model.save(export_path / f"{args.task}.pth")
         model.export_onnx(export_path / f"{args.task}.onnx")
-        print(
+        logger.info(
             f"Exported torch model to {export_path / f'{args.task}.pth'} and ONNX model to {export_path / f'{args.task}.onnx'}"
         )
         return

@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from taser.common.datatypes import Workspace
+from taser.common.logger import logger
 
 
 class OccupancyGrid:
@@ -84,13 +85,6 @@ class OccupancyGrid:
 
 
 if __name__ == "__main__":
-    import logging
-
-    import matplotlib.pyplot as plt
-
-    logging.basicConfig(level=logging.INFO, format="")
-    logger = logging.getLogger()
-
     wksp = (-5, 5, -5, 5)
     cellsize = 0.1
 

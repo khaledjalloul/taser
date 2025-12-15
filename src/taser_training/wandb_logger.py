@@ -1,9 +1,9 @@
-import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import wandb
+from taser.common.logger import logger
 
 
 class WandbLogger:
@@ -27,8 +27,6 @@ class WandbLogger:
             project: Wandb project name
             base_path: Path to save the model checkpoints
         """
-
-        logger = logging.getLogger("TASER")
 
         api_key = os.environ.get("WANDB_API_KEY")
 

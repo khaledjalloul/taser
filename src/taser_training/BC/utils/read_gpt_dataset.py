@@ -21,6 +21,7 @@ from pathlib import Path
 
 import numpy as np
 
+from taser.common.logger import logger
 from taser_training.BC.utils.dataset import GPTDataset, GPTEpisode
 
 if not args.path:
@@ -29,7 +30,7 @@ if not args.path:
     if not files:
         raise FileNotFoundError(f"No dataset found in {outputs_dir}.")
     args.path = files[-1]
-    print(f"No path provided. Using the latest dataset at {args.path}")
+    logger.info(f"No path provided. Using the latest dataset at {args.path}")
 
 
 def sim():
@@ -180,10 +181,6 @@ def sim():
                 self.max_step = max(
                     [ep.shape[0] for ep in self.episodes if ep is not None]
                 )
-                print(
-                    [ep.shape[0] for ep in self.episodes if ep is not None],
-                    self.max_step,
-                )
 
     sim = GPTEvaluator()
     simulation_app.update()
@@ -196,12 +193,8 @@ def sim():
 
 
 def print_text_summary():
-    import logging
     import os
     import time
-
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-    logger = logging.getLogger(__name__)
 
     dataset = GPTDataset(file_path=args.path, action_chunk_size=1)
     total_episodes = len(dataset)

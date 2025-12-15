@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pyperclip
 
+from taser.common.logger import logger
+
 
 def ensure_xclip_installed():
     try:
@@ -13,7 +15,7 @@ def ensure_xclip_installed():
             stderr=subprocess.PIPE,
         )
     except FileNotFoundError:
-        print("xclip not found. Installing...")
+        logger.info("xclip not found. Installing...")
         subprocess.run(["sudo", "apt", "update"], check=True)
         subprocess.run(["sudo", "apt", "install", "-y", "xclip"], check=True)
 
@@ -35,4 +37,4 @@ if __name__ == "__main__":
             paths_str += f'"{ext}",\n'
 
     pyperclip.copy(paths_str)
-    print("Copied to clipboard.")
+    logger.info("Copied to clipboard.")

@@ -16,7 +16,7 @@ class GPTEpisode:
     observations: np.ndarray = field(default_factory=lambda: np.empty((0, OBS_DIM)))
     actions: np.ndarray = field(default_factory=lambda: np.empty((0, ACTION_DIM)))
 
-    indices: ClassVar[dict] = {
+    indices: ClassVar[dict[str, slice]] = {
         "joint_positions": slice(0, 6),
         "joint_velocities": slice(6, 12),
         "eef_positions": slice(12, 18),
@@ -79,9 +79,12 @@ class GPTEpisode:
 
 
 class GPTDataset(Dataset):
-    def __init__(self, file_path: str, action_chunk_size: int):
+    def __init__(
+        self, file_path: str, action_chunk_size: int, obs_history_len: int = 1
+    ):
         super().__init__()
         self.action_chunk_size = action_chunk_size
+        self.obs_history_len = obs_history_len
 
         self.obs = []
         self.actions = []
@@ -105,23 +108,26 @@ class GPTDataset(Dataset):
         return len(self.obs)
 
     def __getitem__(self, index: int):
-        obs = self.obs[index]
+        obs = self.obs[index]  # T, obs_dim
+        obs_padded = F.pad(obs, (0, 0, self.obs_history_len - 1, 0))
         actions = self.actions[index]
         T = obs.shape[0]
 
         start_idx = torch.randint(0, T, (1,)).item()
-        o = obs[start_idx]
+        end_idx = start_idx + self.obs_history_len
+
+        o = obs_padded[start_idx:end_idx]
 
         # Get actions with extra steps for chunking
-        chunk_end = start_idx + self.action_chunk_size
-        a = actions[start_idx:chunk_end]
-        eef_pos = obs[start_idx:chunk_end, GPTEpisode.indices["eef_positions"]]
+        chunk_end_idx = end_idx + self.action_chunk_size - 1
 
-        # Handle end padding if we requested actions past the end of the trajectory
-        if chunk_end > T:
-            end_pad = chunk_end - T
-            a = F.pad(a, (0, 0, 0, end_pad))
-            eef_pos = F.pad(eef_pos, (0, 0, 0, end_pad))
+        a = actions[start_idx:chunk_end_idx]
+        eef_pos = obs[start_idx:chunk_end_idx, GPTEpisode.indices["eef_positions"]]
+
+        if chunk_end_idx > T:
+            pad_len = chunk_end_idx - T
+            a = F.pad(a, (0, 0, 0, pad_len))
+            eef_pos = F.pad(eef_pos, (0, 0, 0, pad_len))
 
         return {"observations": o, "actions": a, "eef_pos": eef_pos}
 

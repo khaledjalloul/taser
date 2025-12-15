@@ -35,15 +35,17 @@ from omni.isaac.core.utils.types import ArticulationActions
 from pxr import UsdGeom  # type: ignore
 
 from taser.common.datatypes import TaserJointState
+from taser.common.logger import logger
 from taser.common.model import USD_PATH
 from taser.manipulation.kinematics import ManipulationKinematics
-from taser_training.BC.model.gpt import GPT
-from taser_training.BC.utils.dataset import OBS_DIM, GPTEpisode
+from taser_training.BC.model.gpt import GPT_ACT, GPT_History, GPTConfig
+from taser_training.BC.utils.dataset import GPTEpisode
 
 
 class GPTEvaluator:
     def __init__(self):
         self.num_envs: int = args.num_envs
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.world: World = World()
         self.robot = self._spawn_robot()
@@ -54,22 +56,35 @@ class GPTEvaluator:
         self.kin_left = ManipulationKinematics(arm="left")
         self.kin_right = ManipulationKinematics(arm="right")
 
+        self.model_cfg = GPTConfig(type="history")
+        GPT = GPT_ACT if self.model_cfg.type == "ACT" else GPT_History
+
         if not args.model_path:
-            outputs_dir = Path("/workspace/taser") / "outputs" / "BC" / "gpt_training"
+            outputs_dir = Path("/workspace/taser") / "outputs" / "BC" / "models"
             subdirs = sorted(
-                [outputs_dir / d for d in outputs_dir.glob("*") if d.is_dir()]
+                [
+                    outputs_dir / d
+                    for d in outputs_dir.glob(f"*{self.model_cfg.type}*")
+                    if d.is_dir()
+                ]
             )
+            if not subdirs:
+                raise FileNotFoundError(
+                    f"No trained model directories found in {outputs_dir} for type {self.model_cfg.type}."
+                )
             args.model_path = subdirs[-1] / "best_model.pth"
-            print(
+            logger.info(
                 f"No model path provided. Using the latest model at {args.model_path}"
             )
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = GPT().to(self.device)
-        self.model.load_state_dict(
-            torch.load(args.model_path, map_location=self.device)
-        )
+        self.model = GPT(config=self.model_cfg).to(self.device)
+        checkpoint = torch.load(args.model_path, map_location=self.device)
+        self.model.load_state_dict(checkpoint["model"])
         self.model.eval()
+
+        self.observations = np.zeros(
+            (self.num_envs, self.model_cfg.history, self.model_cfg.obs_dim)
+        )
 
         self.dof_ids = TaserJointState.isaac_indices
         self.arm_dof_ids = np.hstack([self.dof_ids.left_arm, self.dof_ids.right_arm])
@@ -129,22 +144,11 @@ class GPTEvaluator:
         return targets
 
     def on_physics_step(self, step_size: float) -> None:
-        if self.first_step:
-            self.first_step = False
-        elif self.needs_reset:
+        if self.needs_reset:
             self.world.reset(True)
             self.needs_reset = False
             self.first_step = True
-
-    def run(self) -> None:
-        while simulation_app.is_running():
-            if self.world.is_stopped():
-                self.needs_reset = True
-
-            observations = np.zeros((self.num_envs, OBS_DIM))
-            actions = np.zeros((self.num_envs, self.num_total_dof))
-            actions[:, self.dof_ids.locks] = [-0.5, 7.0, -0.5, 7.0]
-
+        else:
             current_joint_pos = self.robot.get_joint_positions().copy()
             current_joint_vel = self.robot.get_joint_velocities().copy()
 
@@ -161,39 +165,46 @@ class GPTEvaluator:
                     left_arm=current_joint_pos[env_idx, self.dof_ids.left_arm],
                     right_arm=current_joint_pos[env_idx, self.dof_ids.right_arm],
                 )
-                left_eef_pos = self.kin_left.get_eef_position(taser_js)
-                right_eef_pos = self.kin_right.get_eef_position(taser_js)
-
-                eef_positions = np.hstack(
-                    [
-                        left_eef_pos.x,
-                        left_eef_pos.y,
-                        left_eef_pos.z,
-                        right_eef_pos.x,
-                        right_eef_pos.y,
-                        right_eef_pos.z,
-                    ]
-                )
+                left_eef_pos = self.kin_left.get_eef_position(taser_js, as_np=True)
+                right_eef_pos = self.kin_right.get_eef_position(taser_js, as_np=True)
 
                 new_obs = GPTEpisode.collect_observation(
                     joint_positions=current_joint_pos[env_idx, self.arm_dof_ids],
                     joint_velocities=current_joint_vel[env_idx, self.arm_dof_ids],
-                    eef_positions=eef_positions,
+                    eef_positions=np.hstack([left_eef_pos, right_eef_pos]),
                     target_positions=target_positions,
                 )
-                observations[env_idx] = new_obs
+                self.observations[env_idx] = np.roll(
+                    self.observations[env_idx], shift=-1, axis=0
+                )
+                self.observations[env_idx, -1] = new_obs
+
+            if self.first_step:
+                self.first_step = False
+                self.observations[:, :-1, :] = np.repeat(
+                    self.observations[:, -1:, :], self.model_cfg.history - 1, axis=1
+                )
+
+            actions = np.zeros((self.num_envs, self.num_total_dof))
+            actions[:, self.dof_ids.locks] = [-0.5, 7.0, -0.5, 7.0]
 
             with torch.no_grad():
                 model_outputs: dict[str, torch.Tensor] = self.model(
-                    torch.tensor(observations, device=self.device).float()
+                    torch.tensor(self.observations, device=self.device).float()
                 )
 
+            action_idx = 0 if self.model_cfg.type == "ACT" else -1
             actions[:, self.arm_dof_ids] = (
-                model_outputs["actions"][:, 0, :].cpu().numpy()
+                model_outputs["actions"][:, action_idx, :].cpu().numpy()
             )
 
             self.robot.apply_action(ArticulationActions(joint_velocities=actions))
+
+    def run(self) -> None:
+        while simulation_app.is_running():
             self.world.step(render=True)
+            if self.world.is_stopped():
+                self.needs_reset = True
 
 
 def main():

@@ -7,11 +7,16 @@ parser.add_argument(
 parser.add_argument(
     "--num_plans",
     type=int,
-    default=10_000,
+    default=100_000,
     help="Total number of plans to store. Default: infinite",
 )
 parser.add_argument(
     "--num_envs", type=int, default=1, help="Number of environments to simulate"
+)
+parser.add_argument(
+    "--output_path",
+    type=str,
+    help="Output file path for the collected dataset. An existing file will be appended.",
 )
 args = parser.parse_args()
 
@@ -27,6 +32,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import h5py
 import isaacsim.core.utils.stage as stage_utils
 import numpy as np
 from isaacsim.core.api.objects import VisualCuboid
@@ -71,16 +77,26 @@ class CuroboDatasetCollector:
         self.num_arm_dof = len(self.arm_dof_ids)
         self.num_total_dof = self.robot.num_dof
 
+        if args.output_path:
+            self.output_path = Path(args.output_path)
+        else:
+            run_name = f"GPT_dataset_{datetime.now().strftime('%m%d_%H%M%S')}.h5"
+            self.output_path = Path.cwd() / "outputs" / "BC" / "datasets" / run_name
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if self.output_path.exists():
+            with h5py.File(self.output_path, "r") as f:
+                if "episodes" in f:
+                    self.num_plans_saved = len(f["episodes"])
+                    print(f"Found {self.num_plans_saved} existing plans in {self.output_path}")
+
         self.pbar = tqdm(
             total=self.num_plans_to_save,
+            initial=self.num_plans_saved,
             desc="Generating Plans",
             file=sys.stdout,
             disable=False,
         )
-
-        run_name = f"GPT_dataset_{datetime.now().strftime('%m%d_%H%M%S')}.h5"
-        self.output_path = Path.cwd() / "outputs" / "BC" / "datasets" / run_name
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
         self.needs_reset = True
 

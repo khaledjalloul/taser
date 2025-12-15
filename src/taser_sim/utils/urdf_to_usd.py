@@ -8,6 +8,7 @@ from isaacsim.core.api import World
 from isaacsim.core.api.scenes import Scene
 from isaacsim.core.utils.stage import add_reference_to_stage
 
+from taser.common.logger import logger
 from taser.common.model import URDF_PATH, USD_PATH
 from taser_sim.utils.extensions import enable_extensions
 
@@ -51,7 +52,7 @@ def main():
     )
 
     if result:
-        print(f"Successfully saved USD to {str(USD_PATH)}")
+        logger.info(f"Successfully saved USD to {str(USD_PATH)}")
 
     if not simulation_app.config["headless"]:
         scene: Scene = world.scene

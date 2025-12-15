@@ -1,11 +1,10 @@
-from logging import getLogger
-
 from taser_cpp.navigation import (
     Dimensions,
     PathPlanner,
 )
 
 from taser.common.datatypes import Polygon, Pose, VelocityCommand, Workspace
+from taser.common.logger import logger
 from taser_cpp import Pose2D as Pose2DCpp
 
 FILTER_THRESHOLD = 0.4
@@ -34,8 +33,6 @@ class RRTStarPathPlanner:
 
         self.set_polygons(polygons)
 
-        self._logger = getLogger(__name__)
-
     def set_polygons(self, polygons: list[Polygon]):
         self._polygons = polygons
         polygons_cpp = [[Pose2DCpp(p.x, p.y) for p in poly] for poly in polygons]
@@ -51,7 +48,7 @@ class RRTStarPathPlanner:
         )
 
         if not dubins_path:
-            self._logger.warning(f"No dubins path found from {start} to {goal}")
+            logger.warning(f"No dubins path found from {start} to {goal}")
             return []
 
         path_cpp = self._planner.sample_path(dubins_path)
