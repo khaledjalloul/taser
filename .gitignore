@@ -16,3 +16,6 @@ wandb/
 
 # Docker
 docker/.env
+
+# Cluster
+slurm-*.out

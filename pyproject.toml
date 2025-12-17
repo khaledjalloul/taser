@@ -8,12 +8,16 @@ dependencies = [
     "click",
     "cvxpy==1.4.2",
     "dotenv",
+    "h5py",
     "matplotlib",
     "numpy==1.24.0",
     "onnxruntime",
     "pybind11",
     "pyqt6",
     "roboticstoolbox-python==1.1.1",
+    "torch",
+    "tqdm",
+    "wandb",
 ]
 
 [build-system]

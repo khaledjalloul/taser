@@ -12,8 +12,8 @@ parser.add_argument(
     "--model_type",
     type=str,
     required=True,
-    choices=["ACT", "history"],
-    help="Type of the GPT model to train (ACT or history).",
+    choices=["ACT", "GPT"],
+    help="Type of the transformer model to train (ACT or GPT).",
 )
 parser.add_argument("--resume", type=str, help="Path to checkpoint to resume from.")
 
@@ -31,7 +31,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from taser.common.logger import logger
-from taser_training.BC.model.gpt import GPT_ACT, GPT_History, GPTConfig
+from taser_training.BC.model import ACT, GPT, TransformerCfg
 from taser_training.BC.utils.dataset import GPTDataset
 from taser_training.wandb_logger import WandbLogger
 
@@ -47,15 +47,15 @@ class TrainerCfg:
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class GPTTrainer:
+class Trainer:
     def __init__(self) -> None:
         self.trainer_cfg = TrainerCfg()
-        self.gpt_cfg = GPTConfig(type=args.model_type)
+        self.model_cfg = TransformerCfg(type=args.model_type)
 
         self.dataset = GPTDataset(
             file_path=args.data_path,
-            action_chunk_size=self.gpt_cfg.action_chunk_size,
-            obs_history_len=self.gpt_cfg.history,
+            action_chunk_size=self.model_cfg.action_chunk_size,
+            obs_history_len=self.model_cfg.history,
         )
 
         data_split_len = int(self.trainer_cfg.data_split * len(self.dataset))
@@ -80,8 +80,8 @@ class GPTTrainer:
             batch_size=self.trainer_cfg.batch_size,
             shuffle=False,
         )
-        GPT = GPT_ACT if self.gpt_cfg.type == "ACT" else GPT_History
-        self.model = GPT(config=self.gpt_cfg).to(self.trainer_cfg.device)
+        Model = ACT if self.model_cfg.type == "ACT" else GPT
+        self.model = Model(config=self.model_cfg).to(self.trainer_cfg.device)
 
         self.optimizer = torch.optim.AdamW(
             self.model.parameters(),
@@ -96,7 +96,7 @@ class GPTTrainer:
             self.start_epoch = checkpoint["epoch"] + 1
 
         # Set up output path
-        run_name = f"GPT_{self.gpt_cfg.type}_{datetime.now().strftime('%m%d_%H%M%S')}"
+        run_name = f"BC_{self.model_cfg.type}_{datetime.now().strftime('%m%d_%H%M%S')}"
         self.output_path = Path.cwd() / "outputs" / "BC" / "models" / run_name
         self.progress_path = self.output_path / "progress"
         self.progress_path.mkdir(parents=True, exist_ok=True)
@@ -104,7 +104,7 @@ class GPTTrainer:
         self.logger = WandbLogger(
             exp_name=run_name,
             base_path=self.output_path,
-            config={**asdict(self.trainer_cfg), **asdict(self.gpt_cfg)},
+            config={**asdict(self.trainer_cfg), **asdict(self.model_cfg)},
             project="TASER-BC",
         )
 
@@ -123,20 +123,28 @@ class GPTTrainer:
 
             for batch in self.train_dataloader:
                 observations = batch["observations"].to(self.trainer_cfg.device)
-                actions = batch["actions"].to(self.trainer_cfg.device)
-                eef_pos = batch["eef_pos"].to(self.trainer_cfg.device)
+                target_actions = batch["actions"].to(self.trainer_cfg.device)
+                target_eef_pos = batch["eef_pos"].to(self.trainer_cfg.device)
 
                 output = self.model(observations)
 
+                target_actions_unfold = target_actions.unfold(
+                    1, self.model_cfg.action_chunk_size, 1
+                ).permute(0, 1, 3, 2)
+
                 loss = F.l1_loss(
                     input=output["actions"],
-                    target=actions,
+                    target=target_actions_unfold,
                 )
 
-                if self.gpt_cfg.predict_eef_pos:
+                if self.model_cfg.predict_eef_pos:
+                    target_eef_pos_unfold = target_eef_pos.unfold(
+                        1, self.model_cfg.action_chunk_size, 1
+                    ).permute(0, 1, 3, 2)
+
                     loss += F.l1_loss(
                         input=output["eef_pos"],
-                        target=eef_pos,
+                        target=target_eef_pos_unfold,
                     )
 
                 self.optimizer.zero_grad()
@@ -161,20 +169,28 @@ class GPTTrainer:
                 with torch.no_grad():
                     for batch in self.eval_dataloader:
                         observations = batch["observations"].to(self.trainer_cfg.device)
-                        actions = batch["actions"].to(self.trainer_cfg.device)
-                        eef_pos = batch["eef_pos"].to(self.trainer_cfg.device)
+                        target_actions = batch["actions"].to(self.trainer_cfg.device)
+                        target_eef_pos = batch["eef_pos"].to(self.trainer_cfg.device)
 
                         output = self.model(observations)
 
+                        target_actions_unfold = target_actions.unfold(
+                            1, self.model_cfg.action_chunk_size, 1
+                        ).permute(0, 1, 3, 2)
+
                         batch_loss = F.l1_loss(
                             input=output["actions"],
-                            target=actions,
+                            target=target_actions_unfold,
                         )
 
-                        if self.gpt_cfg.predict_eef_pos:
+                        if self.model_cfg.predict_eef_pos:
+                            target_eef_pos_unfold = target_eef_pos.unfold(
+                                1, self.model_cfg.action_chunk_size, 1
+                            ).permute(0, 1, 3, 2)
+
                             batch_loss += F.l1_loss(
                                 input=output["eef_pos"],
-                                target=eef_pos,
+                                target=target_eef_pos_unfold,
                             )
 
                         eval_loss += batch_loss.item()
@@ -238,7 +254,7 @@ class GPTTrainer:
 
 
 def main():
-    trainer = GPTTrainer()
+    trainer = Trainer()
     trainer.train()
 
 
