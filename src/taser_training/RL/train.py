@@ -42,11 +42,10 @@ from taser_training.wandb_logger import WandbLogger
 
 def train(env: gym.Env):
     # Set up output path
-    run_name = f"PPO_{args.task}_{datetime.now().strftime('%m%d_%H%M%S')}"
+    run_name = f"RL_{args.task}_{datetime.now().strftime('%m%d_%H%M%S')}"
 
     output_path = Path.cwd() / "outputs" / "RL" / run_name
-    progress_path = output_path / "progress"
-    progress_path.mkdir(parents=True, exist_ok=True)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     trainer_cfg = PPOTrainerCfg(
         num_iters=args.num_iters,
@@ -139,11 +138,13 @@ def train(env: gym.Env):
             normalized_reward = normalized_reward / env.unwrapped.physics_dt
             normalized_reward = normalized_reward / sum_term_weights
 
+            # Save latest model
+            trainer.policy.save(output_path / "latest_model.pth")
+
             # Save best model
             if normalized_reward.mean() > best_reward:
                 best_reward = normalized_reward.mean()
-                best_model_path = output_path / "best_model.pth"
-                trainer.policy.save(best_model_path)
+                trainer.policy.save(output_path / "best_model.pth")
 
             # Log evaluation metrics
             logger.log(
@@ -159,12 +160,8 @@ def train(env: gym.Env):
                 f"Eval {update}: eval_reward={normalized_reward.item():.4f}, best_reward={best_reward:.4f}"
             )
 
-            model_path = progress_path / f"model_{update}.pth"
-            trainer.policy.save(model_path)
-
     # Save final model
-    final_model_path = output_path / "final_model.pth"
-    trainer.policy.save(final_model_path)
+    trainer.policy.save(output_path / "final_model.pth")
 
     # Close wandb run
     logger.finish()

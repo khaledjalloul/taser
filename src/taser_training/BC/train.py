@@ -98,14 +98,12 @@ class Trainer:
         # Set up output path
         run_name = f"BC_{self.model_cfg.type}_{datetime.now().strftime('%m%d_%H%M%S')}"
         self.output_path = Path.cwd() / "outputs" / "BC" / "models" / run_name
-        self.progress_path = self.output_path / "progress"
-        self.progress_path.mkdir(parents=True, exist_ok=True)
+        self.output_path.mkdir(parents=True, exist_ok=True)
 
         self.logger = WandbLogger(
             exp_name=run_name,
             base_path=self.output_path,
             config={**asdict(self.trainer_cfg), **asdict(self.model_cfg)},
-            project="TASER-BC",
         )
 
     def train(self) -> None:
@@ -197,17 +195,26 @@ class Trainer:
 
                 eval_loss /= len(self.eval_dataloader)
 
+                # Save latest model
+                torch.save(
+                    {
+                        "model": self.model.state_dict(),
+                        "optimizer": self.optimizer.state_dict(),
+                        "epoch": epoch,
+                    },
+                    self.output_path / "latest_model.pth",
+                )
+
                 # Save best model
                 if eval_loss < best_eval_loss:
                     best_eval_loss = eval_loss
-                    best_model_path = self.output_path / "best_model.pth"
                     torch.save(
                         {
                             "model": self.model.state_dict(),
                             "optimizer": self.optimizer.state_dict(),
                             "epoch": epoch,
                         },
-                        best_model_path,
+                        self.output_path / "best_model.pth",
                     )
 
                 self.logger.log(
@@ -222,25 +229,14 @@ class Trainer:
                     f"Epoch {epoch}: eval loss={eval_loss:.4f}, best loss={best_eval_loss:.4f}"
                 )
 
-                model_path = self.progress_path / f"model_{epoch}.pth"
-                torch.save(
-                    {
-                        "model": self.model.state_dict(),
-                        "optimizer": self.optimizer.state_dict(),
-                        "epoch": epoch,
-                    },
-                    model_path,
-                )
-
         # Save final model
-        final_model_path = self.output_path / "final_model.pth"
         torch.save(
             {
                 "model": self.model.state_dict(),
                 "optimizer": self.optimizer.state_dict(),
                 "epoch": epoch,
             },
-            final_model_path,
+            self.output_path / "final_model.pth",
         )
         self.logger.finish()
 
