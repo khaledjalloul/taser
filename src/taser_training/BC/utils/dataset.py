@@ -99,7 +99,10 @@ class GPTDataset(Dataset):
             for ep_id in episode_ids:
                 ep_grp = episodes_group[ep_id]
                 obs = ep_grp["observations"][:]
-                actions = ep_grp["actions"][:]
+                # actions = ep_grp["actions"][:]
+                actions = obs[:, GPTEpisode.indices["joint_positions"]]
+                actions = np.roll(actions, shift=-1, axis=0)
+                actions[-1, :] = actions[-2, :]
 
                 self.obs.append(torch.from_numpy(obs).float())
                 self.actions.append(torch.from_numpy(actions).float())

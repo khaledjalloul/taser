@@ -184,16 +184,13 @@ class CuroboPlanner:
                 trajectories[side] = [result[side].get_interpolated_plan()]
                 successes[side] = [result[side].success]
 
-        max_trajectory_length = (
-            max(
-                [
-                    (traj.position.shape[0] if successes[side][traj_idx] else 0)
-                    for side in ["left", "right"]
-                    for traj_idx, traj in enumerate(trajectories[side])
-                ]
-            )
-            + 10
-        )  # +10 to account for last hold position
+        max_trajectory_length = max(
+            [
+                (traj.position.shape[0] if successes[side][traj_idx] else 0)
+                for side in ["left", "right"]
+                for traj_idx, traj in enumerate(trajectories[side])
+            ]
+        )
 
         start_cfg_stack = np.stack([c for c in start_cfg.values()], axis=1)
         episode = CuroboEpisode(
@@ -252,9 +249,7 @@ class CuroboPlanner:
                             axis=0,
                         )
 
-                    episode.episode_length[env_idx, side_idx] = (
-                        pos_len + 10
-                    )  # +10 to account for last hold position
+                    episode.episode_length[env_idx, side_idx] = pos_len
 
         return episode
 

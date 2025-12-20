@@ -88,7 +88,9 @@ class CuroboDatasetCollector:
             with h5py.File(self.output_path, "r") as f:
                 if "episodes" in f:
                     self.num_plans_saved = len(f["episodes"])
-                    print(f"Found {self.num_plans_saved} existing plans in {self.output_path}")
+                    print(
+                        f"Found {self.num_plans_saved} existing plans in {self.output_path}"
+                    )
 
         self.pbar = tqdm(
             total=self.num_plans_to_save,
@@ -166,6 +168,11 @@ class CuroboDatasetCollector:
                 is_done = self.step >= np.max(self.episode.episode_length[env_idx])
                 if not both_arms_success or is_done:
                     continue
+
+                is_last_step = self.step == self.max_step - 1
+                if is_last_step:
+                    # Hold the last position
+                    actions[env_idx, self.arm_dof_ids] = 0.0
 
                 self.dataset_episodes[env_idx].add_observation(
                     GPTEpisode.collect_observation(
