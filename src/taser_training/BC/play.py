@@ -7,6 +7,13 @@ parser.add_argument(
 parser.add_argument(
     "--num_envs", type=int, default=1, help="Number of environments to simulate"
 )
+parser.add_argument(
+    "--model_type",
+    type=str,
+    required=True,
+    choices=["ACT", "GPT"],
+    help="Type of the model to evaluate (ACT or GPT).",
+)
 parser.add_argument("--model_path", type=str, help="Path to the trained model.")
 parser.add_argument(
     "--export", type=str, help="Directory path to export the torch and ONNX models."
@@ -38,7 +45,7 @@ from taser.common.datatypes import TaserJointState
 from taser.common.logger import logger
 from taser.common.model import USD_PATH
 from taser.manipulation.kinematics import ManipulationKinematics
-from taser_training.BC.model.gpt import GPT_ACT, GPT_History, GPTConfig
+from taser_training.BC.model import ACT, GPT, TransformerCfg
 from taser_training.BC.utils.dataset import GPTEpisode
 
 
@@ -56,8 +63,8 @@ class GPTEvaluator:
         self.kin_left = ManipulationKinematics(arm="left")
         self.kin_right = ManipulationKinematics(arm="right")
 
-        self.model_cfg = GPTConfig(type="history")
-        GPT = GPT_ACT if self.model_cfg.type == "ACT" else GPT_History
+        self.model_cfg = TransformerCfg(type="ACT")
+        Model = ACT if self.model_cfg.type == "ACT" else GPT
 
         if not args.model_path:
             outputs_dir = Path("/workspace/taser") / "outputs" / "BC" / "models"
@@ -77,7 +84,7 @@ class GPTEvaluator:
                 f"No model path provided. Using the latest model at {args.model_path}"
             )
 
-        self.model = GPT(config=self.model_cfg).to(self.device)
+        self.model = Model(config=self.model_cfg).to(self.device)
         checkpoint = torch.load(args.model_path, map_location=self.device)
         self.model.load_state_dict(checkpoint["model"])
         self.model.eval()
@@ -89,6 +96,14 @@ class GPTEvaluator:
         self.dof_ids = TaserJointState.isaac_indices
         self.arm_dof_ids = np.hstack([self.dof_ids.left_arm, self.dof_ids.right_arm])
         self.num_total_dof = self.robot.num_dof
+
+        # Temporal Ensembling
+        self.chunk_size = self.model_cfg.action_chunk_size
+        self.action_dim = len(self.arm_dof_ids)
+        self.action_buffer = np.zeros((self.num_envs, self.chunk_size, self.action_dim))
+        self.weight_buffer = np.zeros((self.num_envs, self.chunk_size))
+        # k = 0.01 for temporal ensembling (ACT style)
+        self.temporal_weights = np.exp(-0.01 * np.arange(self.chunk_size))
 
         self.needs_reset = True
         self.first_step = True
@@ -148,6 +163,8 @@ class GPTEvaluator:
             self.world.reset(True)
             self.needs_reset = False
             self.first_step = True
+            self.action_buffer[:] = 0
+            self.weight_buffer[:] = 0
         else:
             current_joint_pos = self.robot.get_joint_positions().copy()
             current_joint_vel = self.robot.get_joint_velocities().copy()
@@ -193,10 +210,37 @@ class GPTEvaluator:
                     torch.tensor(self.observations, device=self.device).float()
                 )
 
-            action_idx = 0 if self.model_cfg.type == "ACT" else -1
-            actions[:, self.arm_dof_ids] = (
-                model_outputs["actions"][:, action_idx, :].cpu().numpy()
+            # (B, history_len, chunk_size, action_dim)
+            new_actions = model_outputs["actions"].cpu().numpy()
+            new_actions = new_actions[:, -1, :, :]  # (B, chunk_size, action_dim)
+
+            # Add to buffer
+            # Broadcast weights to (1, chunk_size, 1)
+            weights_broad = self.temporal_weights[None, :, None]
+            # Broadcast weights to (1, chunk_size) for weight buffer
+            weights_broad_2d = self.temporal_weights[None, :]
+
+            self.action_buffer += new_actions * weights_broad
+            self.weight_buffer += weights_broad_2d
+
+            # Get current action (weighted average)
+            # Avoid division by zero
+            target_joint_pos = self.action_buffer[:, 0] / (
+                self.weight_buffer[:, 0:1] + 1e-8
             )
+
+            # PD Control
+            Kp = 5.0
+            current_arm_pos = current_joint_pos[:, self.arm_dof_ids]
+            joint_vel_cmd = Kp * (target_joint_pos - current_arm_pos)
+
+            actions[:, self.arm_dof_ids] = joint_vel_cmd
+
+            # Shift buffers
+            self.action_buffer[:, :-1] = self.action_buffer[:, 1:]
+            self.action_buffer[:, -1] = 0
+            self.weight_buffer[:, :-1] = self.weight_buffer[:, 1:]
+            self.weight_buffer[:, -1] = 0
 
             self.robot.apply_action(ArticulationActions(joint_velocities=actions))
 

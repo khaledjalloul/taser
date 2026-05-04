@@ -89,6 +89,5 @@
         "ios": "cpp"
     },
     "python.defaultInterpreterPath": "/workspace/isaaclab/_isaac_sim/python.sh",
-    "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python-envs.pythonProjects": []
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }
