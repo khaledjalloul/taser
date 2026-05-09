@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/isaac-sim:5.1.0 AS base
+FROM nvcr.io/nvidia/isaac-sim:5.1.0
 
 ###############################################
 # Initial Setup
@@ -39,7 +39,7 @@ RUN apt install -y \
     bash-completion \
     wget \
     # Python
-    python3-pip \
+    python3-venv \
     # C++
     gdb \
     # Git
@@ -78,24 +78,23 @@ RUN /workspace/isaaclab/isaaclab.sh --install
 ###############################################
 # cuRobo
 
-USER root
+# USER root
 
 # Install CUDA Toolkit
-RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb && \
-    dpkg -i cuda-keyring_1.0-1_all.deb && \
-    rm -f cuda-keyring_1.0-1_all.deb && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends cuda-toolkit-12.8 && \
-    rm -rf /var/lib/apt/lists/*
+# RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb && \
+#     dpkg -i cuda-keyring_1.0-1_all.deb && \
+#     rm -f cuda-keyring_1.0-1_all.deb && \
+#     apt-get update && \
+#     apt-get install -y --no-install-recommends cuda-toolkit-12.8 && \
+#     rm -rf /var/lib/apt/lists/*
 
-USER ${USERNAME:-root}
+# USER ${USERNAME:-root}
 
-# Install cuRobo
-ENV TORCH_CUDA_ARCH_LIST="7.0+PTX"
-RUN git clone https://github.com/NVlabs/curobo.git /workspace/curobo
-RUN --mount=type=cache,target=/root/.cache/pip \
-    cd /workspace/curobo && \
-    /isaac-sim/python.sh -m pip install -e .[isaacsim] --no-build-isolation
+# # Install cuRobo
+# ENV TORCH_CUDA_ARCH_LIST="7.0+PTX"
+# RUN git clone --branch v0.7.7 https://github.com/NVlabs/curobo.git /workspace/curobo
+# RUN cd /workspace/curobo && \
+#     /isaac-sim/python.sh -m pip install -e .[isaacsim] --no-build-isolation
 
 ###############################################
 # ROS 2 jazzy
@@ -140,6 +139,7 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/workspace/isaacsim/exts/isaacsim.ros2.brid
 
 # Fix Rviz display issue
 ENV LIBGL_DRI3_DISABLE=1
+ENV LIBGL_ALWAYS_SOFTWARE=1
 
 ###############################################
 # Install Dependencies
@@ -160,8 +160,9 @@ WORKDIR /workspace/taser
 
 # Install project
 COPY --chown=${USERNAME:-root} ./pyproject.toml /workspace/taser
-COPY --chown=${USERNAME:-root} ./install.bash /workspace/taser
-COPY --chown=${USERNAME:-root} ./src/taser_cpp /workspace/taser/src/taser_cpp
-RUN bash ./install.bash
+RUN /usr/bin/python3 -m venv /workspace/venv
+RUN /workspace/venv/bin/pip install --upgrade pip
+RUN /workspace/venv/bin/pip install -e .
+RUN /isaac-sim/python.sh -m pip install -e .
 
 ENTRYPOINT [ ]

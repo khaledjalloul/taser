@@ -34,8 +34,7 @@ setup(
     license="TODO: License declaration",
     entry_points={
         "console_scripts": [
-            "sim = taser.ros.standalone.sim:main",
-            "cmd_gui = taser.ros.standalone.cmd_gui:main",
+            "controller_node = taser_ros.controller_node:main",
         ],
     },
 )

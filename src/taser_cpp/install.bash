@@ -1,3 +1,7 @@
+######
+# Old installation script to install Taser with its C++ code and dependencies.
+######
+
 # Exit on error
 set -Eeo pipefail
 

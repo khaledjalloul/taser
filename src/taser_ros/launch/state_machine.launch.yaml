@@ -1,8 +1,0 @@
-launch:
-  - include:
-      file: $(find-pkg-share taser_ros)/launch/robot.launch.yaml
-
-  - node:
-      pkg: state_machine
-      exec: state_machine_node
-      output: screen

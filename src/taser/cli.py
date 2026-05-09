@@ -18,26 +18,26 @@ def cli():
     pass
 
 
-@cli.group()
-def ros():
-    """Commands for ROS 2."""
-    pass
-
-
-@ros.command()
-def rviz():
+@cli.command()
+@click.option(
+    "--standalone",
+    is_flag=True,
+    help="Whether to launch RViz without the controller node.",
+)
+def rviz(standalone: bool):
     """Launch RViz for Taser visualization."""
+    launch_file = "rviz_controller" if not standalone else "rviz"
     subprocess.run(
         [
-            "unset PYTHONPATH && source /opt/ros/jazzy/setup.bash && "
-            "ros2 launch taser_ros rviz.launch.yaml"
+            "unset PYTHONPATH && source /opt/ros/jazzy/setup.bash && source /workspace/taser/install/setup.bash && "
+            f"ros2 launch taser_ros {launch_file}.launch.yaml"
         ],
         shell=True,
         executable="/bin/bash",
     )
 
 
-@ros.group()
+@cli.group()
 def urdf():
     """Commands for URDF file generation and conversion."""
     pass

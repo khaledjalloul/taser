@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import onnxruntime as ort
+from scipy.spatial.transform import Rotation as R
 
 from taser.common.datatypes import TaserJointState
 from taser.locomotion import __file__ as locomotion_path
@@ -42,11 +43,15 @@ class LocomotionPolicy:
         self,
         joint_positions: TaserJointState,
         joint_velocities: TaserJointState,
-        base_quaternion_w: np.ndarray,
-        base_linear_velocity_b: np.ndarray,
-        base_angular_velocity_b: np.ndarray,
+        base_quaternion_w: np.ndarray,  # [w, x, y, z]
+        base_linear_velocity_w: np.ndarray,
+        base_angular_velocity_w: np.ndarray,
         base_target_planar_velocity_b: np.ndarray,
     ) -> TaserJointState:
+        R_BI = R.from_quat(base_quaternion_w, scalar_first=True).as_matrix().transpose()
+        base_linear_velocity_b = np.matmul(R_BI, base_linear_velocity_w)
+        base_angular_velocity_b = np.matmul(R_BI, base_angular_velocity_w)
+
         self._obs_buffer = np.roll(
             self._obs_buffer,
             shift=-1,

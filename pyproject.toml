@@ -10,7 +10,7 @@ dependencies = [
     "dotenv",
     "h5py",
     "matplotlib",
-    "numpy==1.24.0",
+    "numpy==1.26.4",
     "onnxruntime",
     "pybind11",
     "pyqt6",
@@ -19,14 +19,6 @@ dependencies = [
     "tqdm",
     "wandb",
 ]
-
-[build-system]
-requires = ["scikit-build-core"]
-build-backend = "scikit_build_core.build"
-
-[tool.scikit-build]
-wheel.packages = ["src/taser"]
-cmake.source-dir = "src/taser_cpp"
 
 [tool.ruff]
 select = [
@@ -40,7 +32,7 @@ reportUnusedImport = false # Already handled by ruff
 
 extraPaths = [
     # System site-packages
-    "/usr/local/lib/python3.10/dist-packages",
+    "/usr/local/lib/python3.12/dist-packages",
     # Isaac Lab
     "/workspace/isaaclab/source/isaaclab_tasks",
     "/workspace/isaaclab/source/isaaclab_assets",

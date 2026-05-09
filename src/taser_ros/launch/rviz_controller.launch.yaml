@@ -1,0 +1,12 @@
+launch:
+  - include:
+      file: $(find-pkg-share taser_ros)/launch/rviz.launch.yaml
+      arg:
+        - name: use_joint_state_publisher_gui
+          value: "false"
+
+  - node:
+      pkg: taser_ros
+      name: controller_node
+      exec: controller_node
+      output: screen
