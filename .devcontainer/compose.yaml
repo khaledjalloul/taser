@@ -1,4 +1,3 @@
 services:
   taser:
     command: bash -c "while sleep 1000; do :; done"
-    network_mode: host # Temporary fix for when using VPN

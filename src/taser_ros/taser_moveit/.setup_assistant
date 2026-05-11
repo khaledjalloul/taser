@@ -1,0 +1,10 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: taser_ros
+    relative_path: config/taser.urdf
+  srdf:
+    relative_path: config/taser.srdf
+  package_settings:
+    author_name: Khaled Jalloul
+    author_email: khaled.jalloul@hotmail.com
+    generated_timestamp: 1778524029

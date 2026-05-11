@@ -128,12 +128,15 @@ RUN apt install -y \
 
 # Install ROS 2 dependencies for taser_ros package
 RUN rosdep init
-COPY --chown=${USERNAME:-root} ./src/taser_ros/package.xml /workspace/taser/src/taser_ros/package.xml
+COPY --chown=${USERNAME:-root} ./src/taser_ros/taser_ros/package.xml /workspace/taser/src/taser_ros/taser_ros/package.xml
 RUN rosdep update
-RUN ROS_DISTRO=jazzy rosdep install --from-paths /workspace/taser/src --ignore-src -r -y
+ENV ROS_DISTRO=jazzy
+RUN rosdep install --from-paths /workspace/taser/src --ignore-src -r -y
+RUN apt install -y \
+    ros-jazzy-moveit
 
 # Enable Isaac Sim internal rclpy library 
-ENV ROS_DISTRO=jazzy
+# Unset these in case of OpenSSL errors:
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/workspace/isaacsim/exts/isaacsim.ros2.bridge/jazzy/lib
 

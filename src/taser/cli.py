@@ -47,17 +47,19 @@ def urdf():
 def generate_from_xacro():
     """Generate the URDF file from the Xacro files."""
     model_path = "/workspace/taser/src/taser/common/model/urdf"
+    ros_package_path = "/workspace/taser/src/taser_ros"
     xacro_path = f"{model_path}/xacro/robot.urdf.xacro"
-    urdf_path = f"{model_path}/taser.urdf"
+    urdf_paths = [f"{model_path}/taser.urdf", f"{ros_package_path}/config/taser.urdf"]
 
-    subprocess.run(
-        [
-            "unset PYTHONPATH && source /opt/ros/jazzy/setup.bash && "
-            f"xacro {xacro_path} -o {urdf_path}"
-        ],
-        shell=True,
-        executable="/bin/bash",
-    )
+    for urdf_path in urdf_paths:
+        subprocess.run(
+            [
+                "unset PYTHONPATH && source /opt/ros/jazzy/setup.bash && "
+                f"xacro {xacro_path} -o {urdf_path}"
+            ],
+            shell=True,
+            executable="/bin/bash",
+        )
 
 
 @urdf.command(context_settings=IGNORE_ARGS)

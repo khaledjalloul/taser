@@ -1,0 +1,15 @@
+# Default initial positions for taser's ros2_control fake system
+
+initial_positions:
+  left_arm_1_left_arm_2_joint: 0
+  left_arm_2_left_arm_3_joint: 0
+  left_arm_3_left_arm_4_joint: 0
+  left_arm_4_left_arm_5_joint: 0
+  left_arm_shoulder_bridge_left_arm_shoulder_joint: 0
+  left_arm_shoulder_left_arm_1_joint: 0
+  right_arm_1_right_arm_2_joint: 0
+  right_arm_2_right_arm_3_joint: 0
+  right_arm_3_right_arm_4_joint: 0
+  right_arm_4_right_arm_5_joint: 0
+  right_arm_shoulder_bridge_right_arm_shoulder_joint: 0
+  right_arm_shoulder_right_arm_1_joint: 0
