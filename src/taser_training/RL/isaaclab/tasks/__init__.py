@@ -12,7 +12,7 @@ gym.register(
 
 
 gym.register(
-    id="TASER-track_velocity",
+    id="TASER-track-velocity",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
@@ -22,7 +22,7 @@ gym.register(
 )
 
 gym.register(
-    id="TASER-stand_up",
+    id="TASER-stand-up",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={

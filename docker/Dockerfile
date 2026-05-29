@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/isaac-sim:5.1.0
+FROM nvcr.io/nvidia/isaac-lab:2.3.2
 
 ###############################################
 # Initial Setup
@@ -58,22 +58,10 @@ RUN echo ". /etc/bash_completion" >> ${HOME}/.bashrc
 ###############################################
 # Isaac Sim
 
-RUN sudo mkdir /workspace
 RUN if [ -n "$USERNAME" ]; then \
     sudo chown -R ${USERNAME} /isaac-sim; \
     sudo chown -R ${USERNAME} /workspace; \
     fi
-
-# Create Isaac Sim workspace folder
-RUN ln -s /isaac-sim /workspace/isaacsim
-
-###############################################
-# Isaac Lab (Installed manually to get latest version)
-
-ENV TERM=xterm
-RUN git clone https://github.com/isaac-sim/IsaacLab.git /workspace/isaaclab
-RUN ln -s /workspace/isaacsim /workspace/isaaclab/_isaac_sim
-RUN /workspace/isaaclab/isaaclab.sh --install
 
 ###############################################
 # cuRobo
@@ -133,12 +121,14 @@ RUN rosdep update
 ENV ROS_DISTRO=jazzy
 RUN rosdep install --from-paths /workspace/taser/src --ignore-src -r -y
 RUN apt install -y \
-    ros-jazzy-moveit
+    ros-jazzy-rmw-cyclonedds-cpp \
+    ros-jazzy-moveit \
+    ros-jazzy-moveit-py
 
 # Enable Isaac Sim internal rclpy library 
 # Unset these in case of OpenSSL errors:
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/workspace/isaacsim/exts/isaacsim.ros2.bridge/jazzy/lib
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/isaac-sim/exts/isaacsim.ros2.bridge/jazzy/lib
 
 # Fix Rviz display issue
 ENV LIBGL_DRI3_DISABLE=1
@@ -154,6 +144,9 @@ RUN apt install -y khaled-cli
 
 # Force reinstall click to fix intellisense
 RUN /isaac-sim/python.sh -m pip install --force-reinstall click
+
+# Update Weights & Biases
+RUN /isaac-sim/python.sh -m pip install --upgrade wandb
 
 ###############################################
 # Finalization

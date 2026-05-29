@@ -21,7 +21,6 @@ from taser.common.logger import logger
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 task = f"TASER-{args.task}"
-args.headless = True if args.export else args.headless
 
 if not args.model_path:
     outputs_dir = Path("/workspace/taser") / "outputs" / "RL"
@@ -32,7 +31,7 @@ if not args.model_path:
         raise FileNotFoundError(
             f"No trained model directories found in {outputs_dir} for task {task}."
         )
-    args.model_path = subdirs[-1] / "best_model.pth"
+    args.model_path = subdirs[-1] / "latest_model.pth"
     logger.info(f"No model path provided. Using the latest model at {args.model_path}")
 
 app_launcher = AppLauncher(args)
@@ -61,13 +60,11 @@ def play(env: gym.Env):
 
     if args.export:
         export_path = Path(args.export)
-        export_path.mkdir(parents=True, exist_ok=True)
-        model.save(export_path / f"{args.task}.pth")
-        model.export_onnx(export_path / f"{args.task}.onnx")
-        logger.info(
-            f"Exported torch model to {export_path / f'{args.task}.pth'} and ONNX model to {export_path / f'{args.task}.onnx'}"
-        )
-        return
+    else:
+        export_path = Path(args.model_path).parent / "exported"
+    export_path.mkdir(parents=True, exist_ok=True)
+    model.save(export_path / f"{args.task}.pth")
+    model.export_onnx(export_path / f"{args.task}.onnx")
 
     while simulation_app.is_running():
         with torch.inference_mode():

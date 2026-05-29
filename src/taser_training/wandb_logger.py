@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from tqdm import tqdm
+
 import wandb
 from taser.common.logger import logger
 
@@ -52,8 +54,23 @@ class WandbLogger:
         self.episode_lengths = []
         self.base_path = base_path
 
-    def log(self, metrics: Dict[str, Any], step: Optional[int] = None):
-        """Log metrics to wandb."""
+    def log(
+        self,
+        metrics: Dict[str, Any],
+        step: int,
+        max_steps: int,
+        tqdm: Optional[tqdm] = None,
+    ):
+        """Log metrics to the terminal and wandb."""
+
+        log_str = f"-------------- Update {step} / {max_steps}: --------------\n"
+        log_str += "\n".join(f"{k}: {v:.4f}" for k, v in metrics.items())
+
+        if tqdm is not None:
+            tqdm.write(log_str)
+        else:
+            logger.info(log_str)
+
         if not self.enabled:
             return
 

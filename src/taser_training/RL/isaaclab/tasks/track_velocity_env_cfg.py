@@ -14,7 +14,13 @@ from isaaclab.managers import (
 from isaaclab.utils import configclass
 
 from taser.common.datatypes import TaserJointState
-from taser_training.RL.isaaclab.articulation import TASER_CONFIG_USD
+from taser_training.RL.isaaclab.articulation import (
+    GRIPPER_JOINT_NAMES,
+    LEFT_ARM_JOINT_NAMES,
+    RIGHT_ARM_JOINT_NAMES,
+    TASER_CONFIG_USD,
+    WHEEL_JOINT_NAMES,
+)
 from taser_training.RL.isaaclab.base_env_cfg import (
     TaserBaseEnvCfg,
     TaserBaseSceneCfg,
@@ -22,6 +28,7 @@ from taser_training.RL.isaaclab.base_env_cfg import (
 
 V_MAX = 3.0
 W_MAX = 2.0
+JOINT_INDICES = TaserJointState.isaac_indices
 
 
 @configclass
@@ -30,13 +37,10 @@ class ActionsCfg:
 
     wheel_velocities = mdp.JointVelocityActionCfg(
         asset_name="robot",
-        joint_names=[
-            "base_link_left_wheel_joint",
-            "base_link_right_wheel_joint",
-        ],
+        joint_names=WHEEL_JOINT_NAMES,
         # max wheel vel = max lin vel / wheel radius = 3m/s / 0.15rad = 20 rad/s
         # action scale = max wheel vel / model action space = 20 rad/s / 1.0 = 20.0
-        scale=20.0,
+        scale=(V_MAX / 0.15) / 1.0,
     )
 
 
@@ -57,15 +61,12 @@ class CommandsCfg:
 
 
 def update_target_velocity_command(
-    env: ManagerBasedRLEnv,
-    env_ids,
-    old_value,
-    step: float,
-    increment: float,
-    max_value: float,
+    env: ManagerBasedRLEnv, env_ids, old_value, max_value: float
 ):
     """Update the target velocity command."""
-    range = (env.common_step_counter // step) * increment
+    # Ramp up until halfway through training, then keep it constant
+    max_ppo_step = env.unwrapped.cfg.max_num_ppo_updates / 2
+    range = (env.unwrapped.num_ppo_updates / max_ppo_step) * max_value
     range = min(range, max_value)
     return (-range, range)
 
@@ -79,7 +80,7 @@ class CurriculumCfg:
         params={
             "address": "commands.base_velocity.ranges.lin_vel_x",
             "modify_fn": update_target_velocity_command,
-            "modify_params": {"step": 15_000, "increment": 0.1, "max_value": V_MAX},
+            "modify_params": {"max_value": V_MAX},
         },
     )
 
@@ -88,28 +89,15 @@ class CurriculumCfg:
         params={
             "address": "commands.base_velocity.ranges.ang_vel_z",
             "modify_fn": update_target_velocity_command,
-            "modify_params": {"step": 10_000, "increment": 0.1, "max_value": W_MAX},
+            "modify_params": {"max_value": W_MAX},
         },
     )
 
 
-def set_random_joint_velocities(env: ManagerBasedEnv, *args):
+def set_random_joint_velocities(
+    env: ManagerBasedEnv, env_ids, joint_vels: dict[int, list[float]]
+):
     robot: Articulation = env.scene["robot"]
-
-    idx = TaserJointState.isaac_indices
-    joint_vels = {
-        idx.locks[0]: [0.8, 0.2],
-        idx.locks[1]: [7.0, -10.0],
-        idx.locks[2]: [0.8, 0.2],
-        idx.locks[3]: [7.0, -10.0],
-        idx.left_arm[0]: [4.0, -2.0],
-        idx.left_arm[1]: [4.0, -2.0],
-        idx.left_arm[2]: [4.0, -2.0],
-        idx.right_arm[0]: [4.0, -2.0],
-        idx.right_arm[1]: [4.0, -2.0],
-        idx.right_arm[2]: [4.0, -2.0],
-    }
-
     vel_target = (
         torch.rand((env.num_envs, len(joint_vels)), device=env.device)
         * torch.tensor(list(joint_vels.values()), device=env.device)[:, 0]
@@ -129,17 +117,36 @@ class EventsCfg:
             "asset_cfg": SceneEntityCfg(
                 "robot",
                 joint_names=[
-                    "base_link_left_arm_shoulder_joint",
-                    "left_arm_1_left_arm_2_joint",
-                    "left_arm_2_left_arm_3_joint",
-                    "base_link_right_arm_shoulder_joint",
-                    "right_arm_1_right_arm_2_joint",
-                    "right_arm_2_right_arm_3_joint",
-                    "base_link_left_wheel_joint",
-                    "base_link_right_wheel_joint",
+                    LEFT_ARM_JOINT_NAMES[0],
+                    LEFT_ARM_JOINT_NAMES[1],
+                    LEFT_ARM_JOINT_NAMES[3],
+                    LEFT_ARM_JOINT_NAMES[5],
+                    RIGHT_ARM_JOINT_NAMES[0],
+                    RIGHT_ARM_JOINT_NAMES[1],
+                    RIGHT_ARM_JOINT_NAMES[3],
+                    RIGHT_ARM_JOINT_NAMES[5],
                 ],
             ),
-            "position_range": (-torch.pi / 2, torch.pi / 2),
+            "position_range": (-0.5, 0.5),
+            "velocity_range": (0.0, 0.0),
+        },
+    )
+
+    reset_remaining_joints = EventTermCfg(
+        func=mdp.reset_joints_by_offset,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg(
+                "robot",
+                joint_names=[
+                    LEFT_ARM_JOINT_NAMES[2],
+                    LEFT_ARM_JOINT_NAMES[4],
+                    RIGHT_ARM_JOINT_NAMES[2],
+                    RIGHT_ARM_JOINT_NAMES[4],
+                    *GRIPPER_JOINT_NAMES,
+                ],
+            ),
+            "position_range": (0.0, 0.0),
             "velocity_range": (0.0, 0.0),
         },
     )
@@ -179,6 +186,15 @@ class EventsCfg:
     set_random_joint_velocities = EventTermCfg(
         func=set_random_joint_velocities,
         mode="reset",
+        params={
+            "joint_vels": {
+                # [range, min]
+                JOINT_INDICES.locks[0]: [0.8, 0.2],
+                JOINT_INDICES.locks[1]: [7.0, -10.0],
+                JOINT_INDICES.locks[2]: [0.8, 0.2],
+                JOINT_INDICES.locks[3]: [7.0, -10.0],
+            }
+        },
     )
 
     reset_robot_base = EventTermCfg(
@@ -237,9 +253,9 @@ class ObservationsCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    alive_reward = RewardTermCfg(func=mdp.is_alive, weight=1.0)
+    alive_reward = RewardTermCfg(func=mdp.is_alive, weight=0.5)
 
-    termination_penalty = RewardTermCfg(func=mdp.is_terminated, weight=-10.0)
+    termination_penalty = RewardTermCfg(func=mdp.is_terminated, weight=-15.0)
 
     tilt_penalty = RewardTermCfg(
         func=mdp.flat_orientation_l2,
@@ -249,23 +265,23 @@ class RewardsCfg:
 
     track_lin_vel_xy = RewardTermCfg(
         func=mdp.track_lin_vel_xy_exp,
-        weight=15.0,
+        weight=1.5,
         params={"command_name": "base_velocity", "std": 0.25},
     )
-    track_lin_vel_xy_general = RewardTermCfg(
+    track_lin_vel_xy_global = RewardTermCfg(
         func=mdp.track_lin_vel_xy_exp,
-        weight=8.0,
+        weight=0.8,
         params={"command_name": "base_velocity", "std": 1.0},
     )
 
     track_ang_vel_z = RewardTermCfg(
         func=mdp.track_ang_vel_z_exp,
-        weight=15.0,
+        weight=1.5,
         params={"command_name": "base_velocity", "std": 0.25},
     )
-    track_ang_vel_z_general = RewardTermCfg(
+    track_ang_vel_z_global = RewardTermCfg(
         func=mdp.track_ang_vel_z_exp,
-        weight=8.0,
+        weight=0.8,
         params={"command_name": "base_velocity", "std": 1.0},
     )
 
@@ -295,6 +311,8 @@ class TerminationsCfg:
 @configclass
 class TaserTrackVelocityEnvCfg(TaserBaseEnvCfg):
     """TASER environment configuration for the track velocity task."""
+
+    max_num_ppo_updates = 5_000
 
     actions = ActionsCfg()
     commands = CommandsCfg()

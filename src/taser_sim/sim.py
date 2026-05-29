@@ -163,8 +163,8 @@ class TaserIsaacSim(TaserSimRosInterface):
                 base_angular_velocity_w=self.robot.get_angular_velocity(),
                 base_target_planar_velocity_b=vel_cmd,
             )
-            locomotion_action.left_arm = self.joint_velocity_actions.left_arm
-            locomotion_action.right_arm = self.joint_velocity_actions.right_arm
+            # locomotion_action.left_arm = self.joint_velocity_actions.left_arm
+            # locomotion_action.right_arm = self.joint_velocity_actions.right_arm
 
             action = ArticulationAction(joint_velocities=locomotion_action.to("isaac"))
             self.robot.apply_action(action)

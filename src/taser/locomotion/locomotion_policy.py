@@ -23,7 +23,7 @@ class LocomotionPolicy:
             providers=["CPUExecutionProvider"],
         )
         self._track_velocity_policy = ort.InferenceSession(
-            MODELS_PATH / "track_velocity.onnx",
+            MODELS_PATH / "track-velocity.onnx",
             providers=["CPUExecutionProvider"],
         )
 
@@ -73,21 +73,23 @@ class LocomotionPolicy:
             lock_joint_positions=joint_positions.locks
         )
 
-        if is_locking:
-            policy = self._balance_policy
-            obs = np.concatenate(
-                (
-                    # Proprio
-                    joint_positions.to("isaac"),
-                    joint_velocities.to("isaac"),
-                    base_linear_velocity_b,
-                    base_angular_velocity_b,
-                    base_quaternion_w,
-                ),
-                dtype=np.float32,
-            )
+        obs = np.concatenate(
+            (
+                # Proprio
+                joint_positions.to("isaac"),
+                joint_velocities.to("isaac"),
+                base_linear_velocity_b,
+                base_angular_velocity_b,
+                base_quaternion_w,
+                # Policy
+                base_target_planar_velocity_b,
+            ),
+            dtype=np.float32,
+        )
 
-            wheel_velocities = policy.run(
+        if is_locking:
+            obs[-3:] = 0.0  # Zero out target velocity when locking
+            wheel_velocities = self._balance_policy.run(
                 input_feed={"obs": obs.reshape(1, -1)},
                 output_names=["action"],
             )[0][0]  # First action, first batch element
@@ -97,30 +99,13 @@ class LocomotionPolicy:
             wheel_velocities = np.zeros(2, dtype=np.float32)
 
         if not is_idle and not is_locking:
-            policy = self._track_velocity_policy
-            obs = np.concatenate(
-                (
-                    # Proprio
-                    joint_positions.to("isaac"),
-                    joint_velocities.to("isaac"),
-                    base_linear_velocity_b,
-                    base_angular_velocity_b,
-                    base_quaternion_w,
-                    # Policy
-                    base_target_planar_velocity_b,
-                ),
-                dtype=np.float32,
-            )
-            wheel_velocities = policy.run(
+            wheel_velocities = self._track_velocity_policy.run(
                 input_feed={"obs": obs.reshape(1, -1)},
                 output_names=["action"],
             )[0][0]  # First action, first batch element
             wheel_velocities *= 20.0  # Action scale
 
-        return TaserJointState(
-            wheels=wheel_velocities,
-            locks=lock_velocities,
-        )
+        return TaserJointState(wheels=wheel_velocities, locks=lock_velocities)
 
     @property
     def v_max(self) -> float:

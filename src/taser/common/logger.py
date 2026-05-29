@@ -1,4 +1,11 @@
 import logging
 
-logging.basicConfig(level=logging.INFO, format="[TASER] %(message)s")
 logger = logging.getLogger("TASER")
+logger.setLevel(logging.INFO)
+
+if not logger.handlers:
+	handler = logging.StreamHandler()
+	handler.setFormatter(logging.Formatter("[TASER] %(message)s"))
+	logger.addHandler(handler)
+
+logger.propagate = False

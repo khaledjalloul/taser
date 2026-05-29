@@ -3,13 +3,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Train one of the TASER tasks.")
 parser.add_argument("--task", type=str, required=True, help="Task to train on.")
 parser.add_argument(
-    "--num_envs", type=int, default=512, help="Number of environments to spawn."
-)
-parser.add_argument(
-    "--num_iters",
-    type=int,
-    default=600,
-    help="Number of iterations (rollout + training).",
+    "--num_envs", type=int, default=16_384, help="Number of environments to spawn."
 )
 parser.add_argument("--resume", type=str, help="Path to checkpoint to resume from.")
 
@@ -36,7 +30,7 @@ from isaaclab_tasks.utils import parse_env_cfg
 from tqdm import tqdm
 
 import taser_training.RL.isaaclab.tasks  # noqa: F401 # register tasks
-from taser_training.RL.trainer.ppo_trainer import PPOTrainer, PPOTrainerCfg
+from taser_training.RL.algorithm import PPO, TrainCfg
 from taser_training.wandb_logger import WandbLogger
 
 
@@ -47,20 +41,8 @@ def train(env: gym.Env):
     output_path = Path.cwd() / "outputs" / "RL" / run_name
     output_path.mkdir(parents=True, exist_ok=True)
 
-    trainer_cfg = PPOTrainerCfg(
-        num_iters=args.num_iters,
-        num_rollout_steps=2048,
-        num_epochs=10,
-        learning_rate=3e-4,
-        lr_decay_factor=1.0,  # Disabled, tried 0.995 but led to worse performance
-        gamma=0.99,
-        gae_lambda=0.95,
-        clip_eps=0.2,
-        ent_coef=0.01,
-        vf_coef=0.5,
-        target_kl=0.015,
-        eval_freq=5,
-        num_eval_steps=256,
+    train_cfg = TrainCfg(
+        num_iters=env.unwrapped.cfg.max_num_ppo_updates,
         device=env.unwrapped.device,
     )
 
@@ -68,100 +50,69 @@ def train(env: gym.Env):
     logger = WandbLogger(
         exp_name=run_name,
         base_path=output_path,
-        config={"num_envs": args.num_envs, **asdict(trainer_cfg)},
+        config={"num_envs": args.num_envs, **asdict(train_cfg)},
     )
 
     # Initialize trainer
-    trainer = PPOTrainer(env=env, cfg=trainer_cfg)
+    alg = PPO(env=env, cfg=train_cfg)
 
     # Load checkpoint if resuming
     if args.resume:
-        trainer.policy.load(args.resume)
+        alg.policy.load(args.resume)
+
+    env.unwrapped.num_ppo_updates = 0  # Set PPO update counter for curriculum
+    env.reset()
 
     # Training loop
     best_reward = float("-inf")
+    tqdm_bar = tqdm(
+        range(train_cfg.num_iters), desc="Training", dynamic_ncols=True, leave=True
+    )
 
-    for update in tqdm(
-        range(trainer_cfg.num_iters), desc="Training", dynamic_ncols=True, leave=True
-    ):
-        # Training update
-        train_info = trainer.train_step(iter=update)
+    for iter in tqdm_bar:
+        # Rollout
+        with torch.no_grad():
+            obs_dict = env.unwrapped.observation_manager.compute()
+
+            for _ in range(train_cfg.num_rollout_steps):
+                action_dist, value = alg.policy(obs_dict, update_norm=True)
+                action = action_dist.sample()
+
+                next_obs_dict, reward, terminated, truncated, extras = env.step(action)
+                done = torch.logical_or(terminated, truncated)
+
+                alg.update_buffers(obs_dict, action, reward, done, action_dist, value)
+
+                obs_dict = {
+                    k: torch.nan_to_num(v, nan=0.0) for k, v in next_obs_dict.items()
+                }
+
+            # Compute final value for bootstrapping
+            _, final_val = alg.policy(obs_dict, update_norm=True)
+
+        # Update policy
+        info = alg.update(iter=iter, final_val=final_val)
 
         # Log training metrics
         logger.log(
             {
-                "train/policy_loss": train_info["policy_loss"],
-                "train/value_loss": train_info["value_loss"],
-                "train/entropy": train_info["entropy"],
-                "train/total_loss": train_info["loss"],
-                "train/kl_divergence": train_info["kl"],
-                "train/common_step_counter": train_info["common_step_counter"],
-                "train/learning_rate": trainer.optimizer.param_groups[0]["lr"],
+                **{f"train/{k}": v for k, v in info.items()},
+                **extras["log"],
             },
-            step=update,
+            step=iter,
+            max_steps=train_cfg.num_iters,
+            tqdm=tqdm_bar,
         )
 
-        # Update tqdm with wandb stats (e.g., reward, loss)
-        tqdm.write(
-            f"Update {update}: "
-            + ", ".join(f"{k}={v:.4f}" for k, v in train_info.items())
-        )
-
-        # Evaluation
-        if update % trainer_cfg.eval_freq == 0:
-            eval_rewards = torch.zeros(args.num_envs, device=env.unwrapped.device)
-            obs_dict, _ = env.reset()
-
-            with torch.no_grad():
-                for _ in range(trainer_cfg.num_eval_steps):
-                    dist, _ = trainer.policy(obs_dict)
-                    action = dist.mean  # Use mean action for evaluation
-                    obs_dict, reward, _, _, _ = env.step(action)
-
-                    obs_dict = {
-                        k: torch.nan_to_num(v, nan=0.0) for k, v in obs_dict.items()
-                    }
-                    reward = torch.nan_to_num(reward, nan=0.0)
-
-                    eval_rewards += reward
-
-            eval_reward = eval_rewards.mean()
-
-            active_terms = env.unwrapped.reward_manager.active_terms
-            term_weights = [
-                env.unwrapped.reward_manager.get_term_cfg(term).weight
-                for term in active_terms
-            ]
-            sum_term_weights = sum([w for w in term_weights if w > 0])
-
-            normalized_reward = eval_reward / trainer_cfg.num_eval_steps
-            normalized_reward = normalized_reward / env.unwrapped.physics_dt
-            normalized_reward = normalized_reward / sum_term_weights
-
+        # Save models
+        if (iter + 1) % train_cfg.save_freq == 0:
             # Save latest model
-            trainer.policy.save(output_path / "latest_model.pth")
+            alg.policy.save(output_path / "latest_model.pth")
 
             # Save best model
-            if normalized_reward.mean() > best_reward:
-                best_reward = normalized_reward.mean()
-                trainer.policy.save(output_path / "best_model.pth")
-
-            # Log evaluation metrics
-            logger.log(
-                {
-                    "eval/mean_reward": normalized_reward.item(),
-                    "eval/best_reward": best_reward,
-                },
-                step=update,
-            )
-
-            # Update tqdm with evaluation stats
-            tqdm.write(
-                f"Eval {update}: eval_reward={normalized_reward.item():.4f}, best_reward={best_reward:.4f}"
-            )
-
-    # Save final model
-    trainer.policy.save(output_path / "final_model.pth")
+            if info["mean_reward"] > best_reward:
+                best_reward = info["mean_reward"]
+                alg.policy.save(output_path / "best_model.pth")
 
     # Close wandb run
     logger.finish()

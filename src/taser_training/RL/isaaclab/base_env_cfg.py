@@ -28,6 +28,8 @@ class TaserBaseSceneCfg(InteractiveSceneCfg):
 class TaserBaseEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the TASER robot environment."""
 
+    max_num_ppo_updates = 0  # Maximum number of PPO updates, set per task
+
     scene = TaserBaseSceneCfg()
 
     def __post_init__(self):

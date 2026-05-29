@@ -45,27 +45,26 @@ class ActorCritic(nn.Module):
         self.obs_norm = RunningNorm(self.obs_dim)
 
         self.actor = nn.Sequential(
-            nn.Linear(self.obs_dim, 64),
-            nn.LayerNorm(64),
-            nn.ReLU(),
-            nn.Linear(64, 64),
-            nn.LayerNorm(64),
-            nn.ReLU(),
-            nn.Linear(64, act_dim),
+            nn.Linear(self.obs_dim, 256),
+            nn.ELU(),
+            nn.Linear(256, 128),
+            nn.ELU(),
+            nn.Linear(128, 128),
+            nn.ELU(),
+            nn.Linear(128, act_dim),
         )
 
         self.critic = nn.Sequential(
-            nn.Linear(self.obs_dim, 64),
-            nn.LayerNorm(64),
-            nn.ReLU(),
-            nn.Linear(64, 64),
-            nn.LayerNorm(64),
-            nn.ReLU(),
-            nn.Linear(64, 1),
+            nn.Linear(self.obs_dim, 256),
+            nn.ELU(),
+            nn.Linear(256, 128),
+            nn.ELU(),
+            nn.Linear(128, 128),
+            nn.ELU(),
+            nn.Linear(128, 1),
         )
 
-        # log_std initialized small and clamped during forward pass
-        self.log_std = nn.Parameter(torch.ones(act_dim) * -0.5)
+        self.log_std = nn.Parameter(torch.zeros(act_dim))
 
     def forward(
         self, obs_dict: dict[str, torch.Tensor], update_norm: bool = False
@@ -80,8 +79,7 @@ class ActorCritic(nn.Module):
         mu = torch.tanh(mu)  # Apply tanh to constrain output between -1 and 1
 
         # Clamp log_std for numerical stability
-        log_std = torch.clamp(self.log_std, min=-20, max=2)
-        std = log_std.exp()
+        std = self.log_std.exp()
         action_dist = Normal(mu, std)
 
         value = self.critic(obs_norm).squeeze(-1)
@@ -114,10 +112,13 @@ class ActorCritic(nn.Module):
         return super().to(device, **kwargs)
 
     def export_onnx(self, path: str):
+        device = next(self.parameters()).device
+        self.to("cpu")
+
         class OnnxWrapper(nn.Module):
             def __init__(self_wrapper):
                 super().__init__()
-                self_wrapper.model = self.to("cpu")
+                self_wrapper.model = self
 
             def forward(self_wrapper, obs: torch.Tensor):
                 obs_split = torch.split(
@@ -140,3 +141,5 @@ class ActorCritic(nn.Module):
             input_names=["obs"],
             output_names=["action"],
         )
+
+        self.to(device)
