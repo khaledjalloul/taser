@@ -1,3 +1,3 @@
-from .act import ACT
-from .config import TransformerCfg
+from .config import GPTCfg, MLPCfg
 from .gpt import GPT
+from .mlp import MLP

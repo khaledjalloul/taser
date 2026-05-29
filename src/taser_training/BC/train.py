@@ -12,8 +12,8 @@ parser.add_argument(
     "--model_type",
     type=str,
     required=True,
-    choices=["ACT", "GPT"],
-    help="Type of the transformer model to train (ACT or GPT).",
+    choices=["MLP", "GPT"],
+    help="Type of the transformer model to train (MLP or GPT).",
 )
 parser.add_argument("--resume", type=str, help="Path to checkpoint to resume from.")
 
@@ -31,7 +31,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from taser.common.logger import logger
-from taser_training.BC.model import ACT, GPT, TransformerCfg
+from taser_training.BC.model import GPT, MLP, GPTCfg, MLPCfg
 from taser_training.BC.utils.dataset import GPTDataset
 from taser_training.wandb_logger import WandbLogger
 
@@ -50,7 +50,7 @@ class TrainerCfg:
 class Trainer:
     def __init__(self) -> None:
         self.trainer_cfg = TrainerCfg()
-        self.model_cfg = TransformerCfg(type=args.model_type)
+        self.model_cfg = GPTCfg() if args.model_type == "GPT" else MLPCfg()
 
         self.dataset = GPTDataset(
             file_path=args.data_path,
@@ -80,8 +80,12 @@ class Trainer:
             batch_size=self.trainer_cfg.batch_size,
             shuffle=False,
         )
-        Model = ACT if self.model_cfg.type == "ACT" else GPT
+        Model = MLP if args.model_type == "MLP" else GPT
         self.model = Model(config=self.model_cfg).to(self.trainer_cfg.device)
+        self.model.obs_mean.copy_(self.dataset.obs_mean.to(self.trainer_cfg.device))
+        self.model.obs_std.copy_(self.dataset.obs_std.to(self.trainer_cfg.device))
+        self.model.action_mean.copy_(self.dataset.action_mean.to(self.trainer_cfg.device))
+        self.model.action_std.copy_(self.dataset.action_std.to(self.trainer_cfg.device))
 
         self.optimizer = torch.optim.AdamW(
             self.model.parameters(),
@@ -96,7 +100,7 @@ class Trainer:
             self.start_epoch = checkpoint["epoch"] + 1
 
         # Set up output path
-        run_name = f"BC_{self.model_cfg.type}_{datetime.now().strftime('%m%d_%H%M%S')}"
+        run_name = f"BC_{args.model_type}_{datetime.now().strftime('%m%d_%H%M%S')}"
         self.output_path = Path.cwd() / "outputs" / "BC" / "models" / run_name
         self.output_path.mkdir(parents=True, exist_ok=True)
 

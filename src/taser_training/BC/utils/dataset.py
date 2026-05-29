@@ -107,6 +107,18 @@ class GPTDataset(Dataset):
                 self.obs.append(torch.from_numpy(obs).float())
                 self.actions.append(torch.from_numpy(actions).float())
 
+        # Compute normalization stats
+        all_obs = torch.cat(self.obs, dim=0)
+        self.obs_mean = all_obs.mean(dim=0)
+        self.obs_std = all_obs.std(dim=0)
+        self.obs_std[self.obs_std < 1e-6] = 1.0
+
+        all_actions = torch.cat(self.actions, dim=0)
+        # self.action_max = torch.quantile(all_actions.abs(), 0.98, dim=0)
+        self.action_mean = all_actions.mean(dim=0)
+        self.action_std = all_actions.std(dim=0)
+        self.action_std[self.action_std < 1e-6] = 1.0
+
     def __len__(self) -> int:
         return len(self.obs)
 
@@ -131,6 +143,8 @@ class GPTDataset(Dataset):
             pad_len = chunk_end_idx - T
             a = F.pad(a, (0, 0, 0, pad_len))
             eef_pos = F.pad(eef_pos, (0, 0, 0, pad_len))
+
+        a = (a - self.action_mean) / self.action_std
 
         return {"observations": o, "actions": a, "eef_pos": eef_pos}
 
