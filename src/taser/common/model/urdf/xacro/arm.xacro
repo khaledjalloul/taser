@@ -10,90 +10,49 @@
 
     <xacro:macro name="arm" params="side offset_sign">
 
-        <link name="${side}_arm_shoulder_bridge">
-            <visual>
-                <origin rpy="1.57 0.0 0.0" xyz="0.0 0.0 0.0" />
-                <geometry>
-                    <cylinder length="0.025" radius="0.075" />
-                </geometry>
-                <material name="light-blue" />
-            </visual>
-            <collision>
-                <origin rpy="1.57 0.0 0.0" xyz="0.0 0.0 0.0" />
-                <geometry>
-                    <cylinder length="0.025" radius="0.075" />
-                </geometry>
-            </collision>
-        </link>
-
-        <joint name="base_link_${side}_arm_shoulder_bridge_joint" type="fixed">
-            <parent link="base_link" />
-            <child link="${side}_arm_shoulder_bridge" />
-            <origin rpy="0.0 0.0 0.0" xyz="0.0 ${offset_sign}0.2625 0.4" />
-        </joint>
-
-        <link name="${side}_arm_shoulder">
-            <visual>
-                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
-                <geometry>
-                    <box size="0.2 0.1 0.2" />
-                </geometry>
-                <material name="light-blue" />
-            </visual>
-            <collision>
-                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
-                <geometry>
-                    <box size="0.2 0.1 0.2" />
-                </geometry>
-            </collision>
-        </link>
-
-        <joint name="${side}_arm_shoulder_bridge_${side}_arm_shoulder_joint" type="continuous">
-            <parent link="${side}_arm_shoulder_bridge" />
-            <child link="${side}_arm_shoulder" />
-            <origin rpy="0.0 0.0 0.0" xyz="0.0 ${offset_sign}0.0625 0.0" />
-            <axis xyz="0 1 0" />
-            <dynamics damping="0.1" friction="0.1" />
-            <limit effort="0.0" acceleration="1000.0" velocity="1000.0" />
-        </joint>
-
         <link name="${side}_arm_1">
             <visual>
-                <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0" />
+                <origin rpy="0 1.57 0.0" xyz="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.1 0.1 0.1" />
+                    <cylinder length="0.05" radius="0.075" />
                 </geometry>
-                <material name="white" />
+                <material name="light-blue" />
             </visual>
             <collision>
-                <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0" />
+                <origin rpy="0 1.57 0.0" xyz="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.1 0.1 0.1" />
+                    <cylinder length="0.05" radius="0.075" />
                 </geometry>
             </collision>
         </link>
 
-        <joint name="${side}_arm_shoulder_${side}_arm_1_joint" type="continuous">
-            <parent link="${side}_arm_shoulder" />
+        <joint name="base_link_${side}_arm_1_joint" type="revolute">
+            <parent link="base_link" />
             <child link="${side}_arm_1" />
-            <origin xyz="0.0 0 -0.1" rpy="0.0 0.0 0.0" />
-            <axis xyz="0 0 1" />
+            <origin rpy="0.0 0.0 0.0" xyz="0.0 ${offset_sign}0.25 0.5" />
+            <axis xyz="1 0 0" />
             <dynamics damping="0.1" friction="0.1" />
-            <limit effort="0.0" acceleration="1000.0" velocity="1000.0" />
+            <xacro:if value="${side == 'left'}">
+                <limit acceleration="1000.0" effort="0.0" velocity="1000.0" lower="0.0" upper="1.57" />
+            </xacro:if>
+            <xacro:if value="${side == 'right'}">
+                <limit acceleration="1000.0" effort="0.0" velocity="1000.0" lower="-1.57"
+                    upper="0.0" />
+            </xacro:if>
         </joint>
 
         <link name="${side}_arm_2">
             <visual>
-                <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.1 0.1 0.1" />
+                    <box size="0.1 0.1 0.2" />
                 </geometry>
-                <material name="white" />
+                <material name="light-blue" />
             </visual>
             <collision>
-                <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.1 0.1 0.1" />
+                    <box size="0.1 0.1 0.2" />
                 </geometry>
             </collision>
         </link>
@@ -101,24 +60,24 @@
         <joint name="${side}_arm_1_${side}_arm_2_joint" type="continuous">
             <parent link="${side}_arm_1" />
             <child link="${side}_arm_2" />
-            <origin xyz="0.0 0 -0.1" rpy="0.0 0.0 0.0" />
+            <origin rpy="0.0 0.0 0.0" xyz="0.0 ${offset_sign}0.075 0.0" />
             <axis xyz="0 1 0" />
             <dynamics damping="0.1" friction="0.1" />
-            <limit effort="0.0" acceleration="1000.0" velocity="1000.0" />
+            <limit effort="0.0" acceleration="1000.0" velocity="1000.0" lower="-3.14" upper="3.14" />
         </joint>
 
         <link name="${side}_arm_3">
             <visual>
-                <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.075" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.1 0.1 0.1" />
+                    <box size="0.05 0.05 0.15" />
                 </geometry>
                 <material name="white" />
             </visual>
             <collision>
-                <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.075" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.1 0.1 0.1" />
+                    <box size="0.05 0.05 0.15" />
                 </geometry>
             </collision>
         </link>
@@ -127,23 +86,23 @@
             <parent link="${side}_arm_2" />
             <child link="${side}_arm_3" />
             <origin xyz="0.0 0 -0.1" rpy="0.0 0.0 0.0" />
-            <axis xyz="1 0 0" />
+            <axis xyz="0 0 1" />
             <dynamics damping="0.1" friction="0.1" />
-            <limit effort="0.0" acceleration="1000.0" velocity="1000.0" />
+            <limit effort="0.0" acceleration="1000.0" velocity="1000.0" lower="-3.14" upper="3.14" />
         </joint>
 
         <link name="${side}_arm_4">
             <visual>
-                <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.075" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.1 0.1 0.1" />
+                    <box size="0.05 0.05 0.15" />
                 </geometry>
-                <material name="white" />
+                <material name="light-blue" />
             </visual>
             <collision>
-                <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.075" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.1 0.1 0.1" />
+                    <box size="0.05 0.05 0.15" />
                 </geometry>
             </collision>
         </link>
@@ -151,24 +110,24 @@
         <joint name="${side}_arm_3_${side}_arm_4_joint" type="continuous">
             <parent link="${side}_arm_3" />
             <child link="${side}_arm_4" />
-            <origin xyz="0.0 0 -0.1" rpy="0.0 0.0 0.0" />
-            <axis xyz="0 0 1" />
+            <origin xyz="0.0 0 -0.15" rpy="0.0 0.0 0.0" />
+            <axis xyz="0 1 0" />
             <dynamics damping="0.1" friction="0.1" />
-            <limit effort="0.0" acceleration="1000.0" velocity="1000.0" />
+            <limit effort="0.0" acceleration="1000.0" velocity="1000.0" lower="-3.14" upper="3.14" />
         </joint>
 
         <link name="${side}_arm_5">
             <visual>
-                <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.075" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.1 0.1 0.1" />
+                    <box size="0.05 0.05 0.15" />
                 </geometry>
-                <material name="light-blue" />
+                <material name="white" />
             </visual>
             <collision>
-                <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0" />
+                <origin xyz="0.0 0.0 -0.075" rpy="0.0 0.0 0.0" />
                 <geometry>
-                    <box size="0.1 0.1 0.1" />
+                    <box size="0.05 0.05 0.15" />
                 </geometry>
             </collision>
         </link>
@@ -176,20 +135,94 @@
         <joint name="${side}_arm_4_${side}_arm_5_joint" type="continuous">
             <parent link="${side}_arm_4" />
             <child link="${side}_arm_5" />
-            <origin xyz="0.0 0 -0.1" rpy="0.0 0.0 0.0" />
+            <origin xyz="0.0 0 -0.15" rpy="0.0 0.0 0.0" />
             <axis xyz="1 0 0" />
             <dynamics damping="0.1" friction="0.1" />
-            <limit effort="0.0" acceleration="1000.0" lower="-2.3562" upper="2.3562"
-                velocity="1000.0" />
+            <limit effort="0.0" acceleration="1000.0" velocity="1000.0" lower="-3.14" upper="3.14" />
         </joint>
 
+        <link name="${side}_arm_6">
+            <visual>
+                <origin xyz="0.0 0.0 -0.025" rpy="0.0 0.0 0.0" />
+                <geometry>
+                    <box size="0.05 0.1 0.05" />
+                </geometry>
+                <material name="light-blue" />
+            </visual>
+            <collision>
+                <origin xyz="0.0 0.0 -0.025" rpy="0.0 0.0 0.0" />
+                <geometry>
+                    <box size="0.05 0.1 0.05" />
+                </geometry>
+            </collision>
+        </link>
+
+        <joint name="${side}_arm_5_${side}_arm_6_joint" type="continuous">
+            <parent link="${side}_arm_5" />
+            <child link="${side}_arm_6" />
+            <origin xyz="0.0 0 -0.15" rpy="0.0 0.0 0.0" />
+            <axis xyz="0 0 1" />
+            <dynamics damping="0.1" friction="0.1" />
+            <limit effort="0.0" acceleration="1000.0" velocity="1000.0" lower="-3.14" upper="3.14" />
+        </joint>
+
+        <link name="${side}_arm_gripper1">
+            <visual>
+                <origin rpy="0.0 0.0 0.0" xyz="0.0 0.00625 -0.05" />
+                <geometry>
+                    <box size="0.05 0.0125 0.1" />
+                </geometry>
+                <material name="light-blue" />
+            </visual>
+            <collision>
+                <origin rpy="0.0 0.0 0.0" xyz="0.0 0.00625 -0.05" />
+                <geometry>
+                    <box size="0.05 0.0125 0.1" />
+                </geometry>
+            </collision>
+        </link>
+
+        <joint name="${side}_arm_6_${side}_arm_gripper1_joint" type="prismatic">
+            <parent link="${side}_arm_6" />
+            <child link="${side}_arm_gripper1" />
+            <origin rpy="0.0 0.0 0.0" xyz="0.0 ${0.05 - 0.0125} -0.05" />
+            <axis xyz="0 1 0" />
+            <dynamics damping="0.1" friction="0.1" />
+            <limit acceleration="1000.0" effort="0.0" lower="-${0.05 - 0.0125}" upper="0.0" velocity="1000.0" />
+        </joint>
+
+        <link name="${side}_arm_gripper2">
+            <visual>
+                <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.00625 -0.05" />
+                <geometry>
+                    <box size="0.05 0.0125 0.1" />
+                </geometry>
+                <material name="light-blue" />
+            </visual>
+            <collision>
+                <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.00625 -0.05" />
+                <geometry>
+                    <box size="0.05 0.0125 0.1" />
+                </geometry>
+            </collision>
+        </link>
+        <joint name="${side}_arm_6_${side}_arm_gripper2_joint" type="prismatic">
+            <parent link="${side}_arm_6" />
+            <child link="${side}_arm_gripper2" />
+            <origin rpy="0.0 0.0 0.0" xyz="0.0 -${0.05 - 0.0125} -0.05" />
+            <axis xyz="0 1 0" />
+            <dynamics damping="0.1" friction="0.1" />
+            <limit acceleration="1000.0" effort="0.0" lower="0.0" upper="${0.05 - 0.0125}" velocity="1000.0" />
+        </joint>
+
+        <!-- Virtual End Effector Link -->
         <link name="${side}_arm_eef">
         </link>
 
-        <joint name="${side}_arm_5_${side}_arm_eef_joint" type="fixed">
-            <parent link="${side}_arm_5" />
+        <joint name="${side}_arm_6_${side}_arm_eef_joint" type="fixed">
+            <parent link="${side}_arm_6" />
             <child link="${side}_arm_eef" />
-            <origin xyz="0.0 0 -0.1" rpy="0.0 0.0 0.0" />
+            <origin xyz="0.0 0 -${0.05 + 0.05}" rpy="0.0 0.0 0.0" />
         </joint>
 
     </xacro:macro>

@@ -49,8 +49,10 @@ class TaserJointState:
     locks: np.ndarray = field(
         default_factory=lambda: np.zeros(4)
     )  # front, front_support, back, back_support
-    left_arm: np.ndarray = field(default_factory=lambda: np.zeros(3))
-    right_arm: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    left_arm: np.ndarray = field(default_factory=lambda: np.zeros(6))
+    left_gripper: np.ndarray = field(default_factory=lambda: np.zeros(2))
+    right_arm: np.ndarray = field(default_factory=lambda: np.zeros(6))
+    right_gripper: np.ndarray = field(default_factory=lambda: np.zeros(2))
     wheels: np.ndarray = field(default_factory=lambda: np.zeros(2))  # left, right
 
     rtb_indices: ClassVar["TaserJointState"]
@@ -66,43 +68,59 @@ class TaserJointState:
         indices: TaserJointState = cls.__dict__[f"{format}_indices"]
         return TaserJointState(
             left_arm=state[indices.left_arm],
+            left_gripper=state[indices.left_gripper],
             right_arm=state[indices.right_arm],
+            right_gripper=state[indices.right_gripper],
             wheels=state[indices.wheels],
             locks=state[indices.locks],
         )
 
     def to(self, format: Literal["rtb", "ros", "isaac"]) -> np.ndarray:
         indices: TaserJointState = self.__class__.__dict__[f"{format}_indices"]
-        out = np.zeros(
-            self.locks.size
-            + self.left_arm.size
-            + self.right_arm.size
-            + self.wheels.size
-        )
+        out = np.zeros(self.num_joints)
         out[indices.locks] = self.locks
         out[indices.left_arm] = self.left_arm
+        out[indices.left_gripper] = self.left_gripper
         out[indices.right_arm] = self.right_arm
+        out[indices.right_gripper] = self.right_gripper
         out[indices.wheels] = self.wheels
         return out
+
+    @property
+    def num_joints(self) -> int:
+        return (
+            self.locks.size
+            + self.left_arm.size
+            + self.left_gripper.size
+            + self.right_arm.size
+            + self.right_gripper.size
+            + self.wheels.size
+        )
 
 
 TaserJointState.rtb_indices = TaserJointState(
     locks=np.array([0, 1, 2, 3]),
-    left_arm=np.array([4, 5, 6]),
-    right_arm=np.array([7, 8, 9]),
-    wheels=np.array([10, 11]),
+    left_arm=np.array([4, 5, 6, 7, 8, 9]),
+    left_gripper=np.array([10, 11]),
+    right_arm=np.array([12, 13, 14, 15, 16, 17]),
+    right_gripper=np.array([18, 19]),
+    wheels=np.array([20, 21]),
 )
 
 TaserJointState.ros_indices = TaserJointState(
     locks=np.array([0, 1, 2, 3]),
-    left_arm=np.array([4, 5, 6]),
-    right_arm=np.array([7, 8, 9]),
-    wheels=np.array([10, 11]),
+    left_arm=np.array([4, 5, 6, 7, 8, 9]),
+    left_gripper=np.array([10, 11]),
+    right_arm=np.array([12, 13, 14, 15, 16, 17]),
+    right_gripper=np.array([18, 19]),
+    wheels=np.array([20, 21]),
 )
 
 TaserJointState.isaac_indices = TaserJointState(
     locks=np.array([1, 7, 0, 6]),
-    left_arm=np.array([2, 8, 10]),
-    right_arm=np.array([4, 9, 11]),
+    left_arm=np.array([2, 8, 10, 12, 14, 16]),
+    left_gripper=np.array([18, 19]),
+    right_arm=np.array([4, 9, 11, 13, 15, 17]),
+    right_gripper=np.array([20, 21]),
     wheels=np.array([3, 5]),
 )
