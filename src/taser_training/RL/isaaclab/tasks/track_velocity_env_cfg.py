@@ -26,8 +26,18 @@ from taser_training.RL.isaaclab.base_env_cfg import (
     TaserBaseSceneCfg,
 )
 
-V_MAX = 3.0
-W_MAX = 2.0
+CMD_V_MAX = 3.0
+CMD_W_MAX = 3.0
+
+ACTION_PENALTY_WEIGHT = -0.05
+
+# 50% unlocked & moving, 20% unlocked & standing, 20% locking & moving, 10% locking & standing
+UNLOCKED_ENVS_SPLIT = 0.7
+STANDING_ENVS_SPLIT = 0.3
+
+CURRICULUM_CMD_PPO_END = 0.5  # Maximum percentage of PPO updates for curriculum to ramp up command difficulty
+CURRICULUM_ACTION_PENALTY_PPO_START = 0.7  # PPO percentage to enable action penalty
+
 JOINT_INDICES = TaserJointState.isaac_indices
 
 
@@ -40,7 +50,7 @@ class ActionsCfg:
         joint_names=WHEEL_JOINT_NAMES,
         # max wheel vel = max lin vel / wheel radius = 3m/s / 0.15rad = 20 rad/s
         # action scale = max wheel vel / model action space = 20 rad/s / 1.0 = 20.0
-        scale=(V_MAX / 0.15) / 1.0,
+        scale=(CMD_V_MAX / 0.15) / 1.0,
     )
 
 
@@ -52,10 +62,11 @@ class CommandsCfg:
         asset_name="robot",
         resampling_time_range=(5.0, 5.0),
         debug_vis=True,
+        rel_standing_envs=STANDING_ENVS_SPLIT,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-V_MAX, V_MAX),
+            lin_vel_x=(-CMD_V_MAX, CMD_V_MAX),
             lin_vel_y=(0.0, 0.0),
-            ang_vel_z=(-W_MAX, W_MAX),
+            ang_vel_z=(-CMD_W_MAX, CMD_W_MAX),
         ),
     )
 
@@ -64,11 +75,20 @@ def update_target_velocity_command(
     env: ManagerBasedRLEnv, env_ids, old_value, max_value: float
 ):
     """Update the target velocity command."""
-    # Ramp up until halfway through training, then keep it constant
-    max_ppo_step = env.unwrapped.cfg.max_num_ppo_updates / 2
+    max_ppo_step = env.unwrapped.cfg.max_num_ppo_updates * CURRICULUM_CMD_PPO_END
     range = (env.unwrapped.num_ppo_updates / max_ppo_step) * max_value
     range = min(range, max_value)
     return (-range, range)
+
+
+def update_action_penalty_weight(env: ManagerBasedRLEnv, env_ids, old_value):
+    """Update the action penalty."""
+    min_ppo_step = (
+        env.unwrapped.cfg.max_num_ppo_updates * CURRICULUM_ACTION_PENALTY_PPO_START
+    )
+    if env.unwrapped.num_ppo_updates > min_ppo_step:
+        return ACTION_PENALTY_WEIGHT
+    return 0.0
 
 
 @configclass
@@ -80,7 +100,7 @@ class CurriculumCfg:
         params={
             "address": "commands.base_velocity.ranges.lin_vel_x",
             "modify_fn": update_target_velocity_command,
-            "modify_params": {"max_value": V_MAX},
+            "modify_params": {"max_value": CMD_V_MAX},
         },
     )
 
@@ -89,21 +109,52 @@ class CurriculumCfg:
         params={
             "address": "commands.base_velocity.ranges.ang_vel_z",
             "modify_fn": update_target_velocity_command,
-            "modify_params": {"max_value": W_MAX},
+            "modify_params": {"max_value": CMD_W_MAX},
+        },
+    )
+
+    enable_action_penalty = CurriculumTermCfg(
+        func=mdp.modify_term_cfg,
+        params={
+            "address": "rewards.action_penalty.weight",
+            "modify_fn": update_action_penalty_weight,
         },
     )
 
 
 def set_random_joint_velocities(
-    env: ManagerBasedEnv, env_ids, joint_vels: dict[int, list[float]]
+    env: ManagerBasedEnv,
+    env_ids: torch.Tensor,
+    unlocked_joint_vels: dict[int, list[float]],
+    locking_joint_vels: dict[int, list[float]],
+    unlocked_envs_split: float,
 ):
     robot: Articulation = env.scene["robot"]
-    vel_target = (
-        torch.rand((env.num_envs, len(joint_vels)), device=env.device)
-        * torch.tensor(list(joint_vels.values()), device=env.device)[:, 0]
-        + torch.tensor(list(joint_vels.values()), device=env.device)[:, 1]
+
+    is_unlocked = torch.rand(len(env_ids), device=env.device) < unlocked_envs_split
+
+    unlocked_vel_target = (
+        torch.rand((len(env_ids), len(unlocked_joint_vels)), device=env.device)
+        * torch.tensor(list(unlocked_joint_vels.values()), device=env.device)[:, 0]
+        + torch.tensor(list(unlocked_joint_vels.values()), device=env.device)[:, 1]
     )
-    robot.set_joint_velocity_target(vel_target, joint_ids=list(joint_vels.keys()))
+    locking_vel_target = (
+        torch.rand((len(env_ids), len(locking_joint_vels)), device=env.device)
+        * torch.tensor(list(locking_joint_vels.values()), device=env.device)[:, 0]
+        + torch.tensor(list(locking_joint_vels.values()), device=env.device)[:, 1]
+    )
+
+    vel_target = torch.where(
+        is_unlocked.unsqueeze(1),
+        unlocked_vel_target,
+        locking_vel_target,
+    )
+
+    robot.set_joint_velocity_target(
+        vel_target,
+        joint_ids=list(locking_joint_vels.keys()),
+        env_ids=env_ids,
+    )
 
 
 @configclass
@@ -162,7 +213,7 @@ class EventsCfg:
                     "base_link_back_lock_joint",
                 ],
             ),
-            "position_range": (0.15, 0.15),
+            "position_range": (0.03, 0.15),
             "velocity_range": (0.0, 0.0),
         },
     )
@@ -178,22 +229,31 @@ class EventsCfg:
                     "back_lock_support_joint",
                 ],
             ),
-            "position_range": (-np.deg2rad(90), -np.deg2rad(90)),
+            "position_range": (-np.deg2rad(90), -np.deg2rad(10)),
             "velocity_range": (0.0, 0.0),
         },
     )
 
     set_random_joint_velocities = EventTermCfg(
         func=set_random_joint_velocities,
-        mode="reset",
+        mode="interval",
+        interval_range_s=(0.0, 10.0),
         params={
-            "joint_vels": {
+            "unlocked_joint_vels": {
                 # [range, min]
                 JOINT_INDICES.locks[0]: [0.8, 0.2],
                 JOINT_INDICES.locks[1]: [7.0, -10.0],
                 JOINT_INDICES.locks[2]: [0.8, 0.2],
                 JOINT_INDICES.locks[3]: [7.0, -10.0],
-            }
+            },
+            "locking_joint_vels": {
+                # [range, min]
+                JOINT_INDICES.locks[0]: [2.0, -1.0],
+                JOINT_INDICES.locks[1]: [20.0, -10.0],
+                JOINT_INDICES.locks[2]: [2.0, -1.0],
+                JOINT_INDICES.locks[3]: [20.0, -10.0],
+            },
+            "unlocked_envs_split": UNLOCKED_ENVS_SPLIT,
         },
     )
 
@@ -208,7 +268,7 @@ class EventsCfg:
                 "z": (0.0, 0.0),
                 "roll": (0.0, 0.0),
                 # Randomized starting orientation to help explore scenarios where the robot is about to fall
-                "pitch": (-0.3, 0.3),
+                "pitch": (-0.45, 0.45),
                 "yaw": (-torch.pi, torch.pi),
             },
             "velocity_range": {},
@@ -255,7 +315,7 @@ class RewardsCfg:
 
     alive_reward = RewardTermCfg(func=mdp.is_alive, weight=0.5)
 
-    termination_penalty = RewardTermCfg(func=mdp.is_terminated, weight=-15.0)
+    termination_penalty = RewardTermCfg(func=mdp.is_terminated, weight=-30.0)
 
     tilt_penalty = RewardTermCfg(
         func=mdp.flat_orientation_l2,
@@ -268,22 +328,14 @@ class RewardsCfg:
         weight=1.5,
         params={"command_name": "base_velocity", "std": 0.25},
     )
-    track_lin_vel_xy_global = RewardTermCfg(
-        func=mdp.track_lin_vel_xy_exp,
-        weight=0.8,
-        params={"command_name": "base_velocity", "std": 1.0},
-    )
 
     track_ang_vel_z = RewardTermCfg(
         func=mdp.track_ang_vel_z_exp,
         weight=1.5,
         params={"command_name": "base_velocity", "std": 0.25},
     )
-    track_ang_vel_z_global = RewardTermCfg(
-        func=mdp.track_ang_vel_z_exp,
-        weight=0.8,
-        params={"command_name": "base_velocity", "std": 1.0},
-    )
+
+    action_penalty = RewardTermCfg(func=mdp.action_l2, weight=ACTION_PENALTY_WEIGHT)
 
 
 @configclass
@@ -312,7 +364,7 @@ class TerminationsCfg:
 class TaserTrackVelocityEnvCfg(TaserBaseEnvCfg):
     """TASER environment configuration for the track velocity task."""
 
-    max_num_ppo_updates = 5_000
+    max_num_ppo_updates = 6_000
 
     actions = ActionsCfg()
     commands = CommandsCfg()

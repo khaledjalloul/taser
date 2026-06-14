@@ -81,7 +81,9 @@ def main():
         num_envs=args.num_envs,
     )
     env_cfg.curriculum = None  # Disable curriculum for evaluation
+
     env = gym.make(task, cfg=env_cfg)
+    env.unwrapped.num_ppo_updates = 0
 
     play(env)
 

@@ -26,6 +26,7 @@ from pathlib import Path
 
 import gymnasium as gym
 import torch
+from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab_tasks.utils import parse_env_cfg
 from tqdm import tqdm
 
@@ -34,7 +35,7 @@ from taser_training.RL.algorithm import PPO, TrainCfg
 from taser_training.wandb_logger import WandbLogger
 
 
-def train(env: gym.Env):
+def train(env: ManagerBasedRLEnv):
     # Set up output path
     run_name = f"RL_{args.task}_{datetime.now().strftime('%m%d_%H%M%S')}"
 
@@ -73,6 +74,7 @@ def train(env: gym.Env):
         # Rollout
         with torch.no_grad():
             obs_dict = env.unwrapped.observation_manager.compute()
+            obs_dict = {k: torch.nan_to_num(v, nan=0.0) for k, v in obs_dict.items()}
 
             for _ in range(train_cfg.num_rollout_steps):
                 action_dist, value = alg.policy(obs_dict, update_norm=True)
