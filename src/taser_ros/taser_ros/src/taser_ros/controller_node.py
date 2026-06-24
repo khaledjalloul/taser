@@ -1,8 +1,8 @@
 import numpy as np
 import rclpy
-from geometry_msgs.msg import PoseStamped, Twist
+from geometry_msgs.msg import Point32, PolygonStamped, PoseStamped, Twist
 from nav_msgs.msg import OccupancyGrid as OccupancyGridRos
-from nav_msgs.msg import Odometry
+from nav_msgs.msg import Odometry, Path
 from rclpy.node import Node
 from scipy.spatial.transform import Rotation as R
 from sensor_msgs.msg import JointState
@@ -13,11 +13,14 @@ from taser.locomotion import LocomotionPolicy
 from taser.manipulation.pick_controller import PickController
 from taser.navigation import OccupancyGrid
 from taser.navigation.grid_navigator import GridNavigator
+from taser_ros.parameters import load_parameters
 
 
 class TaserControllerRosInterface(Node):
     def __init__(self):
         super().__init__("controller", namespace="taser")
+
+        self.params = load_parameters(self)
 
         self.joint_positions = TaserJointState()
         self.joint_velocities = TaserJointState()
@@ -57,11 +60,18 @@ class TaserControllerRosInterface(Node):
             10,
         )
 
-        self.timer = self.create_timer(1 / 60, self.step)
+        self.navigation_path_pub = self.create_publisher(
+            Path, "/taser/navigation/path", 10
+        )
+        self.workspace_pub = self.create_publisher(
+            PolygonStamped, "/taser/navigation/workspace", 10
+        )
+
+        self.timer = self.create_timer(self.params.dt, self.step)
         logger.info("Controller node running...")
 
     def step(self):
-        return NotImplementedError("This should be implemented in the subclass.")
+        raise NotImplementedError("This should be implemented in the subclass.")
 
     def _joint_state_cb(self, msg: JointState):
         self.joint_positions = TaserJointState.construct_from("ros", msg.position)
@@ -97,7 +107,7 @@ class TaserControllerRosInterface(Node):
         )
 
     def _occupancy_grid_cb(self, occupancy_grid: OccupancyGridRos):
-        return NotImplementedError("This should be implemented in the subclass.")
+        raise NotImplementedError("This should be implemented in the subclass.")
 
     def _navigation_goal_pose_cb(self, pose: PoseStamped):
         target_quat = np.array(
@@ -119,19 +129,44 @@ class TaserControllerRosNode(TaserControllerRosInterface):
     def __init__(self):
         super().__init__()
 
+        # Manipulation
         self._pick_controller = PickController()
-        self._locomotion_policy = LocomotionPolicy()
 
-        workspace = Workspace(x_min=-5, x_max=5, y_min=-5, y_max=5)
+        # Locomotion (only used for velocity limits)
+        self._locomotion_policy = LocomotionPolicy()
+        if self.params.navigation.v_max > self._locomotion_policy.v_max:
+            logger.warning(
+                f"Navigation v_max ({self.params.navigation.v_max}) is greater than locomotion v_max ({self._locomotion_policy.v_max}). Using locomotion v_max."
+            )
+        if self.params.navigation.w_max > self._locomotion_policy.w_max:
+            logger.warning(
+                f"Navigation w_max ({self.params.navigation.w_max}) is greater than locomotion w_max ({self._locomotion_policy.w_max}). Using locomotion w_max."
+            )
+        v_max = min(self.params.navigation.v_max, self._locomotion_policy.v_max)
+        w_max = min(self.params.navigation.w_max, self._locomotion_policy.w_max)
+
+        # Navigation
+        workspace = self.params.navigation.workspace
         self._occupancy_grid = OccupancyGrid(workspace=workspace, cellsize=0.1)
         self._navigator = GridNavigator(
             workspace=workspace,
             occupancy_grid=self._occupancy_grid,
-            v_max=self._locomotion_policy.v_max,
-            w_max=self._locomotion_policy.w_max,
-            wheel_base=0.6,
-            goal_pos_tol=0.5,
+            v_max=v_max,
+            w_max=w_max,
+            wheel_base=self.params.navigation.wheel_base,
+            goal_pos_tol=self.params.navigation.goal_pose_tolerance,
         )
+
+        self.workspace_polygon = PolygonStamped()
+        self.workspace_polygon.header.frame_id = self.params.world_frame
+        self.workspace_polygon.header.stamp = self.get_clock().now().to_msg()
+        self.workspace_polygon.polygon.points = [
+            Point32(x=workspace.x_min, y=workspace.y_min, z=0.0),
+            Point32(x=workspace.x_max, y=workspace.y_min, z=0.0),
+            Point32(x=workspace.x_max, y=workspace.y_max, z=0.0),
+            Point32(x=workspace.x_min, y=workspace.y_max, z=0.0),
+        ]
+        self.workspace_pub.publish(self.workspace_polygon)
 
     def step(self):
         R_IB = R.from_quat(self.quaternion_w, scalar_first=True)
@@ -184,16 +219,30 @@ class TaserControllerRosNode(TaserControllerRosInterface):
             occupancy_grid=self._occupancy_grid,
         )
 
-    def _navigation_occupancy_grid_cb(self, occupancy_grid: OccupancyGridRos):
+        ros_path = Path()
+        ros_path.header = pose.header
+        for pt in self._navigator.path:
+            ros_pose = PoseStamped()
+            ros_pose.header = pose.header
+            ros_pose.pose.position.x = pt.x
+            ros_pose.pose.position.y = pt.y
+            ros_pose.pose.orientation.w = np.cos(pt.rz / 2.0)
+            ros_pose.pose.orientation.z = np.sin(pt.rz / 2.0)
+            ros_path.poses.append(ros_pose)
+
+        self.navigation_path_pub.publish(ros_path)
+
+    def _occupancy_grid_cb(self, occupancy_grid: OccupancyGridRos):
         width = occupancy_grid.info.width
         height = occupancy_grid.info.height
         cellsize = occupancy_grid.info.resolution
-        x_min = occupancy_grid.info.origin.position.x - (width * cellsize) / 2.0
-        x_max = occupancy_grid.info.origin.position.x + (width * cellsize) / 2.0
-        y_min = occupancy_grid.info.origin.position.y - (height * cellsize) / 2.0
-        y_max = occupancy_grid.info.origin.position.y + (height * cellsize) / 2.0
+        # Convert from ROS notation (bottom-left corner) to workspace notation (centered)
+        x_min = occupancy_grid.info.origin.position.x
+        x_max = occupancy_grid.info.origin.position.x + (width * cellsize)
+        y_min = occupancy_grid.info.origin.position.y
+        y_max = occupancy_grid.info.origin.position.y + (height * cellsize)
 
-        self.occupancy_grid = OccupancyGrid(
+        self._occupancy_grid = OccupancyGrid(
             workspace=Workspace(x_min=x_min, x_max=x_max, y_min=y_min, y_max=y_max),
             cellsize=cellsize,
             grid=np.array(occupancy_grid.data).reshape((height, width)),

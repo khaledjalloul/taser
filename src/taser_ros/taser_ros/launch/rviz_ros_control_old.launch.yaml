@@ -11,7 +11,7 @@ launch:
       output: screen
       param:
         - name: robot_description
-          value: $(command 'cat /workspace/taser/src/taser/common/model/urdf/taser.urdf')
+          value: $(command 'cat $(find-pkg-share taser_ros)/config/taser.urdf')
         - from: $(find-pkg-share taser_ros)/config/controller_manager.yaml
 
   - node:

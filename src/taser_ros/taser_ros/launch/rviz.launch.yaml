@@ -19,7 +19,7 @@ launch:
         - name: use_sim_time
           value: true
         - name: robot_description
-          value: $(command 'cat /workspace/taser/src/taser/common/model/urdf/taser.urdf')
+          value: $(command 'cat $(find-pkg-share taser_ros)/config/taser.urdf')
 
   - node:
       pkg: joint_state_publisher_gui

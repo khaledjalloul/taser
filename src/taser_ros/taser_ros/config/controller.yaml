@@ -1,0 +1,15 @@
+/taser/controller:
+  ros__parameters:
+    dt: 0.01667 # 60 Hz
+    world_frame: "World"
+
+    navigation:
+      workspace:
+        x_min: -10.0
+        x_max: 10.0
+        y_min: -10.0
+        y_max: 10.0
+      goal_pose_tolerance: 0.5
+      wheel_base: 0.6
+      v_max: 2.0
+      w_max: 2.0

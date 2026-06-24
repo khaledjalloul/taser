@@ -30,7 +30,7 @@ class IsaacSimOccupancyGridGenerator:
         self.generator.update_settings(CELL_SIZE, 1, 0, -1)
 
         # Set the origin location (should not be inside a prim) and the min and max bounds respectively
-        self.generator.set_transform((-5, -5, 0.2), (-0.1, -0.1, 0.0), (10, 10, 0.0))
+        self.generator.set_transform((-10, -10, 0.2), (-0.1, -0.1, 0.0), (20, 20, 0.0))
 
         self.generator.generate2d()
 

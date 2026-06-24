@@ -5,6 +5,7 @@ from taser.common.datatypes import Pose, Workspace
 from taser.navigation import OccupancyGrid
 
 FILTER_THRESHOLD = 0.4
+INFLATION_SAFE_SCALE = 2
 
 
 class DistanceTransformPathPlanner:
@@ -37,7 +38,8 @@ class DistanceTransformPathPlanner:
             occgrid=self._occupancy_grid.grid,
             # Inflate by half the robot's length + a safety margin
             # Converted to grid cell coordinates
-            inflate=((self._wheel_base / self._occupancy_grid.cellsize) / 2) * 1.5,
+            inflate=((self._wheel_base / self._occupancy_grid.cellsize) / 2)
+            * INFLATION_SAFE_SCALE,
         )
 
     def plan(self, start: Pose, goal: Pose) -> list[Pose]:

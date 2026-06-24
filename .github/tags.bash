@@ -15,3 +15,4 @@ git tag -m "Improve locomotion policies" v2.1.0 ea4acb2eff0a4a30a93ba199804521e9
 git tag -m "Reorganize Python packages" v2.1.1 0687378a1b78ada7bd9acc916fee6bebfdf50c4e
 git tag -m "Add lock mechanism to locomotion policy" v2.1.2 5991d4820c8f386d01b6e3a2820e43cb1b11b258
 git tag -m "Create controller node based on ROS and Rviz" v2.1.3 89420cb40ef8d9b71cbe3e5b4e1e0da0d239e84d
+git tag -m "Combine locomotion policies into one" v2.1.4 3232dce8b0125a509775c02a15026bf7d212f4cc

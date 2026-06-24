@@ -7,6 +7,7 @@ launch:
 
   - node:
       pkg: taser_ros
-      name: controller_node
       exec: controller_node
       output: screen
+      param:
+        - from: $(find-pkg-share taser_ros)/config/controller.yaml

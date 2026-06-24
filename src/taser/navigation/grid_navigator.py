@@ -1,6 +1,7 @@
 import numpy as np
 
 from taser.common.datatypes import Pose, VelocityCommand, Workspace
+from taser.common.logger import logger
 from taser.navigation import (
     DistanceTransformPathPlanner,
     OccupancyGrid,
@@ -30,7 +31,7 @@ class GridNavigator:
             v_max=v_max,
             w_max=w_max,
             curve_slowdown=1.0,
-            goal_pos_tol=goal_pos_tol
+            goal_pos_tol=goal_pos_tol,
         )
 
     def plan_path(
@@ -42,8 +43,12 @@ class GridNavigator:
         if occupancy_grid is not None:
             self._planner.set_occupancy_grid(occupancy_grid)
 
-        path = self._planner.plan(start, goal)
-        self._controller.set_path(path, goal_yaw=goal.rz)
+        try:
+            path = self._planner.plan(start, goal)
+            self._controller.set_path(path, goal_yaw=goal.rz)
+        except Exception as e:
+            logger.error(f"Path planning failed: {e}")
+            return []
 
         return path
 
@@ -56,3 +61,7 @@ class GridNavigator:
     @property
     def inflated_occupancy_grid(self) -> OccupancyGrid:
         return self._planner.inflated_occupancy_grid
+
+    @property
+    def path(self) -> list[Pose]:
+        return self._controller._path

@@ -4,7 +4,6 @@ parser = argparse.ArgumentParser(description="Isaac Sim Taser Simulation")
 parser.add_argument(
     "--headless", action="store_true", help="Run simulation in headless mode"
 )
-parser.add_argument("--cmd_gui", action="store_true", help="Start the command GUI")
 args = parser.parse_args()
 
 ###############################################################
@@ -237,6 +236,7 @@ class TaserIsaacSim(TaserSimRosInterface):
         msg.info.height = int(
             (workspace.y_max - workspace.y_min) / occupancy_grid.cellsize
         )
+        # Origin must follow ROS notation, which is the bottom-left corner of the grid.
         msg.info.origin.position.x = workspace.x_min
         msg.info.origin.position.y = workspace.y_min
         msg.info.origin.position.z = 0.0

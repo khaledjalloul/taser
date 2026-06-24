@@ -18,19 +18,37 @@ def cli():
     pass
 
 
+@cli.command(context_settings=IGNORE_ARGS)
+@click.option("--no-rviz", is_flag=True, help="Whether to skip launching RViz.")
+@click.option("--sim", is_flag=True, help="Whether to show the simulation GUI.")
+def launch(no_rviz: bool, sim: bool):
+    """Launch the Taser stack."""
+    sys.argv = ["launch"]
+    if not sim:
+        sys.argv.append("--headless")
+
+    from taser_sim.sim import main
+
+    if not no_rviz:
+        subprocess.Popen(
+            [
+                "unset PYTHONPATH && source /opt/ros/jazzy/setup.bash && source /workspace/taser/install/setup.bash && "
+                "ros2 launch taser_ros rviz_controller.launch.yaml"
+            ],
+            shell=True,
+            executable="/bin/bash",
+        )
+
+    main()
+
+
 @cli.command()
-@click.option(
-    "--standalone",
-    is_flag=True,
-    help="Whether to launch RViz without the controller node.",
-)
-def rviz(standalone: bool):
+def rviz():
     """Launch RViz for Taser visualization."""
-    launch_file = "rviz_controller" if not standalone else "rviz"
     subprocess.run(
         [
             "unset PYTHONPATH && source /opt/ros/jazzy/setup.bash && source /workspace/taser/install/setup.bash && "
-            f"ros2 launch taser_ros {launch_file}.launch.yaml"
+            "ros2 launch taser_ros rviz.launch.yaml"
         ],
         shell=True,
         executable="/bin/bash",
@@ -47,7 +65,7 @@ def urdf():
 def generate_from_xacro():
     """Generate the URDF file from the Xacro files."""
     model_path = "/workspace/taser/src/taser/common/model/urdf"
-    ros_package_path = "/workspace/taser/src/taser_ros"
+    ros_package_path = "/workspace/taser/src/taser_ros/taser_ros"
     xacro_path = f"{model_path}/xacro/robot.urdf.xacro"
     urdf_paths = [f"{model_path}/taser.urdf", f"{ros_package_path}/config/taser.urdf"]
 
@@ -67,15 +85,6 @@ def convert_to_usd():
     """Convert the URDF file to USD format."""
     sys.argv = sys.argv[2:]
     from taser_sim.utils.urdf_to_usd import main
-
-    main()
-
-
-@cli.command(context_settings=IGNORE_ARGS)
-def sim():
-    """Launch the Taser simulation environment."""
-    sys.argv = sys.argv[1:]
-    from taser_sim.sim import main
 
     main()
 
