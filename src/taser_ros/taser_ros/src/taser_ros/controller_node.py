@@ -1,11 +1,18 @@
 import numpy as np
 import rclpy
-from geometry_msgs.msg import Point32, PolygonStamped, PoseStamped, Twist
+from geometry_msgs.msg import (
+    Point32,
+    PolygonStamped,
+    PoseStamped,
+    PoseWithCovarianceStamped,
+    Twist,
+)
 from nav_msgs.msg import OccupancyGrid as OccupancyGridRos
 from nav_msgs.msg import Odometry, Path
 from rclpy.node import Node
 from scipy.spatial.transform import Rotation as R
 from sensor_msgs.msg import JointState
+from std_srvs.srv import Empty
 
 from taser.common.datatypes import Pose, TaserJointState, Workspace
 from taser.common.logger import logger
@@ -50,6 +57,12 @@ class TaserControllerRosInterface(Node):
             self._navigation_goal_pose_cb,
             10,
         )
+        self._reset_sub = self.create_subscription(
+            PoseWithCovarianceStamped,
+            "/taser/reset",
+            self._reset_cb,
+            10,
+        )
 
         self.arm_joint_velocity_action_pub = self.create_publisher(
             JointState, "/taser/commands/arm_joint_velocity", 10
@@ -66,6 +79,8 @@ class TaserControllerRosInterface(Node):
         self.workspace_pub = self.create_publisher(
             PolygonStamped, "/taser/navigation/workspace", 10
         )
+
+        self._reset_rviz_client = self.create_client(Empty, "/rviz/reset_time")
 
         self.timer = self.create_timer(self.params.dt, self.step)
         logger.info("Controller node running...")
@@ -123,6 +138,10 @@ class TaserControllerRosInterface(Node):
             y=pose.pose.position.y,
             rz=R.from_quat(target_quat, scalar_first=True).as_euler("zyx")[0],
         )
+
+    def _reset_cb(self, msg: PoseWithCovarianceStamped):
+        self.navigation_target_pose = None
+        self._reset_rviz_client.call_async(Empty.Request())
 
 
 class TaserControllerRosNode(TaserControllerRosInterface):
@@ -247,6 +266,13 @@ class TaserControllerRosNode(TaserControllerRosInterface):
             cellsize=cellsize,
             grid=np.array(occupancy_grid.data).reshape((height, width)),
         )
+
+    def _reset_cb(self, msg: PoseWithCovarianceStamped):
+        super()._reset_cb(msg)
+        self._pick_controller.reset()
+        self._navigator.reset()
+        self.workspace_pub.publish(self.workspace_polygon)
+        logger.info("Controller reset.")
 
 
 def main(args=None):

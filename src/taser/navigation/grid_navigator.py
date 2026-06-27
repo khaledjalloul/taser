@@ -58,6 +58,9 @@ class GridNavigator:
         cmd, reached, info = self._controller.step(current_pose, v_current)
         return cmd, reached
 
+    def reset(self):
+        self._controller.reset()
+
     @property
     def inflated_occupancy_grid(self) -> OccupancyGrid:
         return self._planner.inflated_occupancy_grid

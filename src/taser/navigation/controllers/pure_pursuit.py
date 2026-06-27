@@ -56,6 +56,12 @@ class PurePursuitController:
         self._goal_yaw = goal_yaw
         self._precompute_lengths()
 
+    def reset(self):
+        self._path = []
+        self._cum_s = [0.0]
+        self._total_s = 0.0
+        self._goal_yaw = None
+
     def step(
         self,
         pose: Pose,

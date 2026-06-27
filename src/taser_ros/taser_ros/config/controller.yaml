@@ -1,6 +1,6 @@
 /taser/controller:
   ros__parameters:
-    dt: 0.01667 # 60 Hz
+    dt: 0.2 # 5 Hz
     world_frame: "World"
 
     navigation:

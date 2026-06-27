@@ -24,6 +24,11 @@ def cli():
 def launch(no_rviz: bool, sim: bool):
     """Launch the Taser stack."""
     sys.argv = ["launch"]
+
+    if no_rviz:
+        sim = True
+        sys.argv.append("--no-ros")
+
     if not sim:
         sys.argv.append("--headless")
 
@@ -50,6 +55,16 @@ def rviz():
             "unset PYTHONPATH && source /opt/ros/jazzy/setup.bash && source /workspace/taser/install/setup.bash && "
             "ros2 launch taser_ros rviz.launch.yaml"
         ],
+        shell=True,
+        executable="/bin/bash",
+    )
+
+
+@cli.command()
+def kill():
+    """Kill all Taser-related processes."""
+    subprocess.run(
+        ["pkill -f -9 taser"],
         shell=True,
         executable="/bin/bash",
     )

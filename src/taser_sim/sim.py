@@ -4,6 +4,7 @@ parser = argparse.ArgumentParser(description="Isaac Sim Taser Simulation")
 parser.add_argument(
     "--headless", action="store_true", help="Run simulation in headless mode"
 )
+parser.add_argument("--no-ros", action="store_true", help="Disable ROS2 publishing")
 args = parser.parse_args()
 
 ###############################################################
@@ -20,7 +21,7 @@ enable_extensions()
 
 import numpy as np
 import rclpy
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import PoseWithCovarianceStamped, Twist
 from isaacsim.core.api import World
 from isaacsim.core.api.robots.robot import Robot
 from isaacsim.core.prims import XFormPrim
@@ -43,12 +44,18 @@ from taser_sim.utils.teleop import Teleop
 
 NAME = "taser"
 PRIM_PATH = f"/World/{NAME}"
+SPAWN_POSITION_OFFSET = np.array([0.0, 0.0, 0.65])
+ROS_PUBLISH_RATE = 5.0  # Hz
 
 
 class TaserSimRosInterface(Node):
     def __init__(self):
         super().__init__("sim", namespace="taser")
 
+        self.initial_pose = {
+            "position": np.array([0.0, 0.0, 0.0]),
+            "orientation": np.array([1.0, 0.0, 0.0, 0.0]),
+        }
         self.base_vel_cmd = np.zeros(3)
         self.joint_velocity_actions = TaserJointState()
 
@@ -73,6 +80,13 @@ class TaserSimRosInterface(Node):
             10,
         )
 
+        self.create_subscription(
+            PoseWithCovarianceStamped,
+            "/taser/reset",
+            self._reset_cb,
+            10,
+        )
+
     def _base_velocity_cmd_cb(self, msg: Twist):
         self.base_vel_cmd = np.array(
             [msg.linear.x, msg.linear.y, msg.angular.z], dtype=np.float32
@@ -82,6 +96,26 @@ class TaserSimRosInterface(Node):
         self.joint_velocity_actions = TaserJointState.construct_from(
             "ros", msg.velocity
         )
+
+    def _reset_cb(self, msg: PoseWithCovarianceStamped):
+        self.initial_pose = {
+            "position": np.array(
+                [
+                    msg.pose.pose.position.x,
+                    msg.pose.pose.position.y,
+                    msg.pose.pose.position.z,
+                ]
+            ),
+            "orientation": np.array(
+                [
+                    msg.pose.pose.orientation.w,
+                    msg.pose.pose.orientation.x,
+                    msg.pose.pose.orientation.y,
+                    msg.pose.pose.orientation.z,
+                ]
+            ),
+        }
+        self.needs_reset = True
 
 
 class TaserIsaacSim(TaserSimRosInterface):
@@ -96,8 +130,8 @@ class TaserIsaacSim(TaserSimRosInterface):
         self.robot = Robot(
             name=NAME,
             prim_path=PRIM_PATH,
-            position=(0.0, 0.0, 0.65),
-            orientation=(1.0, 0.0, 0.0, 0.0),
+            position=self.initial_pose["position"] + SPAWN_POSITION_OFFSET,
+            orientation=self.initial_pose["orientation"],
         )
         set_up_scene(scene=self.world.scene, robot=self.robot)
 
@@ -118,28 +152,36 @@ class TaserIsaacSim(TaserSimRosInterface):
         self.occupancy_grid_generator = IsaacSimOccupancyGridGenerator()
 
         self.needs_reset = False
-        self.first_step = True
+        self.step = 0
 
     def setup(self) -> None:
         self.world.add_physics_callback("taser_step", callback_fn=self.on_physics_step)
 
     def on_physics_step(self, step_size: float) -> None:
-        if self.first_step:
+        if self.step == 0:
             self.occupancy_grid_generator.setup()
             self.target_prim: XFormPrim = self.world.stage.GetPrimAtPath(
                 "/World/target"
             )
-            self.first_step = False
+            self.step += 1
         elif self.needs_reset:
             self.world.reset(True)
-            self.needs_reset = False
-            self.first_step = True
-        else:
-            self._publish_joint_states()
-            self._publish_odometry()
-            self._publish_occupancy_grid(
-                self.occupancy_grid_generator.get_occupancy_grid()
+            self.robot.set_world_pose(
+                position=self.initial_pose["position"] + SPAWN_POSITION_OFFSET,
+                orientation=self.initial_pose["orientation"],
             )
+            self.needs_reset = False
+            self.step = 0
+        else:
+            if (
+                not args.no_ros
+                and self.step % int(1.0 / (step_size * ROS_PUBLISH_RATE)) == 0
+            ):
+                self._publish_joint_states()
+                self._publish_odometry()
+                self._publish_occupancy_grid(
+                    self.occupancy_grid_generator.get_occupancy_grid()
+                )
 
             vel_cmd = self.teleop.get_command() * [
                 self.locomotion_policy.v_max,
@@ -169,6 +211,7 @@ class TaserIsaacSim(TaserSimRosInterface):
             action = ArticulationAction(joint_velocities=locomotion_action.to("isaac"))
             self.robot.apply_action(action)
             rclpy.spin_once(self, timeout_sec=0)
+            self.step += 1
 
     def run(self) -> None:
         while simulation_app.is_running():
@@ -216,10 +259,10 @@ class TaserIsaacSim(TaserSimRosInterface):
     def _publish_occupancy_grid(self, occupancy_grid: OccupancyGrid) -> None:
         # Hide the robot from the occupancy grid to avoid self-collisions.
         position_w, _ = self.robot.get_world_pose()
-        x_min = np.floor(position_w[0] - 0.3)
-        x_max = np.ceil(position_w[0] + 0.3)
-        y_min = np.floor(position_w[1] - 0.3)
-        y_max = np.ceil(position_w[1] + 0.3)
+        x_min = position_w[0] - 0.75
+        x_max = position_w[0] + 0.75
+        y_min = position_w[1] - 0.75
+        y_max = position_w[1] + 0.75
 
         occupancy_grid.set((x_min, x_max, y_min, y_max), 0)
 
