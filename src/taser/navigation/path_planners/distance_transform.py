@@ -67,7 +67,7 @@ class DistanceTransformPathPlanner:
             ):
                 filtered_path.append(pt)
         path_w = filtered_path[::-1]
-        path_w = [Pose(x=p[0], y=p[1], rz=0.0) for p in path_w]
+        path_w = [Pose(x=p[0], y=p[1]) for p in path_w]
 
         return path_w
 

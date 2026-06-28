@@ -148,6 +148,9 @@ RUN /isaac-sim/python.sh -m pip install --force-reinstall click
 # Update Weights & Biases
 RUN /isaac-sim/python.sh -m pip install --upgrade wandb
 
+# Install scipy typing
+RUN /isaac-sim/python.sh -m pip install scipy-stubs --no-deps
+
 ###############################################
 # Finalization
 

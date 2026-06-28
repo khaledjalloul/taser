@@ -64,6 +64,10 @@ class LocomotionPolicy:
             lock_joint_positions=joint_positions.locks
         )
 
+        if np.all(base_target_planar_velocity_b == 0):
+            base_target_planar_velocity_b = np.zeros(3, dtype=np.float32)
+            base_target_planar_velocity_b[2] = -base_angular_velocity_b[2]
+
         obs = np.concatenate(
             (
                 # Proprio

@@ -16,8 +16,8 @@ NUM_RRT_SAMPLES = 120
 MPC_HORIZON = 10
 
 WORKSPACE = Workspace(x_min=0, x_max=7, y_min=0, y_max=7)
-START = Pose(x=1, y=1, rz=0)
-GOAL = Pose(x=6, y=6, rz=0)
+START = Pose(x=1, y=1)
+GOAL = Pose(x=6, y=6)
 
 
 def plot_controller_step(
@@ -69,8 +69,8 @@ def plot_controller_step(
     ax.quiver(
         robot.x,
         robot.y,
-        np.cos(robot.rz),
-        np.sin(robot.rz),
+        np.cos(robot.rot.as_euler("zyx")[0]),
+        np.sin(robot.rot.as_euler("zyx")[0]),
         color="purple",
         scale_units="xy",
         zorder=3,
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     )
     path = navigator.plan_path(START, GOAL)
 
-    robot = Pose(x=START.x, y=START.y, rz=START.rz)
+    robot = Pose(x=START.x, y=START.y, rot=START.rot)
     cmd = VelocityCommand(0.0, 0.0)
 
     fig, plt_ax = plt.subplots(1, 1)
@@ -124,11 +124,11 @@ if __name__ == "__main__":
 
         cmd, reached = navigator.step(robot, cmd.v)
 
-        robot.x += cmd.v * math.cos(robot.rz) * DT
-        robot.y += cmd.v * math.sin(robot.rz) * DT
-        rz = robot.rz + cmd.w * DT
+        robot.x += cmd.v * math.cos(robot.rot.as_euler("zyx")[0]) * DT
+        robot.y += cmd.v * math.sin(robot.rot.as_euler("zyx")[0]) * DT
+        rz = robot.rot.as_euler("zyx")[0] + cmd.w * DT
         # Wrap between -pi and pi
-        robot.rz = math.atan2(math.sin(rz), math.cos(rz))
+        robot.rot = Pose.R.from_euler("z", math.atan2(math.sin(rz), math.cos(rz)))
 
         traj_x.append(robot.x)
         traj_y.append(robot.y)

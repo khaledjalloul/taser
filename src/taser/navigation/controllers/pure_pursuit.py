@@ -1,7 +1,7 @@
 import math
 from typing import Dict, List, Optional, Tuple
 
-import matplotlib.pyplot as plt
+import numpy as np
 
 from taser.common.datatypes import Pose, Vec2, VelocityCommand
 
@@ -25,11 +25,13 @@ class PurePursuitController:
         max_lookahead: float = 1.00,
         v_max: float = 0.6,
         w_max: float = 1.2,
-        curve_slowdown: float = 1.5,  # alpha in v = v_max/(1+alpha|kappa|)
+        curve_slowdown: float = 1.0,  # alpha in v = v_max/(1+alpha|kappa|)
         heading_turn_thresh: float = math.radians(50.0),  # when target far behind
         goal_pos_tol: float = 0.08,  # m
         goal_yaw_tol: float = math.radians(5.0),  # rad
         turn_gain: float = 2.0,
+        slow_zone: float = 2.0,  # m, for slowdown at the end of path
+        safety_radius: float = 0.25,
     ):  # P-gain for in-place turns
         self.L0 = lookahead_base
         self.kv = lookahead_gain
@@ -42,6 +44,8 @@ class PurePursuitController:
         self.goal_pos_tol = goal_pos_tol
         self.goal_yaw_tol = goal_yaw_tol
         self.turn_gain = turn_gain
+        self.slow_zone = slow_zone
+        self.safety_radius = safety_radius
 
         self._path: List[Pose] = []
         self._cum_s: List[float] = [0.0]
@@ -66,9 +70,6 @@ class PurePursuitController:
         self,
         pose: Pose,
         v_current: float = 0.0,
-        obstacle_distance_ahead: Optional[float] = None,
-        safety_radius: float = 0.25,
-        slow_zone: float = 0.5,
     ) -> Tuple[VelocityCommand, bool, Dict]:
         """
         obstacle_distance_ahead: if provided (meters), we slow as it approaches safety_radius.
@@ -85,9 +86,9 @@ class PurePursuitController:
         if dist_goal <= self.goal_pos_tol:
             # Align heading if requested
             if self._goal_yaw is not None:
-                yaw_err = wrap_angle(self._goal_yaw - pose.rz)
+                yaw_err = wrap_angle(self._goal_yaw - pose.rot.as_euler("zyx")[0])
                 if abs(yaw_err) > self.goal_yaw_tol:
-                    w = max(-self.w_max, min(self.w_max, self.turn_gain * yaw_err))
+                    w = np.clip(self.turn_gain * yaw_err, -self.w_max, self.w_max)
                     return (
                         VelocityCommand(0.0, w),
                         False,
@@ -99,12 +100,13 @@ class PurePursuitController:
         s_closest, closest_xy = self._closest_s_on_path((pose.x, pose.y))
 
         # 2) Lookahead target at s = s_closest + Ld
-        Ld = max(self.Lmin, min(self.L0 + self.kv * abs(v_current), self.Lmax))
+        Ld = np.clip(self.L0 + self.kv * abs(v_current), self.Lmin, self.Lmax)
         s_target = min(self._total_s, s_closest + Ld)
         tx, ty = self._interpolate_at_s(s_target)
 
         # 3) Transform target to robot frame
-        ct, st = math.cos(pose.rz), math.sin(pose.rz)
+        rz = pose.rot.as_euler("zyx")[0]
+        ct, st = math.cos(rz), math.sin(rz)
         dx, dy = tx - pose.x, ty - pose.y
         xr = ct * dx + st * dy
         yr = -st * dx + ct * dy
@@ -116,19 +118,18 @@ class PurePursuitController:
         kappa = 0.0 if Ld < 1e-6 else (2.0 * yr) / (Ld * Ld)
         v_cmd = self.v_max / (1.0 + self.alpha * abs(kappa))
 
-        # 6) Obstacle-based slowdown (optional)
-        if obstacle_distance_ahead is not None:
-            # Ramp from safety_radius → safety_radius+slow_zone
-            m = (obstacle_distance_ahead - safety_radius) / max(1e-6, slow_zone)
-            m = max(0.0, min(1.0, m))
-            v_cmd *= m
+        # 6) Slow down at the end of the path
+        m = 1.0
+        if dist_goal < self.slow_zone:
+            m = dist_goal / self.slow_zone
+        v_cmd *= m
 
         # 7) Decide if we should rotate in place (target behind / big heading error)
         rotate_in_place = (xr < 0.0 and abs(ang_to_tgt) > math.radians(20)) or (
             abs(ang_to_tgt) > self.heading_turn_thresh
         )
         if rotate_in_place:
-            w = max(-self.w_max, min(self.w_max, self.turn_gain * ang_to_tgt))
+            w = np.clip(self.turn_gain * ang_to_tgt, -self.w_max, self.w_max)
             return (
                 VelocityCommand(0.0, w),
                 False,
@@ -140,10 +141,8 @@ class PurePursuitController:
 
         # 8) Curvature → omega, clamp limits
         w_cmd = kappa * v_cmd
-        w_cmd = max(-self.w_max, min(self.w_max, w_cmd))
-        v_cmd = max(
-            0.0, min(self.v_max, v_cmd)
-        )  # forward-only; allow neg if you want reversing
+        w_cmd = np.clip(w_cmd, -self.w_max, self.w_max)
+        v_cmd = np.clip(v_cmd, 0.0, self.v_max)  # forward-only
 
         return (
             VelocityCommand(v_cmd, w_cmd),
@@ -202,7 +201,7 @@ class PurePursuitController:
                 continue
             # projection
             t = ((px - x1) * vx + (py - y1) * vy) / seg2
-            t = max(0.0, min(1.0, t))
+            t = np.clip(t, 0.0, 1.0)
             cx, cy = x1 + t * vx, y1 + t * vy
             d2 = (px - cx) ** 2 + (py - cy) ** 2
             if d2 < best_d2:

@@ -37,11 +37,8 @@ class PolygonNavigator:
         # )
 
         self._controller = PurePursuitController(
-            lookahead_base=0.25,
-            lookahead_gain=0.6,
             v_max=v_max,
             w_max=w_max,
-            curve_slowdown=1.0,
         )
 
     def plan_path(

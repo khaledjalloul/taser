@@ -10,7 +10,6 @@ from geometry_msgs.msg import (
 from nav_msgs.msg import OccupancyGrid as OccupancyGridRos
 from nav_msgs.msg import Odometry, Path
 from rclpy.node import Node
-from scipy.spatial.transform import Rotation as R
 from sensor_msgs.msg import JointState
 from std_srvs.srv import Empty
 
@@ -32,7 +31,6 @@ class TaserControllerRosInterface(Node):
         self.joint_positions = TaserJointState()
         self.joint_velocities = TaserJointState()
         self.pose = Pose()
-        self.quaternion_w = np.array([1.0, 0.0, 0.0, 0.0])
         self.base_linear_velocity_w = np.zeros(3)
         self.base_angular_velocity_w = np.zeros(3)
         self.vel_cmd = np.zeros(3)
@@ -93,18 +91,18 @@ class TaserControllerRosInterface(Node):
         self.joint_velocities = TaserJointState.construct_from("ros", msg.velocity)
 
     def _odometry_cb(self, msg: Odometry):
-        self.quaternion_w = np.array(
-            [
-                msg.pose.pose.orientation.w,
-                msg.pose.pose.orientation.x,
-                msg.pose.pose.orientation.y,
-                msg.pose.pose.orientation.z,
-            ]
-        )
         self.pose = Pose(
             x=msg.pose.pose.position.x,
             y=msg.pose.pose.position.y,
-            rz=R.from_quat(self.quaternion_w, scalar_first=True).as_euler("zyx")[0],
+            rot=Pose.R.from_quat(
+                [
+                    msg.pose.pose.orientation.w,
+                    msg.pose.pose.orientation.x,
+                    msg.pose.pose.orientation.y,
+                    msg.pose.pose.orientation.z,
+                ],
+                scalar_first=True,
+            ),
         )
         self.base_linear_velocity_w = np.array(
             [
@@ -136,7 +134,7 @@ class TaserControllerRosInterface(Node):
         self.navigation_target_pose = Pose(
             x=pose.pose.position.x,
             y=pose.pose.position.y,
-            rz=R.from_quat(target_quat, scalar_first=True).as_euler("zyx")[0],
+            rot=Pose.R.from_quat(target_quat, scalar_first=True),
         )
 
     def _reset_cb(self, msg: PoseWithCovarianceStamped):
@@ -188,8 +186,7 @@ class TaserControllerRosNode(TaserControllerRosInterface):
         self.workspace_pub.publish(self.workspace_polygon)
 
     def step(self):
-        R_IB = R.from_quat(self.quaternion_w, scalar_first=True)
-        R_BI: np.ndarray = R_IB.as_matrix().transpose()
+        R_BI: np.ndarray = self.pose.rot.as_matrix().transpose()
         base_linear_velocity_b = np.matmul(R_BI, self.base_linear_velocity_w)
 
         vel_cmd = np.zeros(3)
@@ -245,8 +242,11 @@ class TaserControllerRosNode(TaserControllerRosInterface):
             ros_pose.header = pose.header
             ros_pose.pose.position.x = pt.x
             ros_pose.pose.position.y = pt.y
-            ros_pose.pose.orientation.w = np.cos(pt.rz / 2.0)
-            ros_pose.pose.orientation.z = np.sin(pt.rz / 2.0)
+            quat = pt.rot.as_quat()
+            ros_pose.pose.orientation.x = quat[0]
+            ros_pose.pose.orientation.y = quat[1]
+            ros_pose.pose.orientation.z = quat[2]
+            ros_pose.pose.orientation.w = quat[3]
             ros_path.poses.append(ros_pose)
 
         self.navigation_path_pub.publish(ros_path)

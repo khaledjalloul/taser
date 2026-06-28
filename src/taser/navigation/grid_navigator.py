@@ -26,11 +26,8 @@ class GridNavigator:
         )
 
         self._controller = PurePursuitController(
-            lookahead_base=0.25,
-            lookahead_gain=0.6,
             v_max=v_max,
             w_max=w_max,
-            curve_slowdown=1.0,
             goal_pos_tol=goal_pos_tol,
         )
 
@@ -45,7 +42,7 @@ class GridNavigator:
 
         try:
             path = self._planner.plan(start, goal)
-            self._controller.set_path(path, goal_yaw=goal.rz)
+            self._controller.set_path(path, goal_yaw=goal.rot.as_euler("zyx")[0])
         except Exception as e:
             logger.error(f"Path planning failed: {e}")
             return []

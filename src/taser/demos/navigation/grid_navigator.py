@@ -12,8 +12,8 @@ V_MAX = 3.0
 W_MAX = 2
 
 WORKSPACE = Workspace(x_min=-5, x_max=5, y_min=-5, y_max=5)
-START = Pose(x=-4, y=-4, rz=3 * np.pi / 4)
-GOAL = Pose(x=4, y=4, rz=0)
+START = Pose(x=-4, y=-4, rot=Pose.R.from_euler("z", 3 * np.pi / 4))
+GOAL = Pose(x=4, y=4)
 
 
 def set_up_occupancy_grid() -> OccupancyGrid:
@@ -55,8 +55,8 @@ def plot_controller_step(
     ax.quiver(
         START.x,
         START.y,
-        np.cos(START.rz),
-        np.sin(START.rz),
+        np.cos(START.rot.as_euler("zyx")[0]),
+        np.sin(START.rot.as_euler("zyx")[0]),
         color="green",
         scale_units="xy",
         zorder=3,
@@ -67,8 +67,8 @@ def plot_controller_step(
     ax.quiver(
         GOAL.x,
         GOAL.y,
-        np.cos(GOAL.rz),
-        np.sin(GOAL.rz),
+        np.cos(GOAL.rot.as_euler("zyx")[0]),
+        np.sin(GOAL.rot.as_euler("zyx")[0]),
         color="orange",
         scale_units="xy",
         zorder=3,
@@ -95,8 +95,8 @@ def plot_controller_step(
     ax.quiver(
         robot.x,
         robot.y,
-        np.cos(robot.rz),
-        np.sin(robot.rz),
+        np.cos(robot.rot.as_euler("zyx")[0]),
+        np.sin(robot.rot.as_euler("zyx")[0]),
         color="purple",
         scale_units="xy",
         zorder=3,
@@ -117,10 +117,11 @@ if __name__ == "__main__":
         v_max=V_MAX,
         w_max=W_MAX,
         wheel_base=L,
+        goal_pos_tol=0.05,
     )
     path = navigator.plan_path(START, GOAL)
 
-    robot = Pose(x=START.x, y=START.y, rz=START.rz)
+    robot = Pose(x=START.x, y=START.y, rot=START.rot)
     cmd = VelocityCommand(0.0, 0.0)
     reached = False
 
@@ -145,11 +146,11 @@ if __name__ == "__main__":
 
         cmd, reached = navigator.step(robot, cmd.v)
 
-        robot.x += cmd.v * math.cos(robot.rz) * DT
-        robot.y += cmd.v * math.sin(robot.rz) * DT
-        rz = robot.rz + cmd.w * DT
+        robot.x += cmd.v * math.cos(robot.rot.as_euler("zyx")[0]) * DT
+        robot.y += cmd.v * math.sin(robot.rot.as_euler("zyx")[0]) * DT
+        rz = robot.rot.as_euler("zyx")[0] + cmd.w * DT
         # Wrap between -pi and pi
-        robot.rz = math.atan2(math.sin(rz), math.cos(rz))
+        robot.rot = Pose.R.from_euler("z", math.atan2(math.sin(rz), math.cos(rz)))
 
         traj_x.append(robot.x)
         traj_y.append(robot.y)

@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import ClassVar, Literal
 
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 Vec2 = tuple[float, float]
 
@@ -19,17 +20,15 @@ class Workspace:
 
 @dataclass
 class Pose:
+    # Expose scipy's Rotation class
+    class R(Rotation):
+        pass
+
     x: float = 0.0
     y: float = 0.0
     z: float = 0.0
-    qw: float = 1.0
-    qx: float = 0.0
-    qy: float = 0.0
-    qz: float = 0.0
-    # TODO: Add converter methods
-    rx: float = 0.0
-    ry: float = 0.0
-    rz: float = 0.0
+
+    rot: Rotation = field(default_factory=lambda: Rotation.identity())
 
 
 @dataclass

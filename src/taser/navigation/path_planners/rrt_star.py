@@ -43,8 +43,8 @@ class RRTStarPathPlanner:
         Plan a path from start to goal.
         """
         dubins_path = self._planner.generate_path(
-            Pose2DCpp(start.x, start.y, start.rz),
-            Pose2DCpp(goal.x, goal.y, goal.rz),
+            Pose2DCpp(start.x, start.y, start.rot.as_euler("zyx")[0]),
+            Pose2DCpp(goal.x, goal.y, goal.rot.as_euler("zyx")[0]),
         )
 
         if not dubins_path:
@@ -53,7 +53,9 @@ class RRTStarPathPlanner:
 
         path_cpp = self._planner.sample_path(dubins_path)
         path_cpp.extend(path_cpp[-1] for _ in range(2 * self._mpc_horizon))
-        path = [Pose(x=p.x, y=p.y, rz=p.theta) for p in path_cpp]
+        path = [
+            Pose(x=p.x, y=p.y, rot=Pose.R.from_euler("z", p.theta)) for p in path_cpp
+        ]
 
         path_vel_cpp = self._planner.get_velocity_profile(path_cpp)
         path_vel = [VelocityCommand(v=v.v, w=v.omega) for v in path_vel_cpp]

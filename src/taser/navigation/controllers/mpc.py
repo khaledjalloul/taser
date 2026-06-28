@@ -67,13 +67,14 @@ class MPCController:
     def get_linearized_model(
         self, x0: Pose, u0: VelocityCommand
     ) -> tuple[np.ndarray, np.ndarray]:
+        rz = x0.rot.as_euler("zyx")[0]
         A = np.eye(self.nx)
-        A[0, 2] = -np.sin(x0.rz) * u0.v * self.dt
-        A[1, 2] = np.cos(x0.rz) * u0.v * self.dt
+        A[0, 2] = -np.sin(rz) * u0.v * self.dt
+        A[1, 2] = np.cos(rz) * u0.v * self.dt
 
         B = np.zeros((self.nx, self.nu))
-        B[0, 0] = np.cos(x0.rz) * self.dt
-        B[1, 0] = np.sin(x0.rz) * self.dt
+        B[0, 0] = np.cos(rz) * self.dt
+        B[1, 0] = np.sin(rz) * self.dt
         B[2, 1] = self.dt
 
         return A, B
@@ -86,8 +87,8 @@ class MPCControllerCpp:
     def step(
         self, x0: Pose, x_ref: list[Pose], u_ref: list[VelocityCommand]
     ) -> VelocityCommand:
-        x0_cpp = Pose2DCpp(x0.x, x0.y, x0.rz)
-        x_ref_cpp = [Pose2DCpp(p.x, p.y, p.rz) for p in x_ref]
+        x0_cpp = Pose2DCpp(x0.x, x0.y, x0.rot.as_euler("zyx")[0])
+        x_ref_cpp = [Pose2DCpp(p.x, p.y, p.rot.as_euler("zyx")[0]) for p in x_ref]
         u_ref_cpp = [BaseVelocity(v.v, v.w) for v in u_ref]
         cmd_cpp = self._controller.step(x0_cpp, x_ref_cpp, u_ref_cpp)
         return VelocityCommand(cmd_cpp.v, cmd_cpp.omega)
@@ -95,7 +96,7 @@ class MPCControllerCpp:
     def get_linearized_model(
         self, x0: Pose, u0: VelocityCommand
     ) -> tuple[np.ndarray, np.ndarray]:
-        x0_cpp = Pose2DCpp(x0.x, x0.y, x0.rz)
+        x0_cpp = Pose2DCpp(x0.x, x0.y, x0.rot.as_euler("zyx")[0])
         u0_cpp = BaseVelocity(u0.v, u0.w)
         A_cpp, B_cpp = self._controller.get_linearized_model(x0_cpp, u0_cpp)
         return np.array(A_cpp), np.array(B_cpp)

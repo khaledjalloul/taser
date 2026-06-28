@@ -33,6 +33,7 @@ reportUnusedImport = false # Already handled by ruff
 extraPaths = [
     # System site-packages
     "/usr/local/lib/python3.12/dist-packages",
+    "/isaac-sim/kit/python/lib/python3.11/site-packages",
     # Isaac Lab
     "/workspace/isaaclab/source/isaaclab_tasks",
     "/workspace/isaaclab/source/isaaclab_assets",
